@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/auth_service.dart';
+import '../../services/localization_service.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Notifications page: per-user notifications from the
@@ -24,7 +25,7 @@ class NotificationsPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Notifications',
+        title: Text(Provider.of<LocalizationService>(context).t('notifications'),
             style: GoogleFonts.notoSansEthiopic(
               fontWeight: FontWeight.w900,
               color: isDark ? Colors.white : AppColors.lightText,

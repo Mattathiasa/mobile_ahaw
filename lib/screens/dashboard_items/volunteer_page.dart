@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/auth_service.dart';
+import '../../services/localization_service.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Volunteer page: pick ministry preferences, saved to
@@ -128,7 +129,7 @@ class _VolunteerPageState extends State<VolunteerPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Volunteer',
+        title: Text(Provider.of<LocalizationService>(context).t('volunteer'),
             style: GoogleFonts.notoSansEthiopic(
               fontWeight: FontWeight.w900,
               color: isDark ? Colors.white : AppColors.lightText,

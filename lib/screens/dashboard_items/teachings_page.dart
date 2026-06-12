@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
+import '../../services/localization_service.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Teaching page: lists the `teachings` collection
@@ -22,7 +24,7 @@ class TeachingsPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Teachings',
+        title: Text(Provider.of<LocalizationService>(context).t('teachings'),
             style: GoogleFonts.notoSansEthiopic(
               fontWeight: FontWeight.w900,
               color: isDark ? Colors.white : AppColors.lightText,

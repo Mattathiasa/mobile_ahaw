@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../services/localization_service.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Memriya Documents page: folder/file browsing of the
@@ -34,7 +36,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Documents',
+        title: Text(Provider.of<LocalizationService>(context).t('documents'),
             style: GoogleFonts.notoSansEthiopic(
               fontWeight: FontWeight.w900,
               color: isDark ? Colors.white : AppColors.lightText,

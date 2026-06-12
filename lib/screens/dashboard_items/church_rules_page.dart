@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
+import '../../services/localization_service.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Church Rules (ChurchLaws) page: tabbed canonical law —
@@ -22,7 +24,7 @@ class ChurchRulesPage extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: Text('Church Rules',
+          title: Text(Provider.of<LocalizationService>(context).t('churchRules'),
               style: GoogleFonts.notoSansEthiopic(
                 fontWeight: FontWeight.w900,
                 color: isDark ? Colors.white : AppColors.lightText,

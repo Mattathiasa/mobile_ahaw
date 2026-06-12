@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/auth_service.dart';
+import '../../services/localization_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/theme_provider.dart';
 
@@ -35,6 +36,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final authService = Provider.of<AuthService>(context);
+    final loc = Provider.of<LocalizationService>(context);
     final user = authService.userModel;
 
     return Scaffold(
@@ -43,7 +45,7 @@ class _SettingsPageState extends State<SettingsPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Settings',
+        title: Text(loc.t('settings'),
             style: GoogleFonts.notoSansEthiopic(
               fontWeight: FontWeight.w900,
               color: isDark ? Colors.white : AppColors.lightText,
@@ -125,6 +127,39 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ).animate().fadeIn(),
+
+          const SizedBox(height: 24),
+
+          // ── Language ──
+          _sectionTitle(loc.t('language').toUpperCase()),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: _cardDecoration(isDark),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final lang in LocalizationService.supportedLanguages)
+                  RadioListTile<String>(
+                    value: lang,
+                    groupValue: loc.language,
+                    onChanged: (v) {
+                      if (v != null) loc.setLanguage(v);
+                    },
+                    activeColor: AppColors.primary,
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(
+                      LocalizationService.languageNames[lang] ?? lang,
+                      style: GoogleFonts.notoSansEthiopic(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color: isDark ? Colors.white : AppColors.lightText,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ).animate().fadeIn(delay: 50.ms),
 
           const SizedBox(height: 24),
 
@@ -210,7 +245,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               icon: const Icon(Icons.logout, size: 18),
-              label: Text('LOGOUT',
+              label: Text(loc.t('logout').toUpperCase(),
                   style: GoogleFonts.notoSansEthiopic(
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1,

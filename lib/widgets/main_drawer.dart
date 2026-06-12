@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../services/auth_service.dart';
+import '../services/localization_service.dart';
 import '../services/permission_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/app_colors.dart';
@@ -37,6 +38,28 @@ class MainDrawer extends StatefulWidget {
 class _MainDrawerState extends State<MainDrawer> {
   // Track which page is currently active by its title
   String _activePage = 'Dashboard';
+
+  // English title → translation catalog key (display only; identity stays English)
+  static const _titleKeys = {
+    'Dashboard': 'dashboard',
+    'Announcements': 'announcements',
+    'Plans': 'plans',
+    'Reports': 'reports',
+    'Members': 'members',
+    'Meetings': 'meetings',
+    'Finance': 'finance',
+    'Church Rules': 'churchRules',
+    'Hige Denb': 'higeDenb',
+    'Missionary': 'missionary',
+    'Teachings': 'teachings',
+    'Strategic Plan': 'strategicPlan',
+    'Volunteer': 'volunteer',
+    'Documents': 'documents',
+    'Notifications': 'notifications',
+    'User Management': 'userManagement',
+    'Hierarchy': 'hierarchy',
+    'Settings': 'settings',
+  };
 
   void _navigateTo(BuildContext context, String title, Widget? page) {
     setState(() => _activePage = title);
@@ -300,6 +323,9 @@ class _MainDrawerState extends State<MainDrawer> {
     required bool isDark,
   }) {
     final isActive = _activePage == title;
+    final loc = Provider.of<LocalizationService>(context);
+    final displayTitle =
+        _titleKeys.containsKey(title) ? loc.t(_titleKeys[title]!) : title;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -348,7 +374,7 @@ class _MainDrawerState extends State<MainDrawer> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    title,
+                    displayTitle,
                     style: GoogleFonts.notoSansEthiopic(
                       fontSize: 13,
                       fontWeight: isActive ? FontWeight.w900 : FontWeight.w700,
@@ -396,7 +422,9 @@ class _MainDrawerState extends State<MainDrawer> {
               const Icon(Icons.logout, color: AppColors.sacredRed, size: 18),
               const SizedBox(width: 10),
               Text(
-                'LOGOUT',
+                Provider.of<LocalizationService>(context)
+                    .t('logout')
+                    .toUpperCase(),
                 style: GoogleFonts.notoSansEthiopic(
                   color: AppColors.sacredRed,
                   fontWeight: FontWeight.w900,
