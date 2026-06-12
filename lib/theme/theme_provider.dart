@@ -7,7 +7,7 @@ class ThemeProvider extends ChangeNotifier {
 
   bool get isDarkMode {
     if (themeMode == ThemeMode.system) {
-      return WidgetsBinding.instance.window.platformBrightness ==
+      return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
           Brightness.dark;
     }
     return themeMode == ThemeMode.dark;
@@ -21,7 +21,7 @@ class ThemeProvider extends ChangeNotifier {
   ThemeData get lightTheme => ThemeData(
     scaffoldBackgroundColor: AppColors.lightBackground,
     primaryColor: AppColors.primary,
-    colorScheme: ColorScheme.light(
+    colorScheme: const ColorScheme.light(
       primary: AppColors.primary,
       secondary: AppColors.accent,
       background: AppColors.lightBackground,
@@ -42,7 +42,7 @@ class ThemeProvider extends ChangeNotifier {
   ThemeData get darkTheme => ThemeData(
     scaffoldBackgroundColor: AppColors.darkBackground,
     primaryColor: AppColors.primary,
-    colorScheme: ColorScheme.dark(
+    colorScheme: const ColorScheme.dark(
       primary: AppColors.primary,
       secondary: AppColors.accent,
       background: AppColors.darkBackground,

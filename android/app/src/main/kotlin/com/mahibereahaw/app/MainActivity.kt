@@ -1,4 +1,4 @@
-package com.example.mobile_ahaw
+package com.mahibereahaw.app
 
 import io.flutter.embedding.android.FlutterActivity
 

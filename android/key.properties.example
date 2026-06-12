@@ -1,0 +1,7 @@
+# Copy to android/key.properties (gitignored) and fill in your release keystore.
+# Generate a keystore with:
+#   keytool -genkey -v -keystore ~/mahibere-ahaw-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias mahibereahaw
+storeFile=/Users/YOUR_USER/mahibere-ahaw-release.jks
+storePassword=YOUR_STORE_PASSWORD
+keyAlias=mahibereahaw
+keyPassword=YOUR_KEY_PASSWORD

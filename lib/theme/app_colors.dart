@@ -25,6 +25,10 @@ class AppColors {
   static const Color error = Color(0xFFDC3545);
   static const Color warning = Color(0xFFFFC107);
 
+  // Spiritual palette (matching web theme)
+  static const Color divineGold = Color(0xFFFABB2A);
+  static const Color sacredRed = Color(0xFFD63031);
+
   // Neutral
   static const Color white = Colors.white;
   static const Color black = Colors.black;

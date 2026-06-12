@@ -6,10 +6,9 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
-import '../widgets/custom_button.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -20,6 +19,15 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+
+  // 3-way language cycle: EN → AM → OM
+  final List<String> _languages = ['EN', 'AM', 'OM'];
+  int _langIndex = 0;
+
+
+  String get _nextLang => _languages[(_langIndex + 1) % _languages.length];
+
+  void _cycleLang() => setState(() => _langIndex = (_langIndex + 1) % _languages.length);
 
   @override
   void dispose() {
@@ -40,20 +48,24 @@ class _LoginPageState extends State<LoginPage> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      // Navigation is handled by auth state listener in main.dart or wrapper
+      // ── Success: pop back to AuthWrapper which will show DashboardPage ──
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+      }
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
         if (_errorMessage!.contains('firebase_auth')) {
-           // Simplify/Clean up firebase error message if needed
-           _errorMessage = _errorMessage!.split('] ').last;
+          _errorMessage = _errorMessage!.split('] ').last;
+        }
+        // Clean up common Firebase error prefixes
+        if (_errorMessage!.startsWith('Exception: ')) {
+          _errorMessage = _errorMessage!.replaceFirst('Exception: ', '');
         }
       });
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -61,33 +73,34 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
-    
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // Dynamic Background
+          // ── Dynamic Background ──
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: isDark 
-                  ? [
-                      const Color(0xFF0D2440),
-                      const Color(0xFF1A365D),
-                      const Color(0xFF0F172A),
-                    ]
-                  : [
-                      const Color(0xFFF0F7FF),
-                      const Color(0xFFE0EBF5),
-                      const Color(0xFFF8F9FA),
-                    ],
+                colors: isDark
+                    ? [
+                        const Color(0xFF0D2440),
+                        const Color(0xFF1A365D),
+                        const Color(0xFF0F172A),
+                      ]
+                    : [
+                        const Color(0xFFF0F7FF),
+                        const Color(0xFFE0EBF5),
+                        const Color(0xFFF8F9FA),
+                      ],
               ),
             ),
           ),
-          
-          // Decorative Elements (Blobs)
+
+          // ── Decorative Blobs ──
           Positioned(
             top: -100,
             right: -100,
@@ -95,20 +108,21 @@ class _LoginPageState extends State<LoginPage> {
               width: 300,
               height: 300,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.2),
+                color: AppColors.primary.withOpacity(0.15),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.2),
+                    color: AppColors.primary.withOpacity(0.15),
                     blurRadius: 100,
                     spreadRadius: 20,
                   ),
                 ],
               ),
             ),
-          ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-           .moveY(begin: 0, end: 50, duration: 4.seconds),
-           
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .moveY(begin: 0, end: 50, duration: 4.seconds),
+
           Positioned(
             bottom: -50,
             left: -50,
@@ -116,180 +130,398 @@ class _LoginPageState extends State<LoginPage> {
               width: 250,
               height: 250,
               decoration: BoxDecoration(
-                color: AppColors.secondary.withOpacity(0.15),
+                color: AppColors.accent.withOpacity(0.12),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.secondary.withOpacity(0.15),
+                    color: AppColors.accent.withOpacity(0.12),
                     blurRadius: 80,
                     spreadRadius: 10,
                   ),
                 ],
               ),
             ),
-          ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-           .moveY(begin: 0, end: -30, duration: 5.seconds),
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .moveY(begin: 0, end: -30, duration: 5.seconds),
 
-          // Main Content
+          // ── Top-left: Home button ──
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            left: 16,
+            child: GestureDetector(
+              onTap: () => Navigator.pushReplacementNamed(context, '/'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.07)
+                      : Colors.white.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primary.withOpacity(0.15),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.home_outlined,
+                        size: 16,
+                        color: isDark ? Colors.white70 : AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      'HOME',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                        color: isDark ? Colors.white70 : AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ).animate().fadeIn().moveY(begin: -10),
+          ),
+
+          // ── Top-right: Theme + Language toggles ──
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            right: 16,
+            child: Row(
+              children: [
+                // Theme toggle
+                _buildTopButton(
+                  isDark: isDark,
+                  child: Icon(
+                    isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                    size: 16,
+                    color: isDark ? AppColors.accent : AppColors.primary,
+                  ),
+                  onTap: () => themeProvider.toggleTheme(!isDark),
+                ),
+                const SizedBox(width: 8),
+                // Language toggle
+                _buildTopButton(
+                  isDark: isDark,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.language,
+                          size: 14,
+                          color: isDark ? AppColors.accent : AppColors.primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        _nextLang,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? Colors.white70 : AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  onTap: _cycleLang,
+                ),
+              ],
+            ).animate().fadeIn().moveY(begin: -10),
+          ),
+
+          // ── Main Card ──
           Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.fromLTRB(24, 100, 24, 40),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(28),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                   child: Container(
-                    padding: const EdgeInsets.all(32.0),
                     decoration: BoxDecoration(
-                      color: isDark 
-                          ? Colors.white.withOpacity(0.05) 
-                          : Colors.white.withOpacity(0.6),
-                      borderRadius: BorderRadius.circular(24),
+                      color: isDark
+                          ? Colors.white.withOpacity(0.05)
+                          : Colors.white.withOpacity(0.65),
+                      borderRadius: BorderRadius.circular(28),
                       border: Border.all(
-                        color: isDark 
-                            ? Colors.white.withOpacity(0.1) 
-                            : Colors.white.withOpacity(0.8),
+                        color: isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : Colors.white.withOpacity(0.85),
                       ),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+                          blurRadius: 30,
+                          offset: const Offset(0, 12),
                         ),
                       ],
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Logo
+                        // ── Gradient accent bar (matches web) ──
                         Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.asset(
-                              'assets/logo.png',
-                              height: 60,
-                              width: 60,
-                            ),
-                          ),
-                        )
-                            .animate()
-                            .fadeIn(duration: 500.ms)
-                            .scale(delay: 200.ms, duration: 500.ms),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Title
-                        Text(
-                          'Ahaw Access',
-                          style: GoogleFonts.notoSansEthiopic(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            color: isDark ? Colors.white : AppColors.primary,
-                            letterSpacing: -0.5,
-                          ),
-                        ).animate().fadeIn().moveY(begin: 10),
-                        
-                        Text(
-                          'Church Management System',
-                          style: GoogleFonts.notoSansEthiopic(
-                            fontSize: 14,
-                            color: isDark ? Colors.white60 : Colors.grey[600],
-                            letterSpacing: 0.5,
-                          ),
-                        ).animate().fadeIn(delay: 200.ms).moveY(begin: 10),
-                        
-                        const SizedBox(height: 32),
-
-                        // Error Message
-                        if (_errorMessage != null)
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.1),
-                              border: Border.all(color: AppColors.error.withOpacity(0.3)),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.error_outline, color: AppColors.error, size: 20),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _errorMessage!,
-                                    style: TextStyle(color: AppColors.error, fontSize: 13),
-                                  ),
-                                ),
+                          height: 4,
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primary,
+                                AppColors.accent,
+                                AppColors.primary,
                               ],
                             ),
-                          ).animate().fadeIn(),
-
-                        // Email Field
-                        _buildTextField(
-                          controller: _emailController,
-                          label: 'Email Address',
-                          icon: Icons.email_outlined,
-                          isDark: isDark,
-                        ).animate().fadeIn(delay: 300.ms).moveX(begin: -20),
-                        
-                        const SizedBox(height: 16),
-
-                        // Password Field
-                        _buildTextField(
-                          controller: _passwordController,
-                          label: 'Password',
-                          icon: Icons.lock_outline,
-                          isObscure: true,
-                          isLast: true,
-                          isDark: isDark,
-                          onSubmitted: (_) => _signIn(),
-                        ).animate().fadeIn(delay: 400.ms).moveX(begin: -20),
-                        
-                        const SizedBox(height: 24),
-
-                        // Sign In Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _signIn,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              elevation: 10,
-                              shadowColor: AppColors.primary.withOpacity(0.4),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(28),
                             ),
-                            child: _isLoading 
-                                ? const SizedBox(
-                                    height: 24, 
-                                    width: 24, 
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                                  )
-                                : const Text(
-                                    'Sign In',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(32, 32, 32, 32),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // ── Logo ──
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.2),
+                                      blurRadius: 20,
+                                      spreadRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Image.asset(
+                                    'assets/logo.png',
+                                    height: 60,
+                                    width: 60,
                                   ),
+                                ),
+                              )
+                                  .animate()
+                                  .fadeIn(duration: 500.ms)
+                                  .scale(delay: 200.ms, duration: 500.ms),
+
+                              const SizedBox(height: 20),
+
+                              // ── Sparkle badge (matches web) ──
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: AppColors.primary.withOpacity(0.2),
+                                  ),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.auto_awesome,
+                                        size: 11, color: AppColors.primary),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'AHAW ACCESS',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 1.5,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ).animate().fadeIn(delay: 100.ms),
+
+                              const SizedBox(height: 14),
+
+                              // ── Title ──
+                              Text(
+                                'Ahaw Access',
+                                style: GoogleFonts.notoSansEthiopic(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w900,
+                                  color: isDark ? Colors.white : AppColors.primary,
+                                  letterSpacing: -0.5,
+                                ),
+                              ).animate().fadeIn().moveY(begin: 10),
+
+                              Text(
+                                'Church Management System',
+                                style: GoogleFonts.notoSansEthiopic(
+                                  fontSize: 13,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : Colors.grey[600],
+                                  letterSpacing: 0.5,
+                                ),
+                              ).animate().fadeIn(delay: 150.ms).moveY(begin: 10),
+
+                              const SizedBox(height: 28),
+
+                              // ── Error message ──
+                              if (_errorMessage != null)
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.sacredRed.withOpacity(0.08),
+                                    border: Border.all(
+                                        color: AppColors.sacredRed
+                                            .withOpacity(0.3)),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.warning_amber_rounded,
+                                          color: AppColors.sacredRed, size: 18),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _errorMessage!,
+                                          style: const TextStyle(
+                                              color: AppColors.sacredRed,
+                                              fontSize: 12),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ).animate().fadeIn(),
+
+                              // ── Email field ──
+                              _buildTextField(
+                                controller: _emailController,
+                                label: 'Username or Email',
+                                icon: Icons.mail_outline,
+                                isDark: isDark,
+                              ).animate().fadeIn(delay: 300.ms).moveX(begin: -20),
+
+                              const SizedBox(height: 14),
+
+                              // ── Password field ──
+                              _buildTextField(
+                                controller: _passwordController,
+                                label: 'Password',
+                                icon: Icons.lock_outline,
+                                isObscure: true,
+                                isLast: true,
+                                isDark: isDark,
+                                onSubmitted: (_) => _signIn(),
+                              ).animate().fadeIn(delay: 400.ms).moveX(begin: -20),
+
+                              const SizedBox(height: 24),
+
+                              // ── Sign In button ──
+                              SizedBox(
+                                width: double.infinity,
+                                height: 54,
+                                child: ElevatedButton(
+                                  onPressed: _isLoading ? null : _signIn,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    elevation: 10,
+                                    shadowColor:
+                                        AppColors.primary.withOpacity(0.4),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  child: _isLoading
+                                      ? const SizedBox(
+                                          height: 22,
+                                          width: 22,
+                                          child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2),
+                                        )
+                                      : const Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              'Sign In',
+                                              style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            SizedBox(width: 8),
+                                            Icon(Icons.arrow_forward,
+                                                size: 18),
+                                          ],
+                                        ),
+                                ),
+                              ).animate().fadeIn(delay: 500.ms).moveY(begin: 20),
+
+                              const SizedBox(height: 20),
+
+                              // ── Auth note (matches web dashed box) ──
+                              Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppColors.primary.withOpacity(0.05)
+                                      : const Color(0xFFE7F0FA),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppColors.primary.withOpacity(0.2),
+                                    style: BorderStyle.solid,
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'AUTHORIZED ACCESS ONLY',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 1.5,
+                                        color: isDark
+                                            ? Colors.white38
+                                            : AppColors.primary.withOpacity(0.5),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Contact your administrator for credentials',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: isDark
+                                            ? Colors.white30
+                                            : AppColors.lightText
+                                                .withOpacity(0.4),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ).animate().fadeIn(delay: 600.ms),
+
+                              const SizedBox(height: 20),
+
+                              // ── Footer ──
+                              Text(
+                                '© 2025 Mahibere Ahaw',
+                                style: GoogleFonts.notoSansEthiopic(
+                                  fontSize: 11,
+                                  color: isDark
+                                      ? Colors.white24
+                                      : Colors.grey[400],
+                                ),
+                              ).animate().fadeIn(delay: 700.ms),
+                            ],
                           ),
-                        ).animate().fadeIn(delay: 500.ms).moveY(begin: 20),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Copyright / Footer
-                        Text(
-                          '© 2025 Mahibere Ahaw',
-                          style: GoogleFonts.notoSansEthiopic(
-                            fontSize: 12,
-                            color: isDark ? Colors.white30 : Colors.grey[400],
-                          ),
-                        ).animate().fadeIn(delay: 600.ms),
+                        ),
                       ],
                     ),
                   ),
@@ -298,6 +530,33 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTopButton({
+    required bool isDark,
+    required Widget child,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withOpacity(0.07)
+              : Colors.white.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: child,
       ),
     );
   }
@@ -313,10 +572,14 @@ class _LoginPageState extends State<LoginPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? Colors.black.withOpacity(0.2) : Colors.grey.withOpacity(0.05),
+        color: isDark
+            ? Colors.black.withOpacity(0.2)
+            : Colors.grey.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2),
+          color: isDark
+              ? Colors.white.withOpacity(0.1)
+              : AppColors.primary.withOpacity(0.15),
         ),
       ),
       child: TextField(
@@ -325,21 +588,25 @@ class _LoginPageState extends State<LoginPage> {
         style: GoogleFonts.notoSansEthiopic(
           color: isDark ? Colors.white : AppColors.lightText,
         ),
-        textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
+        textInputAction:
+            isLast ? TextInputAction.done : TextInputAction.next,
         onSubmitted: onSubmitted,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(
-            color: isDark ? Colors.white60 : Colors.grey[600],
-            fontSize: 14,
+            color: isDark
+                ? Colors.white54
+                : AppColors.primary.withOpacity(0.6),
+            fontSize: 13,
           ),
           prefixIcon: Icon(
-            icon, 
-            color: isDark ? Colors.white60 : Colors.grey[500],
+            icon,
+            color: isDark ? Colors.white38 : AppColors.primary.withOpacity(0.5),
             size: 20,
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
       ),
     );

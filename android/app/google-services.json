@@ -1,34 +1,29 @@
 {
-    "project_info": {
-        "project_number": "123456789012",
-        "project_id": "placeholder-project-id",
-        "storage_bucket": "placeholder-project-id.appspot.com"
-    },
-    "client": [
-        {
-            "client_info": {
-                "mobilesdk_app_id": "1:123456789012:android:6ea87a2d69f03223",
-                "android_client_info": {
-                    "package_name": "com.example.mobile_ahaw"
-                }
-            },
-            "oauth_client": [
-                {
-                    "client_id": "placeholder-client-id.apps.googleusercontent.com",
-                    "client_type": 3
-                }
-            ],
-            "api_key": [
-                {
-                    "current_key": "AIzaSyDummyKeyForBuildOnly"
-                }
-            ],
-            "services": {
-                "appinvite_service": {
-                    "other_platform_oauth_client": []
-                }
-            }
+  "project_info": {
+    "project_number": "43913101958",
+    "project_id": "mahibere-ahaw",
+    "storage_bucket": "mahibere-ahaw.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:43913101958:android:63093cbdc5ff8d6c294707",
+        "android_client_info": {
+          "package_name": "com.mahibereahaw.app"
         }
-    ],
-    "configuration_version": "1"
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCD8nSoD4W9o7r0SwYJt-RVKhmcBV19EDo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
 }
