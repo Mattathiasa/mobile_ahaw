@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/localization_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
 
@@ -19,15 +20,6 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
-
-  // 3-way language cycle: EN → AM → OM
-  final List<String> _languages = ['EN', 'AM', 'OM'];
-  int _langIndex = 0;
-
-
-  String get _nextLang => _languages[(_langIndex + 1) % _languages.length];
-
-  void _cycleLang() => setState(() => _langIndex = (_langIndex + 1) % _languages.length);
 
   @override
   void dispose() {
@@ -74,6 +66,11 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final loc = Provider.of<LocalizationService>(context);
+
+    // Real 4-way language cycle (EN → AM → OM → TI) wired to the app locale.
+    const langs = LocalizationService.supportedLanguages;
+    final nextLang = langs[(langs.indexOf(loc.language) + 1) % langs.length];
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -176,7 +173,7 @@ class _LoginPageState extends State<LoginPage> {
                         color: isDark ? Colors.white70 : AppColors.primary),
                     const SizedBox(width: 6),
                     Text(
-                      'HOME',
+                      loc.t('loginHome').toUpperCase(),
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
@@ -218,7 +215,7 @@ class _LoginPageState extends State<LoginPage> {
                           color: isDark ? AppColors.accent : AppColors.primary),
                       const SizedBox(width: 4),
                       Text(
-                        _nextLang,
+                        nextLang.toUpperCase(),
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
@@ -227,7 +224,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ],
                   ),
-                  onTap: _cycleLang,
+                  onTap: () => loc.setLanguage(nextLang),
                 ),
               ],
             ).animate().fadeIn().moveY(begin: -10),
@@ -325,15 +322,15 @@ class _LoginPageState extends State<LoginPage> {
                                     color: AppColors.primary.withOpacity(0.2),
                                   ),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.auto_awesome,
+                                    const Icon(Icons.auto_awesome,
                                         size: 11, color: AppColors.primary),
-                                    SizedBox(width: 6),
+                                    const SizedBox(width: 6),
                                     Text(
-                                      'AHAW ACCESS',
-                                      style: TextStyle(
+                                      loc.t('loginBadge').toUpperCase(),
+                                      style: const TextStyle(
                                         fontSize: 9,
                                         fontWeight: FontWeight.w900,
                                         letterSpacing: 1.5,
@@ -348,7 +345,8 @@ class _LoginPageState extends State<LoginPage> {
 
                               // ── Title ──
                               Text(
-                                'Ahaw Access',
+                                loc.t('loginTitle'),
+                                textAlign: TextAlign.center,
                                 style: GoogleFonts.notoSansEthiopic(
                                   fontSize: 28,
                                   fontWeight: FontWeight.w900,
@@ -358,7 +356,8 @@ class _LoginPageState extends State<LoginPage> {
                               ).animate().fadeIn().moveY(begin: 10),
 
                               Text(
-                                'Church Management System',
+                                loc.t('loginSubtitle'),
+                                textAlign: TextAlign.center,
                                 style: GoogleFonts.notoSansEthiopic(
                                   fontSize: 13,
                                   color: isDark
@@ -402,7 +401,7 @@ class _LoginPageState extends State<LoginPage> {
                               // ── Email field ──
                               _buildTextField(
                                 controller: _emailController,
-                                label: 'Username or Email',
+                                label: loc.t('loginUsernameLabel'),
                                 icon: Icons.mail_outline,
                                 isDark: isDark,
                               ).animate().fadeIn(delay: 300.ms).moveX(begin: -20),
@@ -412,7 +411,7 @@ class _LoginPageState extends State<LoginPage> {
                               // ── Password field ──
                               _buildTextField(
                                 controller: _passwordController,
-                                label: 'Password',
+                                label: loc.t('loginPasswordLabel'),
                                 icon: Icons.lock_outline,
                                 isObscure: true,
                                 isLast: true,
@@ -446,18 +445,18 @@ class _LoginPageState extends State<LoginPage> {
                                               color: Colors.white,
                                               strokeWidth: 2),
                                         )
-                                      : const Row(
+                                      : Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
                                           children: [
                                             Text(
-                                              'Sign In',
-                                              style: TextStyle(
+                                              loc.t('loginSignIn'),
+                                              style: const TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.bold),
                                             ),
-                                            SizedBox(width: 8),
-                                            Icon(Icons.arrow_forward,
+                                            const SizedBox(width: 8),
+                                            const Icon(Icons.arrow_forward,
                                                 size: 18),
                                           ],
                                         ),
@@ -482,7 +481,7 @@ class _LoginPageState extends State<LoginPage> {
                                 child: Column(
                                   children: [
                                     Text(
-                                      'AUTHORIZED ACCESS ONLY',
+                                      loc.t('loginAuthNote').toUpperCase(),
                                       style: TextStyle(
                                         fontSize: 9,
                                         fontWeight: FontWeight.w900,
@@ -494,7 +493,8 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Contact your administrator for credentials',
+                                      loc.t('loginAuthDesc'),
+                                      textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 10,
                                         color: isDark

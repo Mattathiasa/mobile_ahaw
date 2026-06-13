@@ -25,6 +25,7 @@ class _LandingPageState extends State<LandingPage> {
   final GlobalKey _homeKey = GlobalKey();
   final GlobalKey _aboutKey = GlobalKey();
   final GlobalKey _servicesKey = GlobalKey();
+  final GlobalKey _contactKey = GlobalKey();
 
   @override
   void initState() {
@@ -121,6 +122,8 @@ class _LandingPageState extends State<LandingPage> {
                       ),
                       Row(
                         children: [
+                          _buildLangButton(context),
+                          const SizedBox(width: 8),
                           _buildHeaderIcon(
                             icon: isDark ? Icons.light_mode : Icons.dark_mode,
                             onTap: () => themeProvider.toggleTheme(!isDark),
@@ -429,35 +432,96 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Widget _buildBenefitsSection(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
+    final c = _content(context);
     return Container(
       key: _aboutKey,
-      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 56, horizontal: 24),
+      color: AppColors.primary.withOpacity(0.04),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('ለምን አሃው?', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 32),
-          _buildBenefitItem('ደህንነት', 'አስተማማኝ መረጃ'),
-          _buildBenefitItem('ተደራሽነት', 'በየትኛውም ቦታ'),
-          _buildBenefitItem('ግልጽነት', 'ግልጽ ሪፖርቶች'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBenefitItem(String title, String desc) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          const Icon(Icons.check_circle, color: AppColors.primary, size: 20),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text(desc, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            ],
+          // Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.favorite, size: 12, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Text(c.supportTitle.isNotEmpty ? c.supportTitle : 'Support the Ministry',
+                    style: GoogleFonts.notoSansEthiopic(
+                        fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.primary)),
+              ],
+            ),
           ),
+          const SizedBox(height: 16),
+          if (c.supportDescription.isNotEmpty)
+            Text(c.supportDescription,
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 14, height: 1.6,
+                    color: isDark ? Colors.white70 : Colors.black54)),
+          const SizedBox(height: 24),
+
+          // Mission statement card
+          if (c.missionStatement.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, AppColors.primaryLight],
+                  begin: Alignment.topLeft, end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.favorite, color: Colors.white54, size: 28),
+                  const SizedBox(height: 12),
+                  Text(c.missionTitle.isNotEmpty ? c.missionTitle : 'Our Mission',
+                      style: GoogleFonts.notoSansEthiopic(
+                          fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white)),
+                  const SizedBox(height: 8),
+                  Text('"${c.missionStatement}"',
+                      style: GoogleFonts.notoSansEthiopic(
+                          fontSize: 14, height: 1.6, fontWeight: FontWeight.w600,
+                          color: Colors.white.withOpacity(0.95))),
+                ],
+              ),
+            ),
+
+          // Bank accounts grid
+          if (c.banks.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            ...c.banks.map((b) => Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(b['name']?.toString() ?? '',
+                          style: GoogleFonts.notoSansEthiopic(
+                              fontSize: 11, fontWeight: FontWeight.w900,
+                              color: AppColors.primary)),
+                      Text(b['account']?.toString() ?? '',
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold,
+                              fontFeatures: [FontFeature.tabularFigures()])),
+                    ],
+                  ),
+                )),
+          ],
         ],
       ),
     );
@@ -466,6 +530,7 @@ class _LandingPageState extends State<LandingPage> {
   Widget _buildFooter(BuildContext context) {
     final c = _content(context);
     return Container(
+      key: _contactKey,
       padding: const EdgeInsets.all(40),
       child: Column(
         children: [
@@ -525,6 +590,38 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
+  Widget _buildLangButton(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
+    const langs = LocalizationService.supportedLanguages;
+    final next = langs[(langs.indexOf(loc.language) + 1) % langs.length];
+    return GestureDetector(
+      onTap: () => loc.setLanguage(next),
+      child: Container(
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.language, size: 16, color: AppColors.primary),
+            const SizedBox(width: 4),
+            Text(
+              next.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeaderIcon({required IconData icon, required VoidCallback onTap}) {
     return Container(
       decoration: BoxDecoration(
@@ -552,6 +649,7 @@ class _LandingPageState extends State<LandingPage> {
               _buildMenuLink('ዋና ገፅ', _homeKey, context),
               _buildMenuLink('ስለ እኛ', _aboutKey, context),
               _buildMenuLink('አገልግሎቶች', _servicesKey, context),
+              _buildMenuLink('ግንኙነት', _contactKey, context),
             ],
           ),
         );
