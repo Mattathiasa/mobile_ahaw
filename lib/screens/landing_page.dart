@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
+import '../services/landing_content_service.dart';
+import '../services/localization_service.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -45,6 +47,13 @@ class _LandingPageState extends State<LandingPage> {
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOut,
     );
+  }
+
+  /// Live landing content for the current language (edited in the web admin).
+  LandingContent _content(BuildContext context) {
+    final lang = Provider.of<LocalizationService>(context).language;
+    final raw = Provider.of<LandingContentService>(context).forLanguage(lang);
+    return LandingContent(raw);
   }
 
   @override
@@ -145,6 +154,9 @@ class _LandingPageState extends State<LandingPage> {
 
   Widget _buildHeroSection(BuildContext context) {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
+    final c = _content(context);
+    final title = c.heroTitle;
+    final highlight = c.heroTitleHighlight;
 
     return Container(
       key: _homeKey,
@@ -168,9 +180,9 @@ class _LandingPageState extends State<LandingPage> {
               color: AppColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(30),
             ),
-            child: const Text(
-              'DIVINE TECHNOLOGY',
-              style: TextStyle(
+            child: Text(
+              c.heroBadge.toUpperCase(),
+              style: GoogleFonts.notoSansEthiopic(
                 color: AppColors.primary,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
@@ -185,18 +197,15 @@ class _LandingPageState extends State<LandingPage> {
             textAlign: TextAlign.center,
             text: TextSpan(
               style: GoogleFonts.notoSansEthiopic(
-                fontSize: 42,
+                fontSize: 40,
                 fontWeight: FontWeight.w900,
-                height: 1.1,
+                height: 1.15,
                 color: isDark ? Colors.white : AppColors.lightText,
               ),
-              children: const [
-                TextSpan(text: 'ቤተክርስቲያንን በ\n'),
-                TextSpan(
-                  text: 'ዘመናዊ ጥበብ',
-                  style: TextStyle(color: AppColors.primary),
-                ),
-                TextSpan(text: '\nእናገልግል'),
+              children: [
+                TextSpan(text: title),
+                if (highlight.isNotEmpty)
+                  TextSpan(text: '\n$highlight', style: const TextStyle(color: AppColors.primary)),
               ],
             ),
           ).animate().fadeIn(delay: 200.ms).moveY(begin: 20),
@@ -204,7 +213,7 @@ class _LandingPageState extends State<LandingPage> {
           const SizedBox(height: 24),
 
           Text(
-            'በመጽሐፍ ቅዱስ የተገለጠውን የእግዚአብሔርን ሃሳብ የምታገለግል በቃሉና በመንፈሱ የታደሰች ቤተክርስቲያን።',
+            c.heroDescription,
             textAlign: TextAlign.center,
             style: GoogleFonts.notoSansEthiopic(
               fontSize: 16,
@@ -212,6 +221,18 @@ class _LandingPageState extends State<LandingPage> {
               height: 1.6,
             ),
           ).animate().fadeIn(delay: 400.ms).moveY(begin: 20),
+
+          if (c.heroImageUrl.isNotEmpty) ...[
+            const SizedBox(height: 36),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Image.network(
+                c.heroImageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ).animate().fadeIn(delay: 500.ms).scale(begin: const Offset(0.96, 0.96)),
+          ],
 
           const SizedBox(height: 48),
 
@@ -227,7 +248,7 @@ class _LandingPageState extends State<LandingPage> {
                 elevation: 0,
               ),
               child: Text(
-                'አሁኑኑ ይጀምሩ',
+                c.ctaPrimary,
                 style: GoogleFonts.notoSansEthiopic(fontSize: 18, fontWeight: FontWeight.w900),
               ),
             ),
@@ -237,15 +258,36 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
+  IconData _iconFor(String? name) {
+    switch (name) {
+      case 'MapPin': return Icons.location_on_outlined;
+      case 'Shield': return Icons.shield_outlined;
+      case 'Heart': return Icons.favorite_outline;
+      case 'Languages': return Icons.public;
+      case 'Users': return Icons.people_outline;
+      case 'Calendar': return Icons.calendar_today_outlined;
+      case 'BarChart3': return Icons.bar_chart;
+      case 'FileText': return Icons.description_outlined;
+      default: return Icons.star_outline;
+    }
+  }
+
   Widget _buildStatsSection(BuildContext context) {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
+    final c = _content(context);
 
-    final stats = [
-      {'val': '850', 'label': 'አጥቢያዎች', 'icon': Icons.church},
-      {'val': '2.4k', 'label': 'አገልጋዮች', 'icon': Icons.people},
-      {'val': '40%', 'label': 'ዕድገት', 'icon': Icons.trending_up},
-      {'val': '120+', 'label': 'ሃገረ ስብከቶች', 'icon': Icons.public},
-    ];
+    final stats = c.stats.isNotEmpty
+        ? c.stats.map((s) => {
+              'val': s['value']?.toString() ?? '',
+              'label': s['label']?.toString() ?? '',
+              'icon': _iconFor(s['icon']?.toString()),
+            }).toList()
+        : <Map<String, dynamic>>[
+            {'val': '850', 'label': 'አጥቢያዎች', 'icon': Icons.church},
+            {'val': '2.4k', 'label': 'አገልጋዮች', 'icon': Icons.people},
+            {'val': '40%', 'label': 'ዕድገት', 'icon': Icons.trending_up},
+            {'val': '120+', 'label': 'ሃገረ ስብከቶች', 'icon': Icons.public},
+          ];
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
@@ -291,12 +333,19 @@ class _LandingPageState extends State<LandingPage> {
 
   Widget _buildFeaturesSection(BuildContext context) {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
+    final c = _content(context);
 
-    final features = [
-      {'title': 'አባላት አስተዳደር', 'desc': 'የአባላትን መረጃ በቀላሉ ይያዙ', 'icon': Icons.people_outline},
-      {'title': 'ዕቅድና ሪፖርት', 'desc': 'ተግባራትን ያቅዱ፣ ሪፖርት ያውጡ', 'icon': Icons.assignment_outlined},
-      {'title': 'ፋይናንስ', 'desc': 'የገቢና ወጪ ሂሳቦችን ይቆጣጠሩ', 'icon': Icons.account_balance_wallet_outlined},
-    ];
+    final features = c.featureItems.isNotEmpty
+        ? c.featureItems.map((f) => {
+              'title': f['title']?.toString() ?? '',
+              'desc': f['description']?.toString() ?? '',
+              'icon': _iconFor(f['icon']?.toString()),
+            }).toList()
+        : <Map<String, dynamic>>[
+            {'title': 'አባላት አስተዳደር', 'desc': 'የአባላትን መረጃ በቀላሉ ይያዙ', 'icon': Icons.people_outline},
+            {'title': 'ዕቅድና ሪፖርት', 'desc': 'ተግባራትን ያቅዱ፣ ሪፖርት ያውጡ', 'icon': Icons.assignment_outlined},
+            {'title': 'ፋይናንስ', 'desc': 'የገቢና ወጪ ሂሳቦችን ይቆጣጠሩ', 'icon': Icons.account_balance_wallet_outlined},
+          ];
 
     return Container(
       key: _servicesKey,
@@ -304,9 +353,9 @@ class _LandingPageState extends State<LandingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'አገልግሎቶች',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+          Text(
+            c.featuresTitle,
+            style: GoogleFonts.notoSansEthiopic(fontSize: 28, fontWeight: FontWeight.bold),
           ).animate().fadeIn(),
           const SizedBox(height: 32),
           ...features.map((f) => Container(
@@ -374,13 +423,26 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Widget _buildFooter(BuildContext context) {
+    final c = _content(context);
     return Container(
       padding: const EdgeInsets.all(40),
-      child: const Column(
+      child: Column(
         children: [
-          Text('አሃው', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
-          SizedBox(height: 10),
-          Text('© 2025 የማህበረ አሃው ስነ-ምህዳር', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const Text('አሃው', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
+          if (c.footerDescription.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              c.footerDescription,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.notoSansEthiopic(fontSize: 12, color: Colors.grey, height: 1.5),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Text(
+            c.footerCopyright,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.notoSansEthiopic(fontSize: 12, color: Colors.grey),
+          ),
         ],
       ),
     );

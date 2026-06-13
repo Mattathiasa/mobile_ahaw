@@ -11,6 +11,7 @@ import 'screens/login_page.dart';
 import 'services/audit_service.dart';
 import 'services/audit_log_service.dart';
 import 'services/auth_service.dart';
+import 'services/landing_content_service.dart';
 import 'services/localization_service.dart';
 import 'services/notification_service.dart';
 import 'services/permission_service.dart';
@@ -46,6 +47,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => RemoteConfigService()),
         ChangeNotifierProvider(create: (_) => LocalizationService()),
+        ChangeNotifierProvider(create: (_) => LandingContentService()),
       ],
       child: const MyApp(),
     ),
