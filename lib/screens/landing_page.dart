@@ -257,6 +257,26 @@ class _LandingPageState extends State<LandingPage> {
               ),
             ),
           ).animate().fadeIn(delay: 600.ms).scale(),
+
+          if (c.ctaSecondary.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: OutlinedButton(
+                onPressed: () => _scrollToSection(_servicesKey),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(color: AppColors.primary.withOpacity(0.4)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                ),
+                child: Text(
+                  c.ctaSecondary,
+                  style: GoogleFonts.notoSansEthiopic(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ).animate().fadeIn(delay: 700.ms),
+          ],
         ],
       ),
     );
@@ -371,28 +391,36 @@ class _LandingPageState extends State<LandingPage> {
             style: GoogleFonts.notoSansEthiopic(fontSize: 28, fontWeight: FontWeight.bold),
           ).animate().fadeIn(),
           const SizedBox(height: 32),
-          ...features.map((f) => Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+          ...features.map((f) => Material(
+            color: Colors.transparent,
+            child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.primary.withOpacity(0.05)),
-            ),
-            child: Row(
-              children: [
-                Icon(f['icon'] as IconData, color: AppColors.primary, size: 30),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(f['title'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text(f['desc'] as String, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                    ],
-                  ),
+              onTap: () => Navigator.pushNamed(context, '/login'),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.05)),
                 ),
-              ],
+                child: Row(
+                  children: [
+                    Icon(f['icon'] as IconData, color: AppColors.primary, size: 30),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(f['title'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text(f['desc'] as String, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: AppColors.primary, size: 20),
+                  ],
+                ),
+              ),
             ),
           ).animate().fadeIn().moveX(begin: 20)),
         ],
