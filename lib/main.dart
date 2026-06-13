@@ -11,6 +11,7 @@ import 'screens/login_page.dart';
 import 'services/audit_service.dart';
 import 'services/audit_log_service.dart';
 import 'services/auth_service.dart';
+import 'services/church_rules_service.dart';
 import 'services/landing_content_service.dart';
 import 'services/localization_service.dart';
 import 'services/notification_service.dart';
@@ -48,6 +49,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => RemoteConfigService()),
         ChangeNotifierProvider(create: (_) => LocalizationService()),
         ChangeNotifierProvider(create: (_) => LandingContentService()),
+        ChangeNotifierProvider(create: (_) => ChurchRulesService()),
       ],
       child: const MyApp(),
     ),

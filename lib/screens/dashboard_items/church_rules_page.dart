@@ -4,27 +4,36 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../../services/church_rules_service.dart';
 import '../../services/localization_service.dart';
 import '../../theme/app_colors.dart';
 
-/// Mirrors the web Church Rules (ChurchLaws) page: tabbed canonical law —
-/// General Guidelines, Prohibitions, Obligations, and Admin Rules.
+/// Church Rules (Hige Denb) — three categories synced from the web admin
+/// (siteConfig/churchRules): Regulations (ደንብ), Directives (መመሪያ), Policies.
 class ChurchRulesPage extends StatelessWidget {
   const ChurchRulesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final loc = Provider.of<LocalizationService>(context);
+    final rules = Provider.of<ChurchRulesService>(context);
+
+    final categories = [
+      _Category('Regulations', 'ደንብ', FontAwesomeIcons.scaleBalanced, Colors.indigo, rules.denb),
+      _Category('Directives', 'መመሪያ', FontAwesomeIcons.bookOpen, Colors.green, rules.memerya),
+      _Category('Policies', 'ፖሊሲ', FontAwesomeIcons.clipboardList, Colors.amber, rules.policies),
+    ];
 
     return DefaultTabController(
-      length: 4,
+      length: categories.length,
       child: Scaffold(
         backgroundColor:
             isDark ? AppColors.darkBackground : AppColors.lightBackground,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          title: Text(Provider.of<LocalizationService>(context).t('churchRules'),
+          title: Text(loc.t('churchRules'),
               style: GoogleFonts.notoSansEthiopic(
                 fontWeight: FontWeight.w900,
                 color: isDark ? Colors.white : AppColors.lightText,
@@ -41,213 +50,50 @@ class ChurchRulesPage extends StatelessWidget {
             indicatorColor: AppColors.primary,
             labelStyle: GoogleFonts.notoSansEthiopic(
                 fontWeight: FontWeight.w900, fontSize: 12),
-            tabs: const [
-              Tab(text: 'Guidelines'),
-              Tab(text: 'Prohibitions'),
-              Tab(text: 'Obligations'),
-              Tab(text: 'Admin Rules'),
-            ],
+            tabs: categories
+                .map((c) => Tab(text: '${c.label} (${c.amharic})'))
+                .toList(),
           ),
         ),
-        body: TabBarView(
-          children: [
-            _guidelinesTab(isDark),
-            _prohibitionsTab(isDark),
-            _obligationsTab(isDark),
-            _adminTab(isDark),
-          ],
-        ),
+        body: !rules.loaded
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primary))
+            : TabBarView(
+                children: categories
+                    .map((cat) => _buildList(cat, isDark))
+                    .toList(),
+              ),
       ),
     );
   }
 
-  // ── Guidelines ──────────────────────────────────────────────────────────
-
-  Widget _guidelinesTab(bool isDark) {
-    const items = [
-      {
-        'title': '1. Sunday Worship',
-        'desc':
-            'All members are expected to attend Sunday worship services regularly with devotion and humility.',
-        'icon': FontAwesomeIcons.wandMagicSparkles,
-      },
-      {
-        'title': '2. Community Service',
-        'desc':
-            'Members are encouraged to participate in at least one community service activity per month to manifest the love of Christ in action.',
-        'icon': FontAwesomeIcons.heart,
-      },
-      {
-        'title': '3. Spiritual Growth',
-        'desc':
-            'Active participation in Bible studies, fasting periods, and sacraments is vital for the spiritual maturity of every believer.',
-        'icon': FontAwesomeIcons.shieldHeart,
-      },
-    ];
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: items.length,
-      itemBuilder: (context, i) => Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
-        ),
+  Widget _buildList(_Category cat, bool isDark) {
+    if (cat.items.isEmpty) {
+      return Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Row(
-              children: [
-                FaIcon(items[i]['icon'] as IconData,
-                    size: 16, color: AppColors.primary.withOpacity(0.6)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(items[i]['title'] as String,
-                      style: GoogleFonts.notoSansEthiopic(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 15,
-                        color: isDark ? Colors.white : AppColors.lightText,
-                      )),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(items[i]['desc'] as String,
+            FaIcon(cat.icon, size: 48, color: cat.color.withOpacity(0.4)),
+            const SizedBox(height: 14),
+            Text('No ${cat.label.toLowerCase()} yet',
                 style: GoogleFonts.notoSansEthiopic(
-                  fontSize: 12.5,
-                  height: 1.7,
-                  fontStyle: FontStyle.italic,
-                  color: isDark ? Colors.white60 : Colors.grey.shade700,
-                )),
+                    fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
           ],
         ),
-      ).animate().fadeIn(delay: (i * 100).ms).slideY(begin: 0.05),
-    );
-  }
-
-  // ── Prohibitions ────────────────────────────────────────────────────────
-
-  Widget _prohibitionsTab(bool isDark) {
-    const rules = [
-      'Disruptive behavior during services that hinders the spiritual peace of the congregation.',
-      'Misuse or mishandling of church funds, property, or sacred items.',
-      'Public defamation, gossip, or causing division among church leadership or members.',
-      'Non-compliance with the established canonical practices and traditions.',
-    ];
-
+      );
+    }
     return ListView.builder(
       padding: const EdgeInsets.all(20),
-      itemCount: rules.length,
-      itemBuilder: (context, i) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.red.withOpacity(0.12)),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 6),
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(rules[i],
-                  style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 13,
-                    height: 1.6,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white70 : AppColors.lightText,
-                  )),
-            ),
-          ],
-        ),
-      ).animate().fadeIn(delay: (i * 100).ms).slideY(begin: 0.05),
-    );
-  }
-
-  // ── Obligations ─────────────────────────────────────────────────────────
-
-  Widget _obligationsTab(bool isDark) {
-    const items = [
-      {
-        'title': 'Tithe (Asrat)',
-        'desc':
-            'Faithful and regular contribution of the tithe for church operations.',
-      },
-      {
-        'title': 'Mahderat',
-        'desc': 'Devout participation in the assigned Small Group (Mahderat).',
-      },
-      {
-        'title': 'Respect',
-        'desc':
-            'Honor and submission to the hierarchy and spiritual leadership.',
-      },
-      {
-        'title': 'Purity',
-        'desc':
-            'Maintaining spiritual and moral purity in personal and public life.',
-      },
-    ];
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: items.length,
-      itemBuilder: (context, i) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.green.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.green.withOpacity(0.12)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(items[i]['title']!,
-                style: GoogleFonts.notoSansEthiopic(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 14,
-                  color: Colors.green.shade700,
-                )),
-            const SizedBox(height: 6),
-            Text(items[i]['desc']!,
-                style: GoogleFonts.notoSansEthiopic(
-                  fontSize: 12.5,
-                  height: 1.6,
-                  fontStyle: FontStyle.italic,
-                  color: isDark ? Colors.white60 : Colors.grey.shade700,
-                )),
-          ],
-        ),
-      ).animate().fadeIn(delay: (i * 100).ms).slideY(begin: 0.05),
-    );
-  }
-
-  // ── Admin rules ─────────────────────────────────────────────────────────
-
-  Widget _adminTab(bool isDark) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(22),
+      itemCount: cat.items.length,
+      itemBuilder: (context, i) {
+        final item = cat.items[i];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.amber.withOpacity(0.06),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.amber.withOpacity(0.2)),
+            color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: cat.color.withOpacity(0.15)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,40 +101,45 @@ class ChurchRulesPage extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.amber.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(14),
+                      color: cat.color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: FaIcon(FontAwesomeIcons.gavel,
-                        color: Colors.amber.shade700, size: 18),
+                    child: FaIcon(cat.icon, size: 13, color: cat.color),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text('Administrative Rules',
+                    child: Text(item.title,
                         style: GoogleFonts.notoSansEthiopic(
                           fontWeight: FontWeight.w900,
-                          fontSize: 16,
+                          fontSize: 15,
                           color: isDark ? Colors.white : AppColors.lightText,
                         )),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Rules regarding elections, appointments, and financial management follow the strict guidelines of the Central Council. Transparency and divine accountability are the pillars of our administration.',
-                style: GoogleFonts.notoSansEthiopic(
-                  fontSize: 13.5,
-                  height: 1.8,
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white70 : Colors.grey.shade700,
-                ),
-              ),
+              const SizedBox(height: 12),
+              Text(item.content,
+                  style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 13,
+                    height: 1.7,
+                    fontStyle: FontStyle.italic,
+                    color: isDark ? Colors.white60 : Colors.grey.shade700,
+                  )),
             ],
           ),
-        ).animate().fadeIn().slideY(begin: 0.05),
-      ],
+        ).animate().fadeIn(delay: (i * 80).ms).slideY(begin: 0.05);
+      },
     );
   }
+}
+
+class _Category {
+  final String label;
+  final String amharic;
+  final IconData icon;
+  final Color color;
+  final List<RuleItem> items;
+  const _Category(this.label, this.amharic, this.icon, this.color, this.items);
 }
