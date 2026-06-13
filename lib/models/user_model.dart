@@ -20,6 +20,7 @@ class UserModel {
   final int childrenCount;
   final String? gender;
   final Map<String, dynamic>? address;
+  final String? profilePicture;
   final dynamic createdAt;
   final dynamic updatedAt;
 
@@ -44,6 +45,7 @@ class UserModel {
     this.childrenCount = 0,
     this.gender,
     this.address,
+    this.profilePicture,
     this.createdAt,
     this.updatedAt,
   });
@@ -83,6 +85,7 @@ class UserModel {
       childrenCount: (data['childrenCount'] as num?)?.toInt() ?? 0,
       gender: data['gender'] as String?,
       address: data['address'] as Map<String, dynamic>?,
+      profilePicture: data['profilePicture'] as String?,
       createdAt: data['createdAt'],
       updatedAt: data['updatedAt'],
     );

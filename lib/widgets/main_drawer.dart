@@ -213,16 +213,29 @@ class _MainDrawerState extends State<MainDrawer> {
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Text(
-                    _getInitials(name),
-                    style: GoogleFonts.notoSansEthiopic(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+                clipBehavior: Clip.antiAlias,
+                child: (userModel?.profilePicture != null && userModel!.profilePicture!.isNotEmpty)
+                    ? Image.network(
+                        userModel.profilePicture!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Center(
+                          child: Text(
+                            _getInitials(name),
+                            style: GoogleFonts.notoSansEthiopic(
+                              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: Text(
+                          _getInitials(name),
+                          style: GoogleFonts.notoSansEthiopic(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(

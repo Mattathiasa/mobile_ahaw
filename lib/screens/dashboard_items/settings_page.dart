@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/localization_service.dart';
 import '../../theme/app_colors.dart';
@@ -71,25 +72,20 @@ class _SettingsPageState extends State<SettingsPage> {
                     Container(
                       width: 52,
                       height: 52,
+                      clipBehavior: Clip.antiAlias,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [AppColors.primary, AppColors.primaryLight],
                         ),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Center(
-                        child: Text(
-                          _initials(user?.fullNameEnglish ??
-                              user?.fullName ??
-                              user?.username ??
-                              'U'),
-                          style: GoogleFonts.notoSansEthiopic(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+                      child: (user?.profilePicture != null && user!.profilePicture!.isNotEmpty)
+                          ? Image.network(
+                              user.profilePicture!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _avatarInitials(user),
+                            )
+                          : _avatarInitials(user),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -295,6 +291,19 @@ class _SettingsPageState extends State<SettingsPage> {
                 color: isDark ? Colors.white70 : AppColors.lightText,
               )),
         ],
+      ),
+    );
+  }
+
+  Widget _avatarInitials(UserModel? user) {
+    return Center(
+      child: Text(
+        _initials(user?.fullNameEnglish ?? user?.fullName ?? user?.username ?? 'U'),
+        style: GoogleFonts.notoSansEthiopic(
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
+        ),
       ),
     );
   }
