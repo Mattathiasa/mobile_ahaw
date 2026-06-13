@@ -97,6 +97,15 @@ class LandingContent {
   String get footerDescription => _footer['description'] as String? ?? '';
   String get footerEmail => _footer['email'] as String? ?? '';
   String get footerCopyright => _footer['copyright'] as String? ?? '© 2025 Mahibere Ahaw';
+  String get footerYoutube => _footer['youtube'] as String? ?? '';
+  String get footerTelegram => _footer['telegram'] as String? ?? '';
+  String get footerPhone => _footer['phone'] as String? ?? '';
+
+  List<String> get carousel {
+    final c = _d['carousel'];
+    if (c is List) return c.whereType<String>().toList();
+    return [];
+  }
 
   bool get isEmpty => _d.isEmpty;
 }

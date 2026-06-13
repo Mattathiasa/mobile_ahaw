@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
 import '../services/landing_content_service.dart';
@@ -142,6 +145,7 @@ class _LandingPageState extends State<LandingPage> {
         child: Column(
           children: [
             _buildHeroSection(context),
+            _buildCarouselSection(context),
             _buildStatsSection(context),
             _buildFeaturesSection(context),
             _buildBenefitsSection(context),
@@ -270,6 +274,15 @@ class _LandingPageState extends State<LandingPage> {
       case 'FileText': return Icons.description_outlined;
       default: return Icons.star_outline;
     }
+  }
+
+  Widget _buildCarouselSection(BuildContext context) {
+    final images = _content(context).carousel;
+    if (images.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      child: _AutoCarousel(images: images),
+    );
   }
 
   Widget _buildStatsSection(BuildContext context) {
@@ -437,13 +450,49 @@ class _LandingPageState extends State<LandingPage> {
               style: GoogleFonts.notoSansEthiopic(fontSize: 12, color: Colors.grey, height: 1.5),
             ),
           ],
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (c.footerYoutube.isNotEmpty)
+                _socialIcon(FontAwesomeIcons.youtube, const Color(0xFFFF0000), c.footerYoutube),
+              if (c.footerTelegram.isNotEmpty)
+                _socialIcon(FontAwesomeIcons.telegram, const Color(0xFF229ED9), c.footerTelegram),
+              if (c.footerEmail.isNotEmpty)
+                _socialIcon(FontAwesomeIcons.envelope, AppColors.primary, 'mailto:${c.footerEmail}'),
+              if (c.footerPhone.isNotEmpty)
+                _socialIcon(FontAwesomeIcons.phone, AppColors.primary, 'tel:${c.footerPhone}'),
+            ],
+          ),
+          const SizedBox(height: 16),
           Text(
             c.footerCopyright,
             textAlign: TextAlign.center,
             style: GoogleFonts.notoSansEthiopic(fontSize: 12, color: Colors.grey),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _socialIcon(IconData icon, Color color, String url) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: GestureDetector(
+        onTap: () async {
+          final uri = Uri.tryParse(url);
+          if (uri != null && await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: FaIcon(icon, size: 18, color: color),
+        ),
       ),
     );
   }
@@ -489,6 +538,82 @@ class _LandingPageState extends State<LandingPage> {
         Navigator.pop(context);
         _scrollToSection(key);
       },
+    );
+  }
+}
+
+/// Auto-advancing image carousel for the landing page.
+class _AutoCarousel extends StatefulWidget {
+  final List<String> images;
+  const _AutoCarousel({required this.images});
+
+  @override
+  State<_AutoCarousel> createState() => _AutoCarouselState();
+}
+
+class _AutoCarouselState extends State<_AutoCarousel> {
+  final PageController _controller = PageController();
+  Timer? _timer;
+  int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.images.length > 1) {
+      _timer = Timer.periodic(const Duration(seconds: 4), (_) {
+        if (!mounted) return;
+        _index = (_index + 1) % widget.images.length;
+        _controller.animateToPage(_index,
+            duration: const Duration(milliseconds: 600), curve: Curves.easeInOut);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: PageView.builder(
+              controller: _controller,
+              itemCount: widget.images.length,
+              onPageChanged: (i) => setState(() => _index = i),
+              itemBuilder: (context, i) => Image.network(
+                widget.images[i],
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(color: AppColors.primary.withOpacity(0.1)),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(widget.images.length, (i) {
+            final active = i == _index;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              height: 8,
+              width: active ? 24 : 8,
+              decoration: BoxDecoration(
+                color: active ? AppColors.primary : AppColors.primary.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 }
