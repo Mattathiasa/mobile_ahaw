@@ -3,11 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'models/user_model.dart';
 import 'screens/dashboard_page.dart';
 import 'screens/gate_screens.dart';
 import 'screens/landing_page.dart';
 import 'screens/login_page.dart';
 import 'services/audit_service.dart';
+import 'services/audit_log_service.dart';
 import 'services/auth_service.dart';
 import 'services/localization_service.dart';
 import 'services/notification_service.dart';
@@ -85,6 +87,7 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   String? _lastLoadedUid;
+  UserModel? _lastUserModel;
 
   @override
   Widget build(BuildContext context) {
@@ -119,14 +122,33 @@ class _AuthWrapperState extends State<AuthWrapper> {
         );
         // Report this device/session for the web audit dashboard
         AuditService.report(authService.userModel!);
+        // Record the login in the shared audit trail
+        AuditLogService.log(
+          user: authService.userModel!,
+          action: 'login',
+          targetType: 'auth',
+          description:
+              '${authService.userModel!.fullNameEnglish ?? authService.userModel!.username} signed in',
+        );
       });
+      _lastUserModel = authService.userModel;
     }
 
-    // When a user signs out, clear permissions
+    // When a user signs out, clear permissions and log the logout
     if (!authService.isAuthenticated && _lastLoadedUid != null) {
       _lastLoadedUid = null;
+      final loggingOut = _lastUserModel;
+      _lastUserModel = null;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         permissionService.clear();
+        if (loggingOut != null) {
+          AuditLogService.log(
+            user: loggingOut,
+            action: 'logout',
+            targetType: 'auth',
+            description: 'Signed out',
+          );
+        }
       });
     }
 
