@@ -33,13 +33,45 @@ class DashboardData {
 class DashboardService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<DashboardData> getDashboardData() async {
+  /// Counts members within the caller's directory scope. Returns 0 on a
+  /// permission-denied (parish caller without a resolvable parish) rather than
+  /// throwing, so the rest of the dashboard still loads.
+  Future<int> _scopedMemberCount({
+    required bool wholeDirectory,
+    String? atbiyaId,
+  }) async {
+    try {
+      if (wholeDirectory) {
+        final snap = await _db.collection('users').count().get();
+        return snap.count ?? 0;
+      }
+      if (atbiyaId == null || atbiyaId.isEmpty) return 0;
+      final snap = await _db
+          .collection('users')
+          .where('atbiyaId', isEqualTo: atbiyaId)
+          .count()
+          .get();
+      return snap.count ?? 0;
+    } catch (e) {
+      debugPrint('[Dashboard] scoped member count failed: $e');
+      return 0;
+    }
+  }
+
+  Future<DashboardData> getDashboardData({
+    bool wholeDirectory = true,
+    String? atbiyaId,
+  }) async {
     // Match React's new Date().toISOString()
     final now = DateTime.now().toUtc().toIso8601String();
 
     try {
-      // 1. Get total counts (Aggregate queries are efficient)
-      final totalMembersTask = _db.collection('users').count().get();
+      // 1. Get total counts (Aggregate queries are efficient).
+      //    The members count is scoped to what firestore.rules allows for this
+      //    caller, and guarded on its own so a permission-denied count for a
+      //    parish user doesn't zero out the rest of the dashboard.
+      final totalMembersTask = _scopedMemberCount(
+          wholeDirectory: wholeDirectory, atbiyaId: atbiyaId);
       final totalAnnouncementsTask = _db.collection('announcements').count().get();
       final totalReportsTask = _db.collection('reports').count().get();
       final upcomingMeetingsCountTask = _db.collection('meetings')
@@ -67,7 +99,7 @@ class DashboardService {
 
       return DashboardData(
         stats: DashboardStats(
-          totalMembers: (results[0] as AggregateQuerySnapshot).count ?? 0,
+          totalMembers: results[0] as int,
           activeAnnouncements: (results[1] as AggregateQuerySnapshot).count ?? 0,
           pendingReports: (results[2] as AggregateQuerySnapshot).count ?? 0,
           upcomingMeetings: (results[3] as AggregateQuerySnapshot).count ?? 0,

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import '../../services/member_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/permission_service.dart';
+import '../../services/role_registry_service.dart';
 import '../../theme/app_colors.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -32,7 +36,22 @@ class _MembersPageState extends State<MembersPage> {
   @override
   void initState() {
     super.initState();
-    _membersFuture = _memberService.getAllMembers();
+    // Scope the directory read to what firestore.rules allows for this user
+    // (head office / diocese see everyone; a parish sees only its own members).
+    final auth = Provider.of<AuthService>(context, listen: false);
+    final perms = Provider.of<PermissionService>(context, listen: false);
+    final registry =
+        Provider.of<RoleRegistryService>(context, listen: false);
+    final user = auth.userModel;
+    final scope = registry.memberScopeFor(
+      roleKey: user?.hierarchyLevel,
+      isSuperAdmin: perms.isSuperAdmin,
+      atbiyaId: user?.parishId ?? '',
+    );
+    _membersFuture = _memberService.getMembersInScope(
+      wholeDirectory: scope.wholeDirectory,
+      atbiyaId: scope.atbiyaId,
+    );
   }
 
   @override

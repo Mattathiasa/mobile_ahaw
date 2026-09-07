@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/dashboard_service.dart';
 import '../services/permission_service.dart';
+import '../services/role_registry_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
 import '../widgets/main_drawer.dart';
@@ -29,7 +30,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    _dashboardData = _dashboardService.getDashboardData();
+    _dashboardData = _loadDashboard();
     _scrollController.addListener(() {
       if (_scrollController.offset > 20 && !_scrolled) {
         setState(() => _scrolled = true);
@@ -43,6 +44,24 @@ class _DashboardPageState extends State<DashboardPage> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Loads dashboard data scoped to the signed-in user's directory scope, so a
+  /// parish user's member count isn't a rules-denied query.
+  Future<DashboardData> _loadDashboard() {
+    final auth = Provider.of<AuthService>(context, listen: false);
+    final perms = Provider.of<PermissionService>(context, listen: false);
+    final registry = Provider.of<RoleRegistryService>(context, listen: false);
+    final user = auth.userModel;
+    final scope = registry.memberScopeFor(
+      roleKey: user?.hierarchyLevel,
+      isSuperAdmin: perms.isSuperAdmin,
+      atbiyaId: user?.parishId ?? '',
+    );
+    return _dashboardService.getDashboardData(
+      wholeDirectory: scope.wholeDirectory,
+      atbiyaId: scope.atbiyaId,
+    );
   }
 
   @override
@@ -181,7 +200,7 @@ class _DashboardPageState extends State<DashboardPage> {
           RefreshIndicator(
             onRefresh: () async {
               setState(() {
-                _dashboardData = _dashboardService.getDashboardData();
+                _dashboardData = _loadDashboard();
               });
             },
             child: SingleChildScrollView(

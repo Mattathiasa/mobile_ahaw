@@ -21,6 +21,12 @@ class UserModel {
   final String? gender;
   final Map<String, dynamic>? address;
   final String? profilePicture;
+  /// The parish (Atbiya hierarchy doc id) this user belongs to.
+  final String? atbiyaId;
+  /// The org-unit id assigned at signup/creation (parent of atbiyaId).
+  final String? hierarchyEntityId;
+  /// Account status: 'active' | 'pending' | 'suspended'.
+  final String status;
   final dynamic createdAt;
   final dynamic updatedAt;
 
@@ -46,9 +52,16 @@ class UserModel {
     this.gender,
     this.address,
     this.profilePicture,
+    this.atbiyaId,
+    this.hierarchyEntityId,
+    this.status = 'active',
     this.createdAt,
     this.updatedAt,
   });
+
+  /// The parish id used to scope reads, mirroring the web's
+  /// `myAtbiyaId = user.atbiyaId ?? user.hierarchyEntityId ?? ''`.
+  String get parishId => atbiyaId ?? hierarchyEntityId ?? '';
 
   factory UserModel.fromFirestore(String uid, Map<String, dynamic> data, String firebaseEmail) {
     final firstName = data['firstName'] as String?;
@@ -86,6 +99,9 @@ class UserModel {
       gender: data['gender'] as String?,
       address: data['address'] as Map<String, dynamic>?,
       profilePicture: data['profilePicture'] as String?,
+      atbiyaId: data['atbiyaId'] as String?,
+      hierarchyEntityId: data['hierarchyEntityId'] as String?,
+      status: data['status'] as String? ?? 'active',
       createdAt: data['createdAt'],
       updatedAt: data['updatedAt'],
     );
