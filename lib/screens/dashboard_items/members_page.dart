@@ -6,6 +6,9 @@ import '../../services/member_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/permission_service.dart';
 import '../../services/role_registry_service.dart';
+import '../../services/module_config_service.dart';
+import '../../services/cloudinary_service.dart';
+import '../../widgets/image_upload_field.dart';
 import '../../theme/app_colors.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -36,23 +39,32 @@ class _MembersPageState extends State<MembersPage> {
   @override
   void initState() {
     super.initState();
-    // Scope the directory read to what firestore.rules allows for this user
-    // (head office / diocese see everyone; a parish sees only its own members).
+    _membersFuture = _load();
+  }
+
+  /// Scope the directory read to what firestore.rules allows for this user
+  /// (head office / diocese see everyone; a parish sees only its own members).
+  MemberScope _computeScope() {
     final auth = Provider.of<AuthService>(context, listen: false);
     final perms = Provider.of<PermissionService>(context, listen: false);
-    final registry =
-        Provider.of<RoleRegistryService>(context, listen: false);
+    final registry = Provider.of<RoleRegistryService>(context, listen: false);
     final user = auth.userModel;
-    final scope = registry.memberScopeFor(
+    return registry.memberScopeFor(
       roleKey: user?.hierarchyLevel,
       isSuperAdmin: perms.isSuperAdmin,
       atbiyaId: user?.parishId ?? '',
     );
-    _membersFuture = _memberService.getMembersInScope(
+  }
+
+  Future<List<Map<String, dynamic>>> _load() {
+    final scope = _computeScope();
+    return _memberService.getMembersInScope(
       wholeDirectory: scope.wholeDirectory,
       atbiyaId: scope.atbiyaId,
     );
   }
+
+  void _reload() => setState(() => _membersFuture = _load());
 
   @override
   Widget build(BuildContext context) {
@@ -110,13 +122,13 @@ class _MembersPageState extends State<MembersPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Add Member logic
-        },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ).animate().scale(delay: 500.ms),
+      floatingActionButton: Provider.of<PermissionService>(context).can('canAddMembers')
+          ? (FloatingActionButton(
+              onPressed: () => _openMemberForm(context),
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.add, color: Colors.white),
+            ).animate().scale(delay: 500.ms))
+          : null,
     );
   }
 
@@ -306,16 +318,28 @@ class _MembersPageState extends State<MembersPage> {
                 ),
               ),
               const SizedBox(height: 30),
-              Center(
-                child: CircleAvatar(
-                  radius: 60,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
-                  child: Text(
-                    (member['fullNameEnglish'] ?? 'U')[0],
-                    style: GoogleFonts.notoSansEthiopic(fontSize: 40, fontWeight: FontWeight.bold, color: AppColors.primary),
+              Builder(builder: (context) {
+                final pic = (member['profilePicture'] as String?) ?? '';
+                return Center(
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundImage: pic.isNotEmpty
+                        ? NetworkImage(
+                            CloudinaryService.optimized(pic, width: 240))
+                        : null,
+                    child: pic.isEmpty
+                        ? Text(
+                            (member['fullNameEnglish'] ?? 'U')[0],
+                            style: GoogleFonts.notoSansEthiopic(
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary),
+                          )
+                        : null,
                   ),
-                ),
-              ),
+                );
+              }),
               const SizedBox(height: 20),
               Center(
                 child: Column(
@@ -339,9 +363,249 @@ class _MembersPageState extends State<MembersPage> {
               _buildDetailItem(FontAwesomeIcons.networkWired, 'Hierarchy', member['hierarchyLevel'] ?? 'None'),
               _buildDetailItem(FontAwesomeIcons.mapLocationDot, 'Region', member['address']?['region'] ?? 'None'),
               _buildDetailItem(FontAwesomeIcons.city, 'Zone', member['address']?['zone'] ?? 'None'),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  if (Provider.of<PermissionService>(context, listen: false)
+                      .can('canEditMembers'))
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _openMemberForm(context, member: member);
+                        },
+                        icon: const Icon(Icons.edit, size: 16),
+                        label: const Text('Edit'),
+                      ),
+                    ),
+                  if (Provider.of<PermissionService>(context, listen: false)
+                      .can('canDeleteMembers')) ...[
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.sacredRed),
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          await _confirmSuspend(member);
+                        },
+                        icon: const Icon(Icons.block, size: 16),
+                        label: const Text('Suspend'),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _confirmSuspend(Map<String, dynamic> member) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Suspend member?'),
+        content: Text(
+            'This suspends ${member['fullNameEnglish'] ?? member['fullName'] ?? 'this member'} and revokes their access.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Suspend',
+                  style: TextStyle(color: AppColors.sacredRed))),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await _memberService.suspendMember(member['id'] as String);
+      _reload();
+    }
+  }
+
+  /// Create or edit a member. Creation makes a real Auth account (via
+  /// member_service), so username + password are required; edit updates the
+  /// Firestore profile only.
+  void _openMemberForm(BuildContext context, {Map<String, dynamic>? member}) {
+    final isEditing = member != null;
+    final moduleConfig =
+        Provider.of<ModuleConfigService>(context, listen: false);
+    final creator =
+        Provider.of<AuthService>(context, listen: false).userModel;
+
+    final usernameCtrl = TextEditingController(text: member?['username']);
+    final passwordCtrl = TextEditingController();
+    final fullNameCtrl = TextEditingController(
+        text: member?['fullNameEnglish'] ?? member?['fullName']);
+    final fullNameAmCtrl =
+        TextEditingController(text: member?['fullNameAmharic']);
+    final phoneCtrl = TextEditingController(text: member?['phone']);
+    final emailCtrl = TextEditingController(text: member?['email']);
+    String gender = member?['gender']?.toString() ??
+        (moduleConfig.options('members', 'genders').isNotEmpty
+            ? moduleConfig.options('members', 'genders').first
+            : 'Male');
+    String level = member?['hierarchyLevel']?.toString() ?? 'HiyawanMahderat';
+    String profileUrl = member?['profilePicture']?.toString() ?? '';
+    final formKey = GlobalKey<FormState>();
+    bool saving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(isEditing ? 'Edit Member' : 'New Member',
+                        style: GoogleFonts.notoSansEthiopic(
+                            fontSize: 18, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: ImageUploadField(
+                        initialUrl: profileUrl,
+                        folder: 'members',
+                        label: 'Profile photo',
+                        onUploaded: (url) => profileUrl = url,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _field(fullNameCtrl, 'Full Name (English)', required: true),
+                    _field(fullNameAmCtrl, 'Full Name (Amharic)'),
+                    _field(phoneCtrl, 'Phone',
+                        keyboardType: TextInputType.phone),
+                    if (!isEditing) ...[
+                      _field(emailCtrl, 'Email (optional)',
+                          keyboardType: TextInputType.emailAddress),
+                      _field(usernameCtrl, 'Username', required: true),
+                      _field(passwordCtrl, 'Password (min 6)',
+                          required: true, obscure: true),
+                    ],
+                    _dropdown('Gender', gender,
+                        moduleConfig.options('members', 'genders'),
+                        (v) => setSheet(() => gender = v)),
+                    _dropdown('Hierarchy Level', level, _hierarchyLevels,
+                        (v) => setSheet(() => level = v)),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 14)),
+                        onPressed: saving
+                            ? null
+                            : () async {
+                                if (!formKey.currentState!.validate()) return;
+                                setSheet(() => saving = true);
+                                try {
+                                  if (isEditing) {
+                                    await _memberService.updateMember(
+                                        member['id'] as String, {
+                                      'fullNameEnglish': fullNameCtrl.text.trim(),
+                                      'fullNameAmharic':
+                                          fullNameAmCtrl.text.trim(),
+                                      'phone': phoneCtrl.text.trim(),
+                                      'gender': gender,
+                                      'hierarchyLevel': level,
+                                      'profilePicture': profileUrl,
+                                    });
+                                  } else {
+                                    await _memberService.createMember({
+                                      'username': usernameCtrl.text.trim(),
+                                      'password': passwordCtrl.text.trim(),
+                                      'email': emailCtrl.text.trim(),
+                                      'fullNameEnglish': fullNameCtrl.text.trim(),
+                                      'fullNameAmharic':
+                                          fullNameAmCtrl.text.trim(),
+                                      'phone': phoneCtrl.text.trim(),
+                                      'gender': gender,
+                                      'hierarchyLevel': level,
+                                      'profilePicture': profileUrl,
+                                      // Parish-scoped creators add to their own
+                                      // congregation so it passes rules + scope.
+                                      if ((creator?.parishId ?? '').isNotEmpty)
+                                        'atbiyaId': creator!.parishId,
+                                      'status': 'active',
+                                    });
+                                  }
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                  _reload();
+                                } catch (e) {
+                                  setSheet(() => saving = false);
+                                  if (ctx.mounted) {
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                        SnackBar(content: Text('Failed: $e')));
+                                  }
+                                }
+                              },
+                        child: Text(saving
+                            ? 'Saving…'
+                            : (isEditing ? 'Save' : 'Create Member'),
+                            style: const TextStyle(color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _field(TextEditingController ctrl, String label,
+      {bool required = false,
+      bool obscure = false,
+      TextInputType? keyboardType}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: ctrl,
+        obscureText: obscure,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+            labelText: label, border: const OutlineInputBorder()),
+        validator: required
+            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+            : null,
+      ),
+    );
+  }
+
+  Widget _dropdown(String label, String value, List<String> items,
+      ValueChanged<String> onChanged) {
+    final safeItems = items.isEmpty ? [value] : items;
+    final safeValue = safeItems.contains(value) ? value : safeItems.first;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<String>(
+        value: safeValue,
+        isExpanded: true,
+        decoration: InputDecoration(
+            labelText: label, border: const OutlineInputBorder()),
+        items: safeItems
+            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+            .toList(),
+        onChanged: (v) => onChanged(v ?? safeValue),
       ),
     );
   }
