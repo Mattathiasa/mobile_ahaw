@@ -4,11 +4,21 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import '../screens/dashboard_items/announcements_page.dart';
+import '../screens/dashboard_items/meetings_page.dart';
+import '../screens/dashboard_items/reports_page.dart';
+import '../screens/dashboard_items/notifications_page.dart';
 
 class NotificationService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+
+  /// Global navigator key so notification taps can route without a BuildContext.
+  /// Wired to `MaterialApp(navigatorKey: NotificationService.navigatorKey)`.
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
   static Future<void> initialize() async {
     // 1. Request permissions
@@ -89,13 +99,46 @@ class NotificationService {
       }
     });
 
-    // 7. Handle notification tap when app is in background
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      if (kDebugMode) {
-        print('[FCM] Notification tapped: ${message.data}');
-      }
-      // TODO: navigate to the relevant page based on message.data['type']
-    });
+    // 7. Handle notification tap when app is opened from the background
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageNavigation);
+
+    // 8. Handle the notification that cold-started the app (terminated state).
+    //    Delayed so the navigator + auth state have time to restore.
+    final initialMessage = await _messaging.getInitialMessage();
+    if (initialMessage != null) {
+      Future.delayed(const Duration(milliseconds: 1500),
+          () => _handleMessageNavigation(initialMessage));
+    }
+  }
+
+  /// Routes a tapped notification to the relevant screen based on
+  /// `message.data['type']`, matching the types emitted by the web's Cloud
+  /// Functions (announcement / meeting / report_comment). No-op when signed out.
+  static void _handleMessageNavigation(RemoteMessage message) {
+    if (kDebugMode) {
+      print('[FCM] Notification tapped: ${message.data}');
+    }
+    if (FirebaseAuth.instance.currentUser == null) return;
+    final nav = navigatorKey.currentState;
+    if (nav == null) return;
+
+    final type = message.data['type'] as String?;
+    late final Widget page;
+    switch (type) {
+      case 'announcement':
+        page = const AnnouncementsPage();
+        break;
+      case 'meeting':
+        page = const MeetingsPage();
+        break;
+      case 'report_comment':
+      case 'report':
+        page = const ReportsPage();
+        break;
+      default:
+        page = const NotificationsPage();
+    }
+    nav.push(MaterialPageRoute(builder: (_) => page));
   }
 
   /// Save the device FCM token to the current user's Firestore document.

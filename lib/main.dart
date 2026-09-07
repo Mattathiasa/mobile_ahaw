@@ -65,6 +65,7 @@ class MyApp extends StatelessWidget {
       builder: (context, themeProvider, child) {
         return MaterialApp(
           title: 'Ahaw Mobile',
+          navigatorKey: NotificationService.navigatorKey,
           debugShowCheckedModeBanner: false,
           themeMode: themeProvider.themeMode,
           theme: themeProvider.lightTheme,
