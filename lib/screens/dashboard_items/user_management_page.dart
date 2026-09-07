@@ -58,6 +58,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
               try {
                 await _memberService.createMember({
                   'username': usernameCtrl.text.trim(),
+                  'password': passwordCtrl.text.trim(),
                   'fullName': fullNameCtrl.text.trim(),
                   'fullNameAmharic': fullNameAmharicCtrl.text.trim(),
                   'phone': phoneCtrl.text.trim(),
@@ -241,7 +242,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(leading: const Icon(Icons.edit_outlined), title: const Text('Edit User'), onTap: () => Navigator.pop(ctx)),
-            ListTile(leading: const Icon(Icons.delete_outline, color: AppColors.sacredRed), title: const Text('Delete User', style: TextStyle(color: AppColors.sacredRed)), onTap: () {
+            ListTile(leading: const Icon(Icons.block, color: AppColors.sacredRed), title: const Text('Suspend User', style: TextStyle(color: AppColors.sacredRed)), onTap: () {
               Navigator.pop(ctx);
               _confirmDelete(id, data['fullName']);
             }),
@@ -255,15 +256,16 @@ class _UserManagementPageState extends State<UserManagementPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete User'),
-        content: Text('Are you sure you want to delete ${name ?? 'this user'}?'),
+        title: const Text('Suspend User'),
+        content: Text(
+            'This suspends ${name ?? 'this user'} and revokes their access. Continue?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(onPressed: () async {
-            await _memberService.deleteMember(id);
+            await _memberService.suspendMember(id);
             if (ctx.mounted) Navigator.pop(ctx);
-            _showSnack('User deleted');
-          }, child: const Text('Delete', style: TextStyle(color: AppColors.sacredRed))),
+            _showSnack('User suspended', success: true);
+          }, child: const Text('Suspend', style: TextStyle(color: AppColors.sacredRed))),
         ],
       ),
     );
