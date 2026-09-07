@@ -18,6 +18,8 @@ import 'services/notification_service.dart';
 import 'services/permission_service.dart';
 import 'services/remote_config_service.dart';
 import 'services/role_registry_service.dart';
+import 'services/module_config_service.dart';
+import 'services/software_control_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/theme_provider.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -49,6 +51,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => RoleRegistryService()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => RemoteConfigService()),
+        ChangeNotifierProvider(create: (_) => ModuleConfigService()),
+        ChangeNotifierProvider(create: (_) => SoftwareControlService()),
         ChangeNotifierProvider(create: (_) => LocalizationService()),
         ChangeNotifierProvider(create: (_) => LandingContentService()),
         ChangeNotifierProvider(create: (_) => ChurchRulesService()),

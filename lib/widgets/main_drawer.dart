@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/localization_service.dart';
 import '../services/permission_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/software_control_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
 import '../screens/dashboard_items/announcements_page.dart';
@@ -83,6 +84,8 @@ class _MainDrawerState extends State<MainDrawer> {
     final perms = Provider.of<PermissionService>(context);
 
     final remoteConfig = Provider.of<RemoteConfigService>(context);
+    final softwareControl = Provider.of<SoftwareControlService>(context);
+    final level = authService.userModel?.hierarchyLevel ?? 'HiyawanMahderat';
 
     // Permission-gated nav items (featureKey lets the web admin disable
     // modules remotely via Mobile App Control)
@@ -112,16 +115,23 @@ class _MainDrawerState extends State<MainDrawer> {
       const _NavItem(FontAwesomeIcons.shieldHalved, 'Permissions',     PermissionControlPage(), 'superAdminOnly', 'permissionControl'),
     ];
 
+    // Remote kill-switch per module (Mobile App Control) AND role-based nav
+    // access set on the web (Software Control) both hide an entry.
     bool featureOn(_NavItem i) =>
         i.featureKey == null || remoteConfig.isEnabled(i.featureKey!);
+    bool navOn(_NavItem i) =>
+        i.featureKey == null ||
+        softwareControl.navAllowed(i.featureKey!, level, perms.isSuperAdmin);
 
     final visibleNav = navItems
         .where((i) =>
-            featureOn(i) && (i.permission == null || perms.can(i.permission!)))
+            featureOn(i) &&
+            navOn(i) &&
+            (i.permission == null || perms.can(i.permission!)))
         .toList();
     final visibleAdmin = adminItems
         .where((i) {
-          if (!featureOn(i)) return false;
+          if (!featureOn(i) || !navOn(i)) return false;
           if (i.permission == 'superAdminOnly') return perms.isSuperAdmin;
           return i.permission == null || perms.can(i.permission!);
         })
