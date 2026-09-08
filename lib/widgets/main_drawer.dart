@@ -32,6 +32,7 @@ import '../screens/dashboard_items/permission_control_page.dart';
 import '../screens/dashboard_items/membership_requests_page.dart';
 import '../screens/dashboard_items/inventory_page.dart';
 import '../screens/dashboard_items/hr_page.dart';
+import '../screens/dashboard_items/news_page.dart';
 
 class MainDrawer extends StatefulWidget {
   const MainDrawer({super.key});
@@ -97,6 +98,7 @@ class _MainDrawerState extends State<MainDrawer> {
     final navItems = [
       const _NavItem(FontAwesomeIcons.house,             'Dashboard',      null,                          null, null),
       const _NavItem(FontAwesomeIcons.bullhorn,          'Announcements',  AnnouncementsPage(),     'canViewAnnouncements', 'announcements'),
+      const _NavItem(FontAwesomeIcons.newspaper,         'News',           NewsPage(),              null, 'news'),
       const _NavItem(FontAwesomeIcons.fileLines,         'Plans',          PlansPage(),             'canViewPlans', 'plans'),
       const _NavItem(FontAwesomeIcons.calendarCheck,     'Reports',        ReportsPage(),           'canViewReports', 'reports'),
       const _NavItem(FontAwesomeIcons.users,             'Members',        MembersPage(),           'canViewMembers', 'members'),
