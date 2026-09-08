@@ -30,6 +30,7 @@ import '../screens/dashboard_items/user_management_page.dart';
 import '../screens/dashboard_items/hierarchy_page.dart';
 import '../screens/dashboard_items/permission_control_page.dart';
 import '../screens/dashboard_items/membership_requests_page.dart';
+import '../screens/dashboard_items/my_atbiya_page.dart';
 import '../screens/dashboard_items/inventory_page.dart';
 import '../screens/dashboard_items/hr_page.dart';
 import '../screens/dashboard_items/news_page.dart';
@@ -122,6 +123,7 @@ class _MainDrawerState extends State<MainDrawer> {
     ];
 
     final adminItems = [
+      const _NavItem(FontAwesomeIcons.placeOfWorship, 'My Atbiya',      MyAtbiyaPage(),          'parishConsole', 'myAtbiya'),
       const _NavItem(FontAwesomeIcons.userCheck,    'Membership Requests', MembershipRequestsPage(), 'approverOnly', 'membershipRequests'),
       const _NavItem(FontAwesomeIcons.usersGear,    'User Management', UserManagementPage(),    'canViewUserManagement', 'userManagement'),
       const _NavItem(FontAwesomeIcons.networkWired, 'Hierarchy',       HierarchyPage(),         'canViewHierarchy', 'hierarchy'),
@@ -149,6 +151,11 @@ class _MainDrawerState extends State<MainDrawer> {
           if (i.permission == 'superAdminOnly') return perms.isSuperAdmin;
           if (i.permission == 'approverOnly') {
             return perms.isSuperAdmin || roleRegistry.isApproverRole(level);
+          }
+          if (i.permission == 'parishConsole') {
+            return perms.isSuperAdmin ||
+                roleRegistry.isApproverRole(level) ||
+                (authService.userModel?.parishId ?? '').isNotEmpty;
           }
           return i.permission == null || perms.can(i.permission!);
         })
