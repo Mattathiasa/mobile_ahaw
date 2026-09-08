@@ -27,6 +27,8 @@ class UserModel {
   final String? hierarchyEntityId;
   /// Account status: 'active' | 'pending' | 'suspended'.
   final String status;
+  /// Per-user notification toggles (push/meetings/reports/announcements/…).
+  final Map<String, dynamic>? notificationPreferences;
   final dynamic createdAt;
   final dynamic updatedAt;
 
@@ -55,6 +57,7 @@ class UserModel {
     this.atbiyaId,
     this.hierarchyEntityId,
     this.status = 'active',
+    this.notificationPreferences,
     this.createdAt,
     this.updatedAt,
   });
@@ -102,6 +105,8 @@ class UserModel {
       atbiyaId: data['atbiyaId'] as String?,
       hierarchyEntityId: data['hierarchyEntityId'] as String?,
       status: data['status'] as String? ?? 'active',
+      notificationPreferences:
+          data['notificationPreferences'] as Map<String, dynamic>?,
       createdAt: data['createdAt'],
       updatedAt: data['updatedAt'],
     );

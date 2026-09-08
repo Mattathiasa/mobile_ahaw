@@ -163,6 +163,16 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Re-reads the current user's Firestore profile and notifies listeners.
+  /// Call after editing the profile / preferences so the UI reflects changes
+  /// without waiting for an auth-state event.
+  Future<void> refreshUser() async {
+    final firebaseUser = _auth.currentUser;
+    if (firebaseUser == null) return;
+    await _loadUserData(firebaseUser);
+    notifyListeners();
+  }
+
   // ── Sign out ────────────────────────────────────────────────────────────────
 
   Future<void> signOut() async {

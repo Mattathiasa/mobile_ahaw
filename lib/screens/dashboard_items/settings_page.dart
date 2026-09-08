@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/localization_service.dart';
+import '../../services/member_service.dart';
+import '../../widgets/image_upload_field.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/theme_provider.dart';
 
@@ -20,6 +22,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  final MemberService _memberService = MemberService();
   String _version = '';
 
   @override
@@ -123,6 +126,73 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ).animate().fadeIn(),
+
+          const SizedBox(height: 24),
+
+          // ── Account ──
+          _sectionTitle('ACCOUNT'),
+          Container(
+            decoration: _cardDecoration(isDark),
+            child: Column(
+              children: [
+                ListTile(
+                  leading:
+                      const Icon(Icons.person_outline, color: AppColors.primary),
+                  title: Text('Edit Profile',
+                      style: GoogleFonts.notoSansEthiopic(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                          color: isDark ? Colors.white : AppColors.lightText)),
+                  trailing: const Icon(Icons.chevron_right, size: 18),
+                  onTap: user == null ? null : () => _openProfileForm(user),
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                ListTile(
+                  leading:
+                      const Icon(Icons.lock_outline, color: AppColors.primary),
+                  title: Text('Change Password',
+                      style: GoogleFonts.notoSansEthiopic(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                          color: isDark ? Colors.white : AppColors.lightText)),
+                  trailing: const Icon(Icons.chevron_right, size: 18),
+                  onTap: _openPasswordForm,
+                ),
+              ],
+            ),
+          ).animate().fadeIn(delay: 30.ms),
+
+          const SizedBox(height: 24),
+
+          // ── Notifications ──
+          _sectionTitle('NOTIFICATIONS'),
+          Container(
+            decoration: _cardDecoration(isDark),
+            child: Column(
+              children: [
+                for (final pref in const [
+                  ['push', 'Push notifications'],
+                  ['announcements', 'Announcements'],
+                  ['meetings', 'Meeting reminders'],
+                  ['reports', 'Report updates'],
+                ])
+                  SwitchListTile(
+                    value: (user?.notificationPreferences?[pref[0]] ?? true) == true,
+                    activeColor: AppColors.primary,
+                    dense: true,
+                    title: Text(pref[1],
+                        style: GoogleFonts.notoSansEthiopic(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                            color:
+                                isDark ? Colors.white : AppColors.lightText)),
+                    onChanged: user == null
+                        ? null
+                        : (v) => _toggleNotification(user, pref[0], v),
+                  ),
+              ],
+            ),
+          ).animate().fadeIn(delay: 60.ms),
 
           const SizedBox(height: 24),
 
@@ -250,6 +320,221 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ).animate().fadeIn(delay: 300.ms),
         ],
+      ),
+    );
+  }
+
+  Future<void> _toggleNotification(
+      UserModel user, String key, bool value) async {
+    final prefs =
+        Map<String, dynamic>.from(user.notificationPreferences ?? {});
+    prefs[key] = value;
+    await _memberService.updateMember(user.id, {'notificationPreferences': prefs});
+    if (mounted) {
+      await Provider.of<AuthService>(context, listen: false).refreshUser();
+    }
+  }
+
+  void _openProfileForm(UserModel user) {
+    final nameEnCtrl =
+        TextEditingController(text: user.fullNameEnglish ?? user.fullName);
+    final nameAmCtrl = TextEditingController(text: user.fullNameAmharic);
+    final phoneCtrl = TextEditingController(text: user.phone);
+    String photo = user.profilePicture ?? '';
+    final formKey = GlobalKey<FormState>();
+    bool saving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Edit Profile',
+                        style: GoogleFonts.notoSansEthiopic(
+                            fontSize: 18, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: ImageUploadField(
+                        initialUrl: photo,
+                        folder: 'avatars',
+                        label: 'Profile photo',
+                        onUploaded: (url) => photo = url,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _formField(nameEnCtrl, 'Full Name (English)', required: true),
+                    _formField(nameAmCtrl, 'Full Name (Amharic)'),
+                    _formField(phoneCtrl, 'Phone',
+                        keyboardType: TextInputType.phone),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 14)),
+                        onPressed: saving
+                            ? null
+                            : () async {
+                                if (!formKey.currentState!.validate()) return;
+                                setSheet(() => saving = true);
+                                try {
+                                  await _memberService.updateMember(user.id, {
+                                    'fullNameEnglish': nameEnCtrl.text.trim(),
+                                    'fullNameAmharic': nameAmCtrl.text.trim(),
+                                    'phone': phoneCtrl.text.trim(),
+                                    'profilePicture': photo,
+                                  });
+                                  if (mounted) {
+                                    await Provider.of<AuthService>(context,
+                                            listen: false)
+                                        .refreshUser();
+                                  }
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                } catch (e) {
+                                  setSheet(() => saving = false);
+                                  if (ctx.mounted) {
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                        SnackBar(content: Text('Failed: $e')));
+                                  }
+                                }
+                              },
+                        child: Text(saving ? 'Saving…' : 'Save',
+                            style: const TextStyle(color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openPasswordForm() {
+    final currentCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool saving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Change Password',
+                        style: GoogleFonts.notoSansEthiopic(
+                            fontSize: 18, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 16),
+                    _formField(currentCtrl, 'Current password',
+                        required: true, obscure: true),
+                    _formField(newCtrl, 'New password (min 6)',
+                        required: true, obscure: true),
+                    _formField(confirmCtrl, 'Confirm new password',
+                        required: true, obscure: true),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 14)),
+                        onPressed: saving
+                            ? null
+                            : () async {
+                                if (!formKey.currentState!.validate()) return;
+                                if (newCtrl.text != confirmCtrl.text) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                      const SnackBar(
+                                          content:
+                                              Text('New passwords do not match.')));
+                                  return;
+                                }
+                                setSheet(() => saving = true);
+                                try {
+                                  await Provider.of<AuthService>(context,
+                                          listen: false)
+                                      .changePassword(
+                                    currentPassword: currentCtrl.text,
+                                    newPassword: newCtrl.text,
+                                  );
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                            content:
+                                                Text('Password updated.')));
+                                  }
+                                } catch (e) {
+                                  setSheet(() => saving = false);
+                                  if (ctx.mounted) {
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                        SnackBar(content: Text('$e')));
+                                  }
+                                }
+                              },
+                        child: Text(saving ? 'Updating…' : 'Update Password',
+                            style: const TextStyle(color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _formField(TextEditingController ctrl, String label,
+      {bool required = false,
+      bool obscure = false,
+      TextInputType? keyboardType}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: ctrl,
+        obscureText: obscure,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+            labelText: label, border: const OutlineInputBorder()),
+        validator: required
+            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+            : null,
       ),
     );
   }
