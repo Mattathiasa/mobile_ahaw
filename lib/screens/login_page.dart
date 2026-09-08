@@ -463,7 +463,25 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ).animate().fadeIn(delay: 500.ms).moveY(begin: 20),
 
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 8),
+
+                              // ── Create account link ──
+                              TextButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : () => Navigator.pushNamed(
+                                        context, '/signup'),
+                                child: Text(
+                                  "Don't have an account? Create one",
+                                  style: GoogleFonts.notoSansEthiopic(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 12),
 
                               // ── Auth note (matches web dashed box) ──
                               Container(

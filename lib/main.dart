@@ -8,6 +8,7 @@ import 'screens/dashboard_page.dart';
 import 'screens/gate_screens.dart';
 import 'screens/landing_page.dart';
 import 'screens/login_page.dart';
+import 'screens/signup_page.dart';
 import 'services/audit_service.dart';
 import 'services/audit_log_service.dart';
 import 'services/auth_service.dart';
@@ -79,6 +80,7 @@ class MyApp extends StatelessWidget {
           routes: {
             '/': (context) => const AuthWrapper(),
             '/login': (context) => const LoginPage(),
+            '/signup': (context) => const SignupPage(),
             '/dashboard': (context) => const DashboardPage(),
           },
         );
@@ -195,6 +197,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
             ],
           ),
         ),
+      );
+    }
+
+    // Authenticated but still pending approval → holding screen. Data access is
+    // denied server-side until an approver activates them, so keep them here.
+    if (authService.isAuthenticated &&
+        authService.userModel?.status == 'pending') {
+      return PendingApprovalScreen(
+        parishName: authService.userModel?.atbiyaName,
+        onSignOut: () => authService.signOut(),
       );
     }
 

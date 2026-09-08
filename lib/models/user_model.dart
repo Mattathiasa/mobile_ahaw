@@ -25,6 +25,8 @@ class UserModel {
   final String? atbiyaId;
   /// The org-unit id assigned at signup/creation (parent of atbiyaId).
   final String? hierarchyEntityId;
+  /// Name of the parish the member belongs to / requested.
+  final String? atbiyaName;
   /// Account status: 'active' | 'pending' | 'suspended'.
   final String status;
   /// Per-user notification toggles (push/meetings/reports/announcements/…).
@@ -56,6 +58,7 @@ class UserModel {
     this.profilePicture,
     this.atbiyaId,
     this.hierarchyEntityId,
+    this.atbiyaName,
     this.status = 'active',
     this.notificationPreferences,
     this.createdAt,
@@ -104,6 +107,7 @@ class UserModel {
       profilePicture: data['profilePicture'] as String?,
       atbiyaId: data['atbiyaId'] as String?,
       hierarchyEntityId: data['hierarchyEntityId'] as String?,
+      atbiyaName: data['atbiyaName'] as String?,
       status: data['status'] as String? ?? 'active',
       notificationPreferences:
           data['notificationPreferences'] as Map<String, dynamic>?,
