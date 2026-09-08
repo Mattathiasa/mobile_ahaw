@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../theme/app_colors.dart';
 import '../../services/permission_service.dart';
 import '../../services/meeting_service.dart';
+import '../../services/auth_service.dart';
 import '../../models/meeting_model.dart';
 import 'package:intl/intl.dart';
 
@@ -21,6 +22,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
   void _showCreateSheet(BuildContext context) {
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
+    final locationCtrl = TextEditingController();
     DateTime? selectedDate;
     bool saving = false;
 
@@ -66,6 +68,9 @@ class _MeetingsPageState extends State<MeetingsPage> {
                         _buildLabel('Date & Time *', isDark),
                         _buildDatePicker(context, selectedDate, (d) => setSheet(() => selectedDate = d), isDark),
                         const SizedBox(height: 20),
+                        _buildLabel('Location', isDark),
+                        _buildTextField(locationCtrl, 'e.g. Main Hall / Online link', isDark),
+                        const SizedBox(height: 20),
                         _buildLabel('Description *', isDark),
                         _buildTextField(descCtrl, 'Enter meeting description and agenda', isDark, maxLines: 4),
                       ],
@@ -96,6 +101,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
                                 title: titleCtrl.text,
                                 description: descCtrl.text,
                                 scheduledDate: selectedDate!.toIso8601String(),
+                                location: locationCtrl.text.trim(),
                               ));
                               if (ctx.mounted) Navigator.pop(ctx);
                               _showSnack('Meeting scheduled!', success: true);
@@ -242,31 +248,26 @@ class _MeetingsPageState extends State<MeetingsPage> {
               _buildIconInfo(Icons.access_time, timeStr, isDark),
             ],
           ),
+          if (meeting.location.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _buildIconInfo(Icons.location_on_outlined, meeting.location, isDark),
+          ],
           const SizedBox(height: 12),
           Text(meeting.description, style: GoogleFonts.notoSansEthiopic(fontSize: 13, color: isDark ? Colors.white60 : Colors.black54, height: 1.5)),
           if (isUpcoming) ...[
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      _showSnack('Added to calendar! (Simulation)');
-                    },
-                    icon: const Icon(Icons.calendar_month, size: 16),
-                    label: const Text('Add to Calendar'),
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary.withOpacity(0.1), foregroundColor: AppColors.primary, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  ),
+            const SizedBox(height: 16),
+            _buildRsvpRow(meeting, isDark),
+            if (Provider.of<PermissionService>(context, listen: false).can('canDeleteMeeting')) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => _confirmDelete(meeting),
+                  icon: const Icon(Icons.delete_outline, color: AppColors.sacredRed, size: 18),
+                  label: const Text('Delete', style: TextStyle(color: AppColors.sacredRed)),
                 ),
-                const SizedBox(width: 12),
-                if (Provider.of<PermissionService>(context, listen: false).can('canDeleteMeeting'))
-                  IconButton(
-                    onPressed: () => _confirmDelete(meeting),
-                    icon: const Icon(Icons.delete_outline, color: AppColors.sacredRed, size: 20),
-                    style: IconButton.styleFrom(backgroundColor: AppColors.sacredRed.withOpacity(0.1), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  ),
-              ],
-            ),
+              ),
+            ],
           ],
         ],
       ),
@@ -288,6 +289,54 @@ class _MeetingsPageState extends State<MeetingsPage> {
           }, child: const Text('Delete', style: TextStyle(color: AppColors.sacredRed))),
         ],
       ),
+    );
+  }
+
+  Widget _buildRsvpRow(MeetingModel meeting, bool isDark) {
+    final uid = Provider.of<AuthService>(context, listen: false).userModel?.id;
+    final myResponse = uid == null ? null : meeting.rsvps[uid];
+
+    Widget chip(String label, String value, IconData icon, Color color) {
+      final selected = myResponse == value;
+      return Expanded(
+        child: OutlinedButton.icon(
+          onPressed: uid == null
+              ? null
+              : () async {
+                  await _meetingService.setRsvp(meeting.id, uid, value);
+                },
+          icon: Icon(icon, size: 16, color: selected ? Colors.white : color),
+          label: Text(label,
+              style: TextStyle(color: selected ? Colors.white : color)),
+          style: OutlinedButton.styleFrom(
+            backgroundColor: selected ? color : color.withOpacity(0.06),
+            side: BorderSide(color: color.withOpacity(0.4)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('${meeting.goingCount} going',
+            style: GoogleFonts.notoSansEthiopic(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            chip('Going', 'going', Icons.check_circle_outline,
+                AppColors.success),
+            const SizedBox(width: 10),
+            chip('Not going', 'not_going', Icons.cancel_outlined,
+                AppColors.sacredRed),
+          ],
+        ),
+      ],
     );
   }
 

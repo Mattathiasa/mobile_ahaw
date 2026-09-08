@@ -32,4 +32,13 @@ class MeetingService {
   Future<void> deleteMeeting(String id) async {
     await _db.collection('meetings').doc(id).delete();
   }
+
+  /// Records the current user's RSVP as a field on the meeting doc
+  /// (rsvps.<uid> = 'going' | 'not_going').
+  Future<void> setRsvp(String meetingId, String uid, String response) async {
+    await _db.collection('meetings').doc(meetingId).update({
+      'rsvps.$uid': response,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 }
