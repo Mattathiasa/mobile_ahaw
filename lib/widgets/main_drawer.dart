@@ -30,6 +30,7 @@ import '../screens/dashboard_items/user_management_page.dart';
 import '../screens/dashboard_items/hierarchy_page.dart';
 import '../screens/dashboard_items/permission_control_page.dart';
 import '../screens/dashboard_items/membership_requests_page.dart';
+import '../screens/dashboard_items/inventory_page.dart';
 
 class MainDrawer extends StatefulWidget {
   const MainDrawer({super.key});
@@ -108,6 +109,7 @@ class _MainDrawerState extends State<MainDrawer> {
       const _NavItem(FontAwesomeIcons.handshake,         'Partner',        PartnerPage(),           null, 'partner'),
       const _NavItem(FontAwesomeIcons.heartPulse,        'Volunteer',      VolunteerPage(),         'canViewVolunteer', 'volunteer'),
       const _NavItem(FontAwesomeIcons.folderOpen,        'Documents',      DocumentsPage(),         'canViewDocuments', 'documents'),
+      const _NavItem(FontAwesomeIcons.boxesStacked,      'Inventory',      InventoryPage(),         'canViewInventory', 'inventory'),
       const _NavItem(FontAwesomeIcons.solidBell,         'Notifications',  NotificationsPage(),     null, 'notifications'),
     ];
 
