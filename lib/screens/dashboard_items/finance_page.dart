@@ -21,6 +21,9 @@ class _FinancePageState extends State<FinancePage>
   List<Map<String, dynamic>> _transactions = [];
   List<Map<String, dynamic>> _budgets = [];
   List<Map<String, dynamic>> _reports = [];
+  List<Map<String, dynamic>> _tithes = [];
+  List<Map<String, dynamic>> _pledges = [];
+  List<Map<String, dynamic>> _vouchers = [];
   bool _loading = true;
 
   static const _incomeTypes = [
@@ -31,7 +34,7 @@ class _FinancePageState extends State<FinancePage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _loadData();
   }
 
@@ -57,6 +60,22 @@ class _FinancePageState extends State<FinancePage>
       });
     } catch (e) {
       setState(() => _loading = false);
+    }
+    // Tithes / pledges / vouchers are loaded independently and guarded so a
+    // permission-denied on one doesn't blank the whole Finance page.
+    _tithes = await _guardedLoad('finance_tithes');
+    _pledges = await _guardedLoad('finance_pledges');
+    _vouchers = await _guardedLoad('finance_requisitions');
+    if (mounted) setState(() {});
+  }
+
+  Future<List<Map<String, dynamic>>> _guardedLoad(String col) async {
+    try {
+      final snap =
+          await _db.collection(col).orderBy('createdAt', descending: true).get();
+      return snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+    } catch (_) {
+      return [];
     }
   }
 
@@ -112,10 +131,14 @@ class _FinancePageState extends State<FinancePage>
           indicatorColor: AppColors.primary,
           labelStyle: GoogleFonts.notoSansEthiopic(
               fontSize: 11, fontWeight: FontWeight.w900),
+          isScrollable: true,
           tabs: const [
             Tab(text: 'TRANSACTIONS'),
             Tab(text: 'BUDGETS'),
             Tab(text: 'REPORTS'),
+            Tab(text: 'TITHES'),
+            Tab(text: 'PLEDGES'),
+            Tab(text: 'VOUCHERS'),
           ],
         ),
       ),
@@ -133,6 +156,9 @@ class _FinancePageState extends State<FinancePage>
                         _buildTransactionsList(isDark),
                         _buildBudgetsList(isDark),
                         _buildReportsList(isDark),
+                        _buildTithesList(isDark, perms.can('canAddTransaction') || perms.isSuperAdmin),
+                        _buildPledgesList(isDark, perms.can('canAddTransaction') || perms.isSuperAdmin),
+                        _buildVouchersList(isDark, perms.can('canAddTransaction') || perms.isSuperAdmin),
                       ],
                     ),
                   ),
@@ -513,6 +539,446 @@ class _FinancePageState extends State<FinancePage>
                 ),
               ),
             ]))),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  // ── Tithes ──────────────────────────────────────────────────────────────────
+  Widget _buildTithesList(bool isDark, bool canAdd) {
+    return _listWithAdd(
+      isDark: isDark,
+      canAdd: canAdd,
+      addLabel: 'Record tithe / offering',
+      onAdd: () => _showAddTitheSheet(isDark),
+      empty: _tithes.isEmpty,
+      emptyMsg: 'No tithe records yet',
+      emptyIcon: FontAwesomeIcons.handHoldingHeart,
+      items: _tithes,
+      itemBuilder: (t) {
+        final amount = (t['amount'] as num?)?.toDouble() ?? 0;
+        return _financeCard(isDark,
+            title: t['memberName'] ?? 'Member',
+            subtitle: '${t['type'] ?? ''} · ${t['receiptNumber'] ?? ''}',
+            trailing: '+${amount.toStringAsFixed(0)} ETB',
+            trailingColor: const Color(0xFF10B981));
+      },
+    );
+  }
+
+  void _showAddTitheSheet(bool isDark) {
+    final nameCtrl = TextEditingController();
+    final amountCtrl = TextEditingController();
+    final receiptCtrl = TextEditingController();
+    String type = 'Asrat (10%)';
+    String method = 'Cash';
+    _showFinanceFormSheet(
+      isDark: isDark,
+      title: 'Record Tithe / Offering',
+      fields: (setSheet) => [
+        _sheetField(nameCtrl, 'Member Name', Icons.person_outline, isDark),
+        const SizedBox(height: 14),
+        _sheetField(amountCtrl, 'Amount (ETB)', Icons.attach_money, isDark,
+            isNumber: true),
+        const SizedBox(height: 14),
+        _dropdown('Type', type, const [
+          'Asrat (10%)',
+          'Offering (መባ)',
+          'First Fruit (በኵራት)',
+          'Building Contribution'
+        ], (v) => setSheet(() => type = v)),
+        const SizedBox(height: 14),
+        _dropdown('Payment Method', method,
+            const ['Cash', 'Bank', 'Mobile'], (v) => setSheet(() => method = v)),
+        const SizedBox(height: 14),
+        _sheetField(receiptCtrl, 'Receipt Number', Icons.receipt_long, isDark),
+      ],
+      onSave: () async {
+        if (nameCtrl.text.trim().isEmpty || amountCtrl.text.trim().isEmpty) {
+          return false;
+        }
+        final amount = double.tryParse(amountCtrl.text) ?? 0;
+        final date = DateTime.now().toIso8601String();
+        await _db.collection('finance_tithes').add({
+          'memberName': nameCtrl.text.trim(),
+          'type': type,
+          'amount': amount,
+          'paymentMethod': method,
+          'receiptNumber': receiptCtrl.text.trim(),
+          'date': date,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        // Mirror as an income transaction, matching the web.
+        await _db.collection('finance_transactions').add({
+          'amount': amount,
+          'type': 'Tithe',
+          'category': type,
+          'description':
+              'Tithe from ${nameCtrl.text.trim()} (${receiptCtrl.text.trim()})',
+          'date': date,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        return true;
+      },
+    );
+  }
+
+  // ── Pledges ─────────────────────────────────────────────────────────────────
+  Widget _buildPledgesList(bool isDark, bool canAdd) {
+    return _listWithAdd(
+      isDark: isDark,
+      canAdd: canAdd,
+      addLabel: 'New pledge',
+      onAdd: () => _showAddPledgeSheet(isDark),
+      empty: _pledges.isEmpty,
+      emptyMsg: 'No pledges yet',
+      emptyIcon: FontAwesomeIcons.handshakeAngle,
+      items: _pledges,
+      itemBuilder: (p) {
+        final pledged = (p['pledgedAmount'] as num?)?.toDouble() ?? 0;
+        final paid = (p['paidAmount'] as num?)?.toDouble() ?? 0;
+        final pct = pledged > 0 ? (paid / pledged).clamp(0.0, 1.0) : 0.0;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.primary.withOpacity(0.07)),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Expanded(
+                child: Text(p['memberName'] ?? 'Member',
+                    style: GoogleFonts.notoSansEthiopic(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                        color: isDark ? Colors.white : AppColors.lightText)),
+              ),
+              Text(p['status'] ?? 'Active',
+                  style: GoogleFonts.notoSansEthiopic(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                      color: (p['status'] == 'Completed')
+                          ? const Color(0xFF10B981)
+                          : AppColors.divineGold)),
+            ]),
+            if ((p['campaignTitle'] ?? '').toString().isNotEmpty)
+              Text(p['campaignTitle'],
+                  style: GoogleFonts.notoSansEthiopic(
+                      fontSize: 10, color: Colors.grey)),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: pct,
+                minHeight: 6,
+                backgroundColor: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+                '${paid.toStringAsFixed(0)} / ${pledged.toStringAsFixed(0)} ETB',
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+          ]),
+        );
+      },
+    );
+  }
+
+  void _showAddPledgeSheet(bool isDark) {
+    final nameCtrl = TextEditingController();
+    final campaignCtrl = TextEditingController();
+    final pledgedCtrl = TextEditingController();
+    final paidCtrl = TextEditingController(text: '0');
+    _showFinanceFormSheet(
+      isDark: isDark,
+      title: 'New Pledge',
+      fields: (setSheet) => [
+        _sheetField(nameCtrl, 'Member Name', Icons.person_outline, isDark),
+        const SizedBox(height: 14),
+        _sheetField(campaignCtrl, 'Campaign', Icons.campaign_outlined, isDark),
+        const SizedBox(height: 14),
+        _sheetField(pledgedCtrl, 'Pledged Amount (ETB)', Icons.attach_money,
+            isDark, isNumber: true),
+        const SizedBox(height: 14),
+        _sheetField(paidCtrl, 'Paid So Far (ETB)', Icons.payments_outlined,
+            isDark, isNumber: true),
+      ],
+      onSave: () async {
+        if (nameCtrl.text.trim().isEmpty || pledgedCtrl.text.trim().isEmpty) {
+          return false;
+        }
+        final pledged = double.tryParse(pledgedCtrl.text) ?? 0;
+        final paid = double.tryParse(paidCtrl.text) ?? 0;
+        await _db.collection('finance_pledges').add({
+          'memberName': nameCtrl.text.trim(),
+          'campaignTitle': campaignCtrl.text.trim(),
+          'pledgedAmount': pledged,
+          'paidAmount': paid,
+          'status': paid >= pledged && pledged > 0 ? 'Completed' : 'Active',
+          'dueDate': '',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        return true;
+      },
+    );
+  }
+
+  // ── Vouchers / Requisitions ──────────────────────────────────────────────────
+  Widget _buildVouchersList(bool isDark, bool canAdd) {
+    return _listWithAdd(
+      isDark: isDark,
+      canAdd: canAdd,
+      addLabel: 'New requisition voucher',
+      onAdd: () => _showAddVoucherSheet(isDark),
+      empty: _vouchers.isEmpty,
+      emptyMsg: 'No vouchers yet',
+      emptyIcon: FontAwesomeIcons.receipt,
+      items: _vouchers,
+      itemBuilder: (v) {
+        final amount = (v['amount'] as num?)?.toDouble() ?? 0;
+        final status = v['status'] as String? ?? 'Pending';
+        final statusColor = status == 'Paid' || status == 'Approved'
+            ? const Color(0xFF10B981)
+            : status == 'Rejected'
+                ? AppColors.sacredRed
+                : AppColors.divineGold;
+        return _financeCard(isDark,
+            title: v['purpose'] ?? 'Requisition',
+            subtitle:
+                '${v['voucherNumber'] ?? ''} · ${v['department'] ?? ''} · $status',
+            subtitleColor: statusColor,
+            trailing: '${amount.toStringAsFixed(0)} ETB',
+            trailingColor: AppColors.sacredRed);
+      },
+    );
+  }
+
+  void _showAddVoucherSheet(bool isDark) {
+    final requestedByCtrl = TextEditingController();
+    final purposeCtrl = TextEditingController();
+    final amountCtrl = TextEditingController();
+    String department = 'Administration & Finance';
+    _showFinanceFormSheet(
+      isDark: isDark,
+      title: 'New Requisition Voucher',
+      fields: (setSheet) => [
+        _sheetField(requestedByCtrl, 'Requested By', Icons.person_outline,
+            isDark),
+        const SizedBox(height: 14),
+        _sheetField(purposeCtrl, 'Purpose', Icons.notes, isDark),
+        const SizedBox(height: 14),
+        _sheetField(amountCtrl, 'Amount (ETB)', Icons.attach_money, isDark,
+            isNumber: true),
+        const SizedBox(height: 14),
+        _dropdown('Department', department, const [
+          'Evangelism',
+          'Education & Training',
+          'Services Coordination',
+          'Administration & Finance',
+          'Public & External Relations',
+          'Youth & Children',
+        ], (v) => setSheet(() => department = v)),
+      ],
+      onSave: () async {
+        if (purposeCtrl.text.trim().isEmpty || amountCtrl.text.trim().isEmpty) {
+          return false;
+        }
+        final voucherNumber =
+            'VCH-${DateTime.now().year}-${1000 + DateTime.now().millisecond % 9000}';
+        await _db.collection('finance_requisitions').add({
+          'voucherNumber': voucherNumber,
+          'requestedBy': requestedByCtrl.text.trim(),
+          'department': department,
+          'purpose': purposeCtrl.text.trim(),
+          'amount': double.tryParse(amountCtrl.text) ?? 0,
+          'status': 'Pending',
+          'date': DateTime.now().toIso8601String(),
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        return true;
+      },
+    );
+  }
+
+  // ── Shared building blocks for the new tabs ──────────────────────────────────
+  Widget _listWithAdd({
+    required bool isDark,
+    required bool canAdd,
+    required String addLabel,
+    required VoidCallback onAdd,
+    required bool empty,
+    required String emptyMsg,
+    required IconData emptyIcon,
+    required List<Map<String, dynamic>> items,
+    required Widget Function(Map<String, dynamic>) itemBuilder,
+  }) {
+    return Column(
+      children: [
+        if (canAdd)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add, size: 16),
+                label: Text(addLabel),
+              ),
+            ),
+          ),
+        Expanded(
+          child: empty
+              ? _emptyState(emptyMsg, emptyIcon)
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+                  children: items.map(itemBuilder).toList(),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _financeCard(bool isDark,
+      {required String title,
+      required String subtitle,
+      Color? subtitleColor,
+      required String trailing,
+      required Color trailingColor}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.primary.withOpacity(0.07)),
+      ),
+      child: Row(children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title,
+                style: GoogleFonts.notoSansEthiopic(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                    color: isDark ? Colors.white : AppColors.lightText)),
+            const SizedBox(height: 2),
+            Text(subtitle,
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 9,
+                    color: subtitleColor ?? Colors.grey,
+                    fontWeight: FontWeight.bold)),
+          ]),
+        ),
+        Text(trailing,
+            style: GoogleFonts.notoSansEthiopic(
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+                color: trailingColor)),
+      ]),
+    );
+  }
+
+  Widget _dropdown(String label, String value, List<String> items,
+      ValueChanged<String> onChanged) {
+    return DropdownButtonFormField<String>(
+      value: items.contains(value) ? value : items.first,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+      items: items
+          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+          .toList(),
+      onChanged: (v) => onChanged(v ?? value),
+    );
+  }
+
+  void _showFinanceFormSheet({
+    required bool isDark,
+    required String title,
+    required List<Widget> Function(void Function(void Function())) fields,
+    required Future<bool> Function() onSave,
+  }) {
+    bool saving = false;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Container(
+          height: MediaQuery.of(context).size.height * 0.8,
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkBackground : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(children: [
+            const SizedBox(height: 12),
+            Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            Text(title,
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: isDark ? Colors.white : AppColors.lightText)),
+            const SizedBox(height: 20),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(children: [
+                  ...fields(setSheet),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                      ),
+                      onPressed: saving
+                          ? null
+                          : () async {
+                              setSheet(() => saving = true);
+                              try {
+                                final ok = await onSave();
+                                if (!ok) {
+                                  setSheet(() => saving = false);
+                                  return;
+                                }
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                _loadData();
+                              } catch (e) {
+                                setSheet(() => saving = false);
+                                if (ctx.mounted) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                      SnackBar(content: Text('Failed: $e')));
+                                }
+                              }
+                            },
+                      child: Text(saving ? 'Saving…' : 'Save',
+                          style: GoogleFonts.notoSansEthiopic(
+                              fontWeight: FontWeight.bold, color: Colors.white)),
+                    ),
+                  ),
+                ]),
+              ),
+            ),
           ]),
         ),
       ),
