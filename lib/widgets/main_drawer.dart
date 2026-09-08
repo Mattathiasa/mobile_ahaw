@@ -7,6 +7,7 @@ import '../services/localization_service.dart';
 import '../services/permission_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/software_control_service.dart';
+import '../services/role_registry_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
 import '../screens/dashboard_items/announcements_page.dart';
@@ -28,6 +29,7 @@ import '../screens/dashboard_items/settings_page.dart';
 import '../screens/dashboard_items/user_management_page.dart';
 import '../screens/dashboard_items/hierarchy_page.dart';
 import '../screens/dashboard_items/permission_control_page.dart';
+import '../screens/dashboard_items/membership_requests_page.dart';
 
 class MainDrawer extends StatefulWidget {
   const MainDrawer({super.key});
@@ -85,6 +87,7 @@ class _MainDrawerState extends State<MainDrawer> {
 
     final remoteConfig = Provider.of<RemoteConfigService>(context);
     final softwareControl = Provider.of<SoftwareControlService>(context);
+    final roleRegistry = Provider.of<RoleRegistryService>(context);
     final level = authService.userModel?.hierarchyLevel ?? 'HiyawanMahderat';
 
     // Permission-gated nav items (featureKey lets the web admin disable
@@ -109,6 +112,7 @@ class _MainDrawerState extends State<MainDrawer> {
     ];
 
     final adminItems = [
+      const _NavItem(FontAwesomeIcons.userCheck,    'Membership Requests', MembershipRequestsPage(), 'approverOnly', 'membershipRequests'),
       const _NavItem(FontAwesomeIcons.usersGear,    'User Management', UserManagementPage(),    'canViewUserManagement', 'userManagement'),
       const _NavItem(FontAwesomeIcons.networkWired, 'Hierarchy',       HierarchyPage(),         'canViewHierarchy', 'hierarchy'),
       const _NavItem(FontAwesomeIcons.gear,         'Settings',        SettingsPage(),          'canViewSettings', null),
@@ -133,6 +137,9 @@ class _MainDrawerState extends State<MainDrawer> {
         .where((i) {
           if (!featureOn(i) || !navOn(i)) return false;
           if (i.permission == 'superAdminOnly') return perms.isSuperAdmin;
+          if (i.permission == 'approverOnly') {
+            return perms.isSuperAdmin || roleRegistry.isApproverRole(level);
+          }
           return i.permission == null || perms.can(i.permission!);
         })
         .toList();
