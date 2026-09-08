@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -7,6 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/localization_service.dart';
+import '../../services/permission_service.dart';
+import '../../services/cloudinary_service.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Memriya Documents page: folder/file browsing of the
@@ -26,13 +31,147 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   String? get _currentParentId => _path.isEmpty ? null : _path.last.key;
 
+  bool _uploading = false;
+
+  Future<void> _createFolder() async {
+    final ctrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New Folder'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Folder name'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: const Text('Create')),
+        ],
+      ),
+    );
+    if (name == null || name.isEmpty) return;
+    await FirebaseFirestore.instance.collection('documents').add({
+      'name': name,
+      'type': 'folder',
+      'parentId': _currentParentId,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> _uploadFile() async {
+    try {
+      final res = await FilePicker.platform.pickFiles(withData: false);
+      final path = res?.files.single.path;
+      if (res == null || path == null) return;
+      final f = res.files.single;
+      setState(() => _uploading = true);
+      final url = await CloudinaryService.uploadFile(
+        File(path),
+        folder: 'mahibere-ahaw/documents',
+        resourceType: 'auto',
+      );
+      await FirebaseFirestore.instance.collection('documents').add({
+        'name': f.name,
+        'type': 'file',
+        'parentId': _currentParentId,
+        'size': '${(f.size / 1024).toStringAsFixed(2)} KB',
+        'fileType': f.extension ?? '',
+        'filePath': url,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  Future<void> _deleteDocument(String id, String name) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete?'),
+        content: Text('Delete "$name"?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete',
+                  style: TextStyle(color: AppColors.sacredRed))),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await FirebaseFirestore.instance.collection('documents').doc(id).delete();
+    }
+  }
+
+  void _showAddSheet(bool canUpload) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.create_new_folder_outlined,
+                  color: AppColors.primary),
+              title: const Text('New Folder'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _createFolder();
+              },
+            ),
+            ListTile(
+              leading:
+                  const Icon(Icons.upload_file, color: AppColors.primary),
+              title: const Text('Upload File'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _uploadFile();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final perms = Provider.of<PermissionService>(context);
+    final canUpload = perms.isSuperAdmin || perms.can('canUploadDocuments');
+    final canDelete = perms.isSuperAdmin || perms.can('canDeleteDocuments');
 
     return Scaffold(
       backgroundColor:
           isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      floatingActionButton: canUpload
+          ? FloatingActionButton(
+              onPressed: _uploading ? null : () => _showAddSheet(canUpload),
+              backgroundColor: AppColors.primary,
+              child: _uploading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -175,7 +314,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                   padding: const EdgeInsets.all(20),
                   itemCount: items.length,
                   itemBuilder: (context, index) =>
-                      _buildItem(items[index], isDark, index),
+                      _buildItem(items[index], isDark, index, canDelete),
                 );
               },
             ),
@@ -203,7 +342,8 @@ class _DocumentsPageState extends State<DocumentsPage> {
     );
   }
 
-  Widget _buildItem(Map<String, dynamic> item, bool isDark, int index) {
+  Widget _buildItem(
+      Map<String, dynamic> item, bool isDark, int index, bool canDelete) {
     final isFolder = item['type'] == 'folder';
     final name = item['name'] as String? ?? 'Unnamed';
     final size = item['size'] as String? ?? '';
@@ -267,6 +407,13 @@ class _DocumentsPageState extends State<DocumentsPage> {
               size: 16,
               color: Colors.grey,
             ),
+            if (canDelete)
+              IconButton(
+                icon: const Icon(Icons.delete_outline,
+                    size: 18, color: AppColors.sacredRed),
+                onPressed: () =>
+                    _deleteDocument(item['id'] as String, name),
+              ),
           ],
         ),
       ).animate().fadeIn(delay: (index * 50).ms),
