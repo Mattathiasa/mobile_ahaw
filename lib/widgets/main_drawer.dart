@@ -33,6 +33,7 @@ import '../screens/dashboard_items/membership_requests_page.dart';
 import '../screens/dashboard_items/inventory_page.dart';
 import '../screens/dashboard_items/hr_page.dart';
 import '../screens/dashboard_items/news_page.dart';
+import '../screens/suggestion_page.dart';
 
 class MainDrawer extends StatefulWidget {
   const MainDrawer({super.key});
@@ -110,6 +111,7 @@ class _MainDrawerState extends State<MainDrawer> {
       const _NavItem(FontAwesomeIcons.bookOpenReader,    'Teachings',      TeachingsPage(),         'canViewTeachings', 'teachings'),
       const _NavItem(FontAwesomeIcons.fileContract,      'Strategic Plan', StrategicPlanPage(),     'canViewStrategicPlan', 'strategicPlan'),
       const _NavItem(FontAwesomeIcons.handshake,         'Partner',        PartnerPage(),           null, 'partner'),
+      const _NavItem(FontAwesomeIcons.lightbulb,         'Suggestions',    SuggestionPage(),        null, 'suggestions'),
       const _NavItem(FontAwesomeIcons.heartPulse,        'Volunteer',      VolunteerPage(),         'canViewVolunteer', 'volunteer'),
       const _NavItem(FontAwesomeIcons.folderOpen,        'Documents',      DocumentsPage(),         'canViewDocuments', 'documents'),
       const _NavItem(FontAwesomeIcons.boxesStacked,      'Inventory',      InventoryPage(),         'canViewInventory', 'inventory'),

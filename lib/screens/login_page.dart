@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../services/localization_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/theme_provider.dart';
+import 'suggestion_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -477,6 +478,25 @@ class _LoginPageState extends State<LoginPage> {
                                     fontSize: 13,
                                     fontWeight: FontWeight.w800,
                                     color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+
+                              // ── Suggestion box link (public) ──
+                              TextButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                const SuggestionPage())),
+                                child: Text(
+                                  'Send us a suggestion',
+                                  style: GoogleFonts.notoSansEthiopic(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary.withOpacity(0.8),
                                   ),
                                 ),
                               ),

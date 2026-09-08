@@ -50,14 +50,19 @@ class AuthService extends ChangeNotifier {
         };
 
   bool get isLoading => _isLoading;
-  bool get isAuthenticated => _firebaseUser != null;
+
+  /// Anonymous sessions (minted transiently for the public suggestion box) do
+  /// NOT count as authenticated — otherwise they would flip the app into the
+  /// dashboard. Mirrors the web's isAnonymous guard in AuthContext.
+  bool get isAuthenticated =>
+      _firebaseUser != null && !_firebaseUser!.isAnonymous;
 
   // ── Auth state listener ─────────────────────────────────────────────────────
 
   Future<void> _onAuthStateChanged(User? firebaseUser) async {
     _firebaseUser = firebaseUser;
 
-    if (firebaseUser != null) {
+    if (firebaseUser != null && !firebaseUser.isAnonymous) {
       await _loadUserData(firebaseUser);
     } else {
       _userModel = null;
