@@ -18,7 +18,15 @@ class _HierarchyPageState extends State<HierarchyPage> with SingleTickerProvider
   late TabController _tabController;
   final HierarchyService _hierarchyService = HierarchyService();
 
-  final List<String> _levels = ['Zone', 'Atbiya', 'EnkesekaseMaikel', 'Mahderat'];
+  // Full organisation registry, head office → fellowship group. 'Synod' is the
+  // Standing Synod / head-office tier the web's Organisation page exposes.
+  final List<String> _levels = [
+    'Synod',
+    'Zone',
+    'Atbiya',
+    'EnkesekaseMaikel',
+    'Mahderat'
+  ];
 
   @override
   void initState() {
@@ -32,13 +40,17 @@ class _HierarchyPageState extends State<HierarchyPage> with SingleTickerProvider
     super.dispose();
   }
 
-  void _showCreateEntitySheet(BuildContext context, String level) {
-    final nameCtrl = TextEditingController();
-    final nameAmharicCtrl = TextEditingController();
-    final locationCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    String? selectedParentId;
+  void _showEntitySheet(BuildContext context, String level,
+      {Map<String, dynamic>? existing}) {
+    final isEditing = existing != null;
+    final nameCtrl = TextEditingController(text: existing?['name']);
+    final nameAmharicCtrl =
+        TextEditingController(text: existing?['nameAmharic']);
+    final locationCtrl = TextEditingController(text: existing?['location']);
+    final descCtrl = TextEditingController(text: existing?['description']);
+    String? selectedParentId = existing?['parentId'] as String?;
     bool saving = false;
+    final needsParent = level != 'Zone' && level != 'Synod';
 
     showModalBottomSheet(
       context: context,
@@ -48,25 +60,32 @@ class _HierarchyPageState extends State<HierarchyPage> with SingleTickerProvider
         builder: (ctx, setSheet) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
           return FormSheet(
-            title: 'Create $level',
-            subtitle: 'Add a new organizational unit to the hierarchy',
+            title: isEditing ? 'Edit $level' : 'Create $level',
+            subtitle: 'Organizational unit in the church hierarchy',
             isDark: isDark,
             saving: saving,
-            submitLabel: 'Create Entity',
+            submitLabel: isEditing ? 'Save' : 'Create Entity',
             onSubmit: () async {
               if (nameCtrl.text.isEmpty) return;
               setSheet(() => saving = true);
               try {
-                await _hierarchyService.createEntity({
+                final data = {
                   'name': nameCtrl.text.trim(),
                   'nameAmharic': nameAmharicCtrl.text.trim(),
                   'level': level,
                   'location': locationCtrl.text.trim(),
                   'description': descCtrl.text.trim(),
                   'parentId': selectedParentId,
-                });
+                };
+                if (isEditing) {
+                  await _hierarchyService.updateEntity(
+                      existing['id'] as String, data);
+                } else {
+                  await _hierarchyService.createEntity(data);
+                }
                 if (ctx.mounted) Navigator.pop(ctx);
-                _showSnack('$level created successfully!', success: true);
+                _showSnack(isEditing ? '$level updated!' : '$level created!',
+                    success: true);
               } catch (e) {
                 _showSnack('Failed: $e');
               } finally {
@@ -80,16 +99,18 @@ class _HierarchyPageState extends State<HierarchyPage> with SingleTickerProvider
               buildLabel('Name (Amharic)', isDark),
               buildTextField(nameAmharicCtrl, 'e.g. ምስራቅ ሸዋ ዞን', isDark),
               const SizedBox(height: 16),
-              if (level != 'Zone') ...[
+              if (needsParent) ...[
                 buildLabel('Parent Entity *', isDark),
-                _buildParentDropdown(level, selectedParentId, (v) => setSheet(() => selectedParentId = v), isDark),
+                _buildParentDropdown(level, selectedParentId,
+                    (v) => setSheet(() => selectedParentId = v), isDark),
                 const SizedBox(height: 16),
               ],
               buildLabel('Location', isDark),
               buildTextField(locationCtrl, 'e.g. Addis Ababa', isDark),
               const SizedBox(height: 16),
               buildLabel('Description', isDark),
-              buildTextField(descCtrl, 'Brief description...', isDark, maxLines: 3),
+              buildTextField(descCtrl, 'Brief description...', isDark,
+                  maxLines: 3),
             ],
           );
         },
@@ -124,7 +145,7 @@ class _HierarchyPageState extends State<HierarchyPage> with SingleTickerProvider
               padding: const EdgeInsets.only(right: 12),
               child: IconButton(
                 icon: const Icon(Icons.add_business_outlined, color: AppColors.primary),
-                onPressed: () => _showCreateEntitySheet(context, _levels[_tabController.index]),
+                onPressed: () => _showEntitySheet(context, _levels[_tabController.index]),
               ),
             ),
         ],
@@ -193,6 +214,13 @@ class _HierarchyPageState extends State<HierarchyPage> with SingleTickerProvider
                   ],
                 ),
               ),
+              if (perms.isSuperAdmin || perms.can('canCreateHierarchy'))
+                IconButton(
+                    icon: const Icon(Icons.edit_outlined,
+                        color: AppColors.primary, size: 20),
+                    onPressed: () => _showEntitySheet(
+                        context, (data['level'] ?? 'Zone').toString(),
+                        existing: data)),
               if (perms.isSuperAdmin || perms.can('canDeleteHierarchy'))
                 IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.sacredRed, size: 20), onPressed: () => _confirmDelete(data['id'], data['name'])),
             ],
