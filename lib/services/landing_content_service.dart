@@ -107,5 +107,34 @@ class LandingContent {
     return [];
   }
 
+  // ── About section (rendered by the About screen) ────────────────────────────
+  Map<String, dynamic> get _about => (_d['about'] as Map<String, dynamic>?) ?? {};
+
+  String get aboutBadge => _about['badge'] as String? ?? 'About Us';
+  String get aboutTitle =>
+      _about['sectionTitle'] as String? ?? 'About Us & Our Faith';
+  String get aboutDescription => _about['sectionDescription'] as String? ?? '';
+  String get whoWeAreTitle => _about['whoWeAreTitle'] as String? ?? 'Our Origin';
+  String get whoWeAreDescription =>
+      _about['whoWeAreDescription'] as String? ?? '';
+  String get aboutMissionTitle =>
+      _about['missionTitle'] as String? ?? 'Our Mission';
+  String get aboutMissionDescription =>
+      _about['missionDescription'] as String? ?? '';
+  String get visionTitle => _about['visionTitle'] as String? ?? 'Our Vision';
+  String get visionDescription => _about['visionDescription'] as String? ?? '';
+  String get beliefsTitle =>
+      _about['beliefsTitle'] as String? ?? 'What We Believe';
+  List<Map<String, dynamic>> get beliefs {
+    final b = _about['beliefs'];
+    return b is List ? b.whereType<Map<String, dynamic>>().toList() : [];
+  }
+
+  String get valuesTitle => _about['valuesTitle'] as String? ?? 'Our Values';
+  List<Map<String, dynamic>> get values {
+    final v = _about['values'];
+    return v is List ? v.whereType<Map<String, dynamic>>().toList() : [];
+  }
+
   bool get isEmpty => _d.isEmpty;
 }
