@@ -38,12 +38,14 @@ class _PlansPageState extends State<PlansPage> {
     super.dispose();
   }
 
-  // ── Create ──────────────────────────────────────────────────────────────────
-  void _showCreateSheet(BuildContext context) {
+  // ── Create / Edit ─────────────────────────────────────────────────────────
+  void _showPlanSheet(BuildContext context,
+      {String? id, Map<String, dynamic>? existing}) {
+    final isEditing = id != null;
     final userModel = Provider.of<AuthService>(context, listen: false).userModel;
-    final nameCtrl = TextEditingController();
-    final detailsCtrl = TextEditingController();
-    String timeframe = 'Monthly';
+    final nameCtrl = TextEditingController(text: existing?['name']);
+    final detailsCtrl = TextEditingController(text: existing?['details']);
+    String timeframe = existing?['timeframe']?.toString() ?? 'Monthly';
     bool saving = false;
 
     showModalBottomSheet(
@@ -54,30 +56,40 @@ class _PlansPageState extends State<PlansPage> {
         builder: (ctx, setSheet) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
           return FormSheet(
-            title: 'New Plan',
-            subtitle: 'Establish a new strategic roadmap for ministry',
+            title: isEditing ? 'Edit Plan' : 'New Plan',
+            subtitle: 'Establish a strategic roadmap for ministry',
             isDark: isDark,
             saving: saving,
-            submitLabel: 'Create Plan',
+            submitLabel: isEditing ? 'Save Plan' : 'Create Plan',
             onSubmit: () async {
               if (nameCtrl.text.trim().isEmpty ||
                   detailsCtrl.text.trim().isEmpty) return;
               setSheet(() => saving = true);
               try {
-                await _db.collection('plans').add({
-                  'name': nameCtrl.text.trim(),
-                  'timeframe': timeframe,
-                  'details': detailsCtrl.text.trim(),
-                  'createdBy': {
-                    'id': userModel?.id,
-                    'fullName': userModel?.displayName,
-                    'hierarchyLevel': userModel?.hierarchyLevel ?? 'Atbiya',
-                  },
-                  'createdAt': FieldValue.serverTimestamp(),
-                  'updatedAt': FieldValue.serverTimestamp(),
-                });
+                if (isEditing) {
+                  await _db.collection('plans').doc(id).update({
+                    'name': nameCtrl.text.trim(),
+                    'timeframe': timeframe,
+                    'details': detailsCtrl.text.trim(),
+                    'updatedAt': FieldValue.serverTimestamp(),
+                  });
+                } else {
+                  await _db.collection('plans').add({
+                    'name': nameCtrl.text.trim(),
+                    'timeframe': timeframe,
+                    'details': detailsCtrl.text.trim(),
+                    'createdBy': {
+                      'id': userModel?.id,
+                      'fullName': userModel?.displayName,
+                      'hierarchyLevel': userModel?.hierarchyLevel ?? 'Atbiya',
+                    },
+                    'createdAt': FieldValue.serverTimestamp(),
+                    'updatedAt': FieldValue.serverTimestamp(),
+                  });
+                }
                 if (ctx.mounted) Navigator.pop(ctx);
-                _showSnack('Plan created!', success: true);
+                _showSnack(isEditing ? 'Plan updated!' : 'Plan created!',
+                    success: true);
               } catch (e) {
                 _showSnack('Failed: $e');
               } finally {
@@ -180,7 +192,7 @@ class _PlansPageState extends State<PlansPage> {
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: ElevatedButton.icon(
-                onPressed: () => _showCreateSheet(context),
+                onPressed: () => _showPlanSheet(context),
                 icon: const Icon(Icons.add, size: 18),
                 label: Text('New',
                     style: GoogleFonts.notoSansEthiopic(
@@ -300,7 +312,7 @@ class _PlansPageState extends State<PlansPage> {
                     final data = docs[index].data() as Map<String, dynamic>;
                     final id = docs[index].id;
                     return _buildCard(context, data, id, index, isDark,
-                        canDelete: canDelete);
+                        canDelete: canDelete, canEdit: canCreate);
                   },
                 );
               },
@@ -313,7 +325,7 @@ class _PlansPageState extends State<PlansPage> {
 
   Widget _buildCard(BuildContext context, Map<String, dynamic> data, String id,
       int index, bool isDark,
-      {required bool canDelete}) {
+      {required bool canDelete, required bool canEdit}) {
     final timeframe = data['timeframe'] as String? ?? 'Monthly';
     final color = _timeframeColors[timeframe] ?? AppColors.primary;
     final createdBy = data['createdBy'] as Map<String, dynamic>?;
@@ -375,6 +387,22 @@ class _PlansPageState extends State<PlansPage> {
                               color: color,
                               letterSpacing: 0.5)),
                     ),
+                    if (canEdit) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () =>
+                            _showPlanSheet(context, id: id, existing: data),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.edit_outlined,
+                              size: 16, color: AppColors.primary),
+                        ),
+                      ),
+                    ],
                     if (canDelete) ...[
                       const SizedBox(width: 8),
                       GestureDetector(
