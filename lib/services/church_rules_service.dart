@@ -52,6 +52,33 @@ class ChurchRulesService extends ChangeNotifier {
         .toList();
   }
 
+  /// Persists one category array (denb / memerya / policies) back to
+  /// siteConfig/churchRules. Admin-gated in the UI. The live stream updates the
+  /// local lists after the write. Uses merge so the other categories are kept.
+  Future<void> saveCategory(String category, List<RuleItem> items) async {
+    await FirebaseFirestore.instance
+        .collection('siteConfig')
+        .doc('churchRules')
+        .set({
+      category: items
+          .map((r) => {'title': r.title, 'content': r.content})
+          .toList(),
+    }, SetOptions(merge: true));
+  }
+
+  List<RuleItem> itemsFor(String category) {
+    switch (category) {
+      case 'denb':
+        return denb;
+      case 'memerya':
+        return memerya;
+      case 'policies':
+        return policies;
+      default:
+        return const [];
+    }
+  }
+
   @override
   void dispose() {
     _sub?.cancel();
