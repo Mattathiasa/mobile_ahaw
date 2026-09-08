@@ -6,6 +6,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/localization_service.dart';
+import '../../services/permission_service.dart';
+import '../../services/module_config_service.dart';
+import '../../widgets/image_upload_field.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Teaching page: lists the `teachings` collection
@@ -61,11 +64,20 @@ class TeachingsPage extends StatelessWidget {
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final data = docs[index].data();
-              return _TeachingCard(data: data, isDark: isDark, index: index);
+              return _TeachingCard(
+                  id: docs[index].id, data: data, isDark: isDark, index: index);
             },
           );
         },
       ),
+      floatingActionButton:
+          Provider.of<PermissionService>(context).can('canCreateTeaching')
+              ? FloatingActionButton(
+                  onPressed: () => showTeachingForm(context),
+                  backgroundColor: AppColors.primary,
+                  child: const Icon(Icons.add, color: Colors.white),
+                )
+              : null,
     );
   }
 
@@ -89,12 +101,16 @@ class TeachingsPage extends StatelessWidget {
 }
 
 class _TeachingCard extends StatelessWidget {
+  final String id;
   final Map<String, dynamic> data;
   final bool isDark;
   final int index;
 
   const _TeachingCard(
-      {required this.data, required this.isDark, required this.index});
+      {required this.id,
+      required this.data,
+      required this.isDark,
+      required this.index});
 
   @override
   Widget build(BuildContext context) {
@@ -283,10 +299,234 @@ class _TeachingCard extends StatelessWidget {
                     height: 1.8,
                     color: isDark ? Colors.white70 : AppColors.lightText,
                   )),
+              if (Provider.of<PermissionService>(context, listen: false)
+                  .can('canCreateTeaching')) ...[
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          showTeachingForm(context, id: id, existing: data);
+                        },
+                        icon: const Icon(Icons.edit, size: 16),
+                        label: const Text('Edit'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.sacredRed),
+                        onPressed: () async {
+                          final ok = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Delete teaching?'),
+                              content: Text('Delete "$title"?'),
+                              actions: [
+                                TextButton(
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                    child: const Text('Cancel')),
+                                TextButton(
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    child: const Text('Delete',
+                                        style:
+                                            TextStyle(color: AppColors.sacredRed))),
+                              ],
+                            ),
+                          );
+                          if (ok == true) {
+                            await FirebaseFirestore.instance
+                                .collection('teachings')
+                                .doc(id)
+                                .delete();
+                            if (context.mounted) Navigator.pop(context);
+                          }
+                        },
+                        icon: const Icon(Icons.delete_outline, size: 16),
+                        label: const Text('Delete'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
       ),
     );
   }
+}
+
+/// Create/edit a teaching. Mirrors the web CreateTeachingDialog: title,
+/// speaker, service type (from Module Config), short/full content, date,
+/// featured image (Cloudinary) and published/draft status.
+void showTeachingForm(BuildContext context,
+    {String? id, Map<String, dynamic>? existing}) {
+  final isEditing = id != null;
+  final moduleConfig = Provider.of<ModuleConfigService>(context, listen: false);
+  final serviceTypes = moduleConfig.options('teachings', 'serviceTypes');
+
+  final titleCtrl = TextEditingController(text: existing?['title']);
+  final speakerCtrl = TextEditingController(text: existing?['speaker']);
+  final shortCtrl = TextEditingController(text: existing?['shortDescription']);
+  final fullCtrl = TextEditingController(text: existing?['fullContent']);
+  final dateCtrl = TextEditingController(
+      text: existing?['dateDelivered'] ??
+          DateTime.now().toIso8601String().split('T').first);
+  String serviceType = existing?['serviceType']?.toString() ??
+      (serviceTypes.isNotEmpty ? serviceTypes.first : 'Other');
+  String status = existing?['status']?.toString() ?? 'Published';
+  String featuredImage = existing?['featuredImage']?.toString() ?? '';
+  final formKey = GlobalKey<FormState>();
+  bool saving = false;
+
+  Widget field(TextEditingController c, String label,
+          {bool required = false, int maxLines = 1}) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: TextFormField(
+          controller: c,
+          maxLines: maxLines,
+          decoration: InputDecoration(
+              labelText: label, border: const OutlineInputBorder()),
+          validator: required
+              ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+              : null,
+        ),
+      );
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setSheet) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(isEditing ? 'Edit Teaching' : 'New Teaching',
+                      style: GoogleFonts.notoSansEthiopic(
+                          fontSize: 18, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: ImageUploadField(
+                      initialUrl: featuredImage,
+                      folder: 'teachings',
+                      circle: false,
+                      size: 120,
+                      label: 'Featured image',
+                      onUploaded: (url) => featuredImage = url,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  field(titleCtrl, 'Title', required: true),
+                  field(speakerCtrl, 'Speaker'),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: DropdownButtonFormField<String>(
+                      value: serviceTypes.contains(serviceType)
+                          ? serviceType
+                          : (serviceTypes.isNotEmpty
+                              ? serviceTypes.first
+                              : serviceType),
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                          labelText: 'Service Type',
+                          border: OutlineInputBorder()),
+                      items: (serviceTypes.isEmpty ? [serviceType] : serviceTypes)
+                          .map((e) =>
+                              DropdownMenuItem(value: e, child: Text(e)))
+                          .toList(),
+                      onChanged: (v) =>
+                          setSheet(() => serviceType = v ?? serviceType),
+                    ),
+                  ),
+                  field(shortCtrl, 'Short Description', maxLines: 2),
+                  field(fullCtrl, 'Full Content', maxLines: 5),
+                  field(dateCtrl, 'Date Delivered (YYYY-MM-DD)'),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: DropdownButtonFormField<String>(
+                      value: status,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                          labelText: 'Status', border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(
+                            value: 'Published', child: Text('Published')),
+                        DropdownMenuItem(value: 'Draft', child: Text('Draft')),
+                      ],
+                      onChanged: (v) => setSheet(() => status = v ?? 'Published'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 14)),
+                      onPressed: saving
+                          ? null
+                          : () async {
+                              if (!formKey.currentState!.validate()) return;
+                              setSheet(() => saving = true);
+                              final payload = {
+                                'title': titleCtrl.text.trim(),
+                                'speaker': speakerCtrl.text.trim(),
+                                'serviceType': serviceType,
+                                'shortDescription': shortCtrl.text.trim(),
+                                'fullContent': fullCtrl.text.trim(),
+                                'dateDelivered': dateCtrl.text.trim(),
+                                'featuredImage': featuredImage,
+                                'status': status,
+                                'updatedAt': FieldValue.serverTimestamp(),
+                              };
+                              try {
+                                final col = FirebaseFirestore.instance
+                                    .collection('teachings');
+                                if (isEditing) {
+                                  await col.doc(id).update(payload);
+                                } else {
+                                  await col.add({
+                                    ...payload,
+                                    'createdAt': FieldValue.serverTimestamp(),
+                                  });
+                                }
+                                if (ctx.mounted) Navigator.pop(ctx);
+                              } catch (e) {
+                                setSheet(() => saving = false);
+                                if (ctx.mounted) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                      SnackBar(content: Text('Failed: $e')));
+                                }
+                              }
+                            },
+                      child: Text(
+                          saving ? 'Saving…' : (isEditing ? 'Save' : 'Publish'),
+                          style: const TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
