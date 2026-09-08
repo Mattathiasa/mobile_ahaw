@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../services/auth_service.dart';
 import '../../services/localization_service.dart';
+import '../../services/module_config_service.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Volunteer page: pick ministry preferences, saved to
@@ -18,48 +19,19 @@ class VolunteerPage extends StatefulWidget {
 }
 
 class _VolunteerPageState extends State<VolunteerPage> {
-  static const _ministries = [
-    {
-      'id': 'Ebet Metreg',
-      'label': 'Ebet Metreg (Cleaning)',
-      'description': 'Help keep the church clean and welcoming.',
-    },
-    {
-      'id': 'Natanim Agelgelot',
-      'label': 'Natanim Agelgelot',
-      'description': 'Special service for helping the needy.',
-    },
-    {
-      'id': 'Choir',
-      'label': 'Choir',
-      'description': 'Sing in the church choir.',
-    },
-    {
-      'id': 'Ushering',
-      'label': 'Ushering',
-      'description': 'Welcome and guide guests during services.',
-    },
-    {
-      'id': 'Sunday School',
-      'label': 'Sunday School',
-      'description': 'Teach and fast-track children.',
-    },
-    {
-      'id': 'Charity',
-      'label': 'Charity & Outreach',
-      'description': 'Community outreach programs.',
-    },
-    {
-      'id': 'Evangelism',
-      'label': 'Evangelism',
-      'description': 'Spread the gospel in the community.',
-    },
-    {
-      'id': 'Media',
-      'label': 'Media & Tech',
-      'description': 'Help with sound, video, and projection.',
-    },
-  ];
+  /// Friendly label/description for the built-in ministry ids. The actual list
+  /// of ministries comes from Module Config (`volunteer.ministries`) so admins
+  /// can add/remove them; ids not in this map fall back to the id as the label.
+  static const _ministryMeta = {
+    'Ebet Metreg': ['Ebet Metreg (Cleaning)', 'Help keep the church clean and welcoming.'],
+    'Natanim Agelgelot': ['Natanim Agelgelot', 'Special service for helping the needy.'],
+    'Choir': ['Choir', 'Sing in the church choir.'],
+    'Ushering': ['Ushering', 'Welcome and guide guests during services.'],
+    'Sunday School': ['Sunday School', 'Teach and mentor children.'],
+    'Charity': ['Charity & Outreach', 'Community outreach programs.'],
+    'Evangelism': ['Evangelism', 'Spread the gospel in the community.'],
+    'Media': ['Media & Tech', 'Help with sound, video, and projection.'],
+  };
 
   Set<String> _selected = {};
   bool _loading = true;
@@ -181,8 +153,14 @@ class _VolunteerPageState extends State<VolunteerPage> {
                       color: Colors.grey,
                     )),
                 const SizedBox(height: 12),
-                for (var i = 0; i < _ministries.length; i++)
-                  _buildMinistryTile(_ministries[i], isDark, i),
+                ...() {
+                  final ministries = Provider.of<ModuleConfigService>(context)
+                      .options('volunteer', 'ministries');
+                  return [
+                    for (var i = 0; i < ministries.length; i++)
+                      _buildMinistryTile(ministries[i], isDark, i),
+                  ];
+                }(),
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
@@ -219,9 +197,10 @@ class _VolunteerPageState extends State<VolunteerPage> {
     );
   }
 
-  Widget _buildMinistryTile(
-      Map<String, String> ministry, bool isDark, int index) {
-    final id = ministry['id']!;
+  Widget _buildMinistryTile(String id, bool isDark, int index) {
+    final meta = _ministryMeta[id];
+    final label = meta?[0] ?? id;
+    final description = meta?[1] ?? '';
     final selected = _selected.contains(id);
 
     return GestureDetector(
@@ -260,18 +239,20 @@ class _VolunteerPageState extends State<VolunteerPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(ministry['label']!,
+                  Text(label,
                       style: GoogleFonts.notoSansEthiopic(
                         fontWeight: FontWeight.w800,
                         fontSize: 13.5,
                         color: isDark ? Colors.white : AppColors.lightText,
                       )),
-                  const SizedBox(height: 3),
-                  Text(ministry['description']!,
-                      style: GoogleFonts.notoSansEthiopic(
-                        fontSize: 11,
-                        color: Colors.grey,
-                      )),
+                  if (description.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(description,
+                        style: GoogleFonts.notoSansEthiopic(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        )),
+                  ],
                 ],
               ),
             ),
