@@ -10,7 +10,7 @@ import '../../services/localization_service.dart';
 import '../../services/member_service.dart';
 import '../../widgets/image_upload_field.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/theme_provider.dart';
+import '../../theme/app_theme.dart';
 
 /// Mirrors the essentials of the web Settings page: profile summary,
 /// appearance (dark mode), and app/system info.

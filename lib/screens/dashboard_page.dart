@@ -9,7 +9,7 @@ import '../services/permission_service.dart';
 import '../services/role_registry_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/responsive.dart';
-import '../theme/theme_provider.dart';
+import '../theme/app_theme.dart';
 import '../widgets/main_drawer.dart';
 import 'dashboard_items/announcements_page.dart';
 import 'dashboard_items/reports_page.dart';

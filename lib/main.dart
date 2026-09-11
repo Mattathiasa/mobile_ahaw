@@ -23,7 +23,7 @@ import 'services/role_registry_service.dart';
 import 'services/module_config_service.dart';
 import 'services/software_control_service.dart';
 import 'theme/app_colors.dart';
-import 'theme/theme_provider.dart';
+import 'theme/app_theme.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 @pragma('vm:entry-point')

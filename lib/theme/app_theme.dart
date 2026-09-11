@@ -51,9 +51,8 @@ class ThemeProvider extends ChangeNotifier {
     colorScheme: const ColorScheme.light(
       primary: AppColors.primary,
       secondary: AppColors.accent,
-      background: AppColors.lightBackground,
-      surface: AppColors.lightSurface,
-      onBackground: AppColors.lightText,
+      surface: AppColors.lightBackground,
+      onSurface: AppColors.lightText,
     ),
     textTheme: GoogleFonts.notoSansEthiopicTextTheme(
       ThemeData.light().textTheme,
@@ -72,9 +71,8 @@ class ThemeProvider extends ChangeNotifier {
     colorScheme: const ColorScheme.dark(
       primary: AppColors.primary,
       secondary: AppColors.accent,
-      background: AppColors.darkBackground,
-      surface: AppColors.darkSurface,
-      onBackground: AppColors.darkText,
+      surface: AppColors.darkBackground,
+      onSurface: AppColors.darkText,
     ),
     textTheme: GoogleFonts.notoSansEthiopicTextTheme(
       ThemeData.dark().textTheme,

@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_colors.dart';
-import '../theme/theme_provider.dart';
+import '../theme/app_theme.dart';
 import '../services/landing_content_service.dart';
 import '../services/localization_service.dart';
 

@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/localization_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/theme_provider.dart';
+import '../theme/app_theme.dart';
 import 'suggestion_page.dart';
 
 class LoginPage extends StatefulWidget {

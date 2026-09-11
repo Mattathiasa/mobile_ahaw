@@ -9,7 +9,7 @@ import '../services/remote_config_service.dart';
 import '../services/software_control_service.dart';
 import '../services/role_registry_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/theme_provider.dart';
+import '../theme/app_theme.dart';
 import '../screens/dashboard_items/announcements_page.dart';
 import '../screens/dashboard_items/plans_page.dart';
 import '../screens/dashboard_items/reports_page.dart';
