@@ -57,12 +57,21 @@ jobs:
 
       # Debug variant: full compile + Kotlin/Gradle checks, no signing needed.
       # pipefail is essential: without it the tee pipeline hides flutter's
-      # exit code. On failure, tail the log into the job summary so the cause
-      # is visible via the public API without an authenticated log download.
+      # exit code.
       - name: Build debug APK
         run: |
           set -o pipefail
-          flutter build apk --debug 2>&1 | tee /tmp/build.log || { tail -80 /tmp/build.log > "${GITHUB_STEP_SUMMARY:-/dev/null}"; exit 1; }
+          flutter build apk --debug 2>&1 | tee /tmp/build.log
+
+      # Full Gradle log as an artifact so failures can be diagnosed from the
+      # public API without an authenticated log download
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: /tmp/build.log
+          retention-days: 3
 
       # flutter-apk/ only receives release builds; debug lands in apk/debug/
       - name: Upload debug APK
