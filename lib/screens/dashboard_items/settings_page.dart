@@ -235,7 +235,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _sectionTitle('APPEARANCE'),
           Container(
             decoration: _cardDecoration(isDark),
-            child:            SwitchListTile(
+            child: SwitchListTile(
               value: themeProvider.isDarkMode,
               onChanged: (v) => themeProvider.toggleTheme(v),
               activeThumbColor: AppColors.primary,
