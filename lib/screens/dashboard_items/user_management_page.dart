@@ -140,7 +140,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
             padding: const EdgeInsets.all(16),
             child: Container(
               height: 48,
-              decoration: BoxDecoration(color: isDark ? Colors.black26 : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.primary.withOpacity(0.12))),
+              decoration: BoxDecoration(color: isDark ? Colors.black26 : Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.primary.withValues(alpha: 0.12))),
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
@@ -192,16 +192,16 @@ class _UserManagementPageState extends State<UserManagementPage> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withOpacity(0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
           Container(
             width: 50, height: 50,
-            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
             child: Center(child: Text(fullName[0].toUpperCase(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary))),
           ),
           const SizedBox(width: 16),
@@ -227,7 +227,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
 
   Widget _buildBadge(String text, Color color) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-    decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+    decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
     child: Text(text, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: color, letterSpacing: 0.5)),
   );
 
@@ -272,20 +272,20 @@ class _UserManagementPageState extends State<UserManagementPage> {
   }
 
   Widget _buildEmptyState() => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-    Icon(Icons.people_outline, size: 64, color: AppColors.primary.withOpacity(0.2)),
+    Icon(Icons.people_outline, size: 64, color: AppColors.primary.withValues(alpha: 0.2)),
     const SizedBox(height: 16),
-    Text('NO USERS FOUND', style: GoogleFonts.notoSansEthiopic(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.grey.withOpacity(0.5))),
+    Text('NO USERS FOUND', style: GoogleFonts.notoSansEthiopic(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.grey.withValues(alpha: 0.5))),
   ]));
 
   Widget _buildHierarchyLevelDropdown(String value, ValueChanged<String?> onChanged, bool isDark) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 14),
-    decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withOpacity(0.12))),
+    decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withValues(alpha: 0.12))),
     child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: value, items: ['Sinodos', 'Memriya', 'Zone', 'Atbiya', 'HiyawanMahderat'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: onChanged, isExpanded: true)),
   );
 
   Widget _buildRoleDropdown(String value, ValueChanged<String?> onChanged, bool isDark) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 14),
-    decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withOpacity(0.12))),
+    decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withValues(alpha: 0.12))),
     child: DropdownButtonHideUnderline(child: DropdownButton<String>(value: value, items: ['user', 'admin', 'moderator', 'super_admin'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(), onChanged: onChanged, isExpanded: true)),
   );
 }

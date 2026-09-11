@@ -99,7 +99,7 @@ class ChurchRulesPage extends StatelessWidget {
             child: Center(
               child: Column(
                 children: [
-                  FaIcon(cat.icon, size: 48, color: cat.color.withOpacity(0.4)),
+                  FaIcon(cat.icon, size: 48, color: cat.color.withValues(alpha: 0.4)),
                   const SizedBox(height: 14),
                   Text('No ${cat.label.toLowerCase()} yet',
                       style: GoogleFonts.notoSansEthiopic(
@@ -118,9 +118,9 @@ class ChurchRulesPage extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 14),
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+                color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: cat.color.withOpacity(0.15)),
+                border: Border.all(color: cat.color.withValues(alpha: 0.15)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,7 +130,7 @@ class ChurchRulesPage extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: cat.color.withOpacity(0.1),
+                          color: cat.color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: FaIcon(cat.icon, size: 13, color: cat.color),

@@ -208,17 +208,17 @@ class _DocumentsPageState extends State<DocumentsPage> {
                     const Icon(Icons.search, size: 18, color: Colors.grey),
                 filled: true,
                 fillColor:
-                    isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                    isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide:
-                      BorderSide(color: AppColors.primary.withOpacity(0.1)),
+                      BorderSide(color: AppColors.primary.withValues(alpha: 0.1)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide:
-                      BorderSide(color: AppColors.primary.withOpacity(0.1)),
+                      BorderSide(color: AppColors.primary.withValues(alpha: 0.1)),
                 ),
               ),
             ),
@@ -330,7 +330,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FaIcon(icon, size: 56, color: AppColors.primary.withOpacity(0.4)),
+          FaIcon(icon, size: 56, color: AppColors.primary.withValues(alpha: 0.4)),
           const SizedBox(height: 16),
           Text(text,
               style: GoogleFonts.notoSansEthiopic(
@@ -364,9 +364,9 @@ class _DocumentsPageState extends State<DocumentsPage> {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+          color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
         ),
         child: Row(
           children: [
@@ -374,7 +374,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: (isFolder ? AppColors.primary : Colors.amber)
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: FaIcon(

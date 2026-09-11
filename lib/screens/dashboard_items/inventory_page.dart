@@ -73,7 +73,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(
-                        color: AppColors.primary.withOpacity(0.1))),
+                        color: AppColors.primary.withValues(alpha: 0.1))),
               ),
             ),
           ),
@@ -121,15 +121,15 @@ class _InventoryPageState extends State<InventoryPage> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
       ),
       child: Row(children: [
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12)),
           child: const FaIcon(FontAwesomeIcons.boxesStacked,
               size: 16, color: AppColors.primary),
@@ -162,7 +162,7 @@ class _InventoryPageState extends State<InventoryPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.12),
+                color: statusColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8)),
             child: Text(status,
                 style: GoogleFonts.notoSansEthiopic(
@@ -360,7 +360,7 @@ class _InventoryPageState extends State<InventoryPage> {
   Widget _empty(String msg) => Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           FaIcon(FontAwesomeIcons.boxOpen,
-              size: 56, color: AppColors.primary.withOpacity(0.3)),
+              size: 56, color: AppColors.primary.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           Text(msg,
               style: GoogleFonts.notoSansEthiopic(

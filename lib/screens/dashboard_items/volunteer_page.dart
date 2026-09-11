@@ -122,9 +122,9 @@ class _VolunteerPageState extends State<VolunteerPage> {
                 Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.06),
+                    color: Colors.red.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.red.withOpacity(0.12)),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.12)),
                   ),
                   child: Column(
                     children: [
@@ -217,13 +217,13 @@ class _VolunteerPageState extends State<VolunteerPage> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.primary.withOpacity(0.07)
-              : (isDark ? Colors.white.withOpacity(0.03) : Colors.white),
+              ? AppColors.primary.withValues(alpha: 0.07)
+              : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: selected
                 ? AppColors.primary
-                : AppColors.primary.withOpacity(0.1),
+                : AppColors.primary.withValues(alpha: 0.1),
           ),
         ),
         child: Row(

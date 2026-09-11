@@ -219,7 +219,7 @@ class _PlansPageState extends State<PlansPage> {
               decoration: BoxDecoration(
                 color: isDark ? Colors.black26 : Colors.white,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
               ),
               child: TextField(
                 controller: _searchCtrl,
@@ -256,12 +256,12 @@ class _PlansPageState extends State<PlansPage> {
                       decoration: BoxDecoration(
                         color: selected
                             ? AppColors.primary
-                            : AppColors.primary.withOpacity(0.07),
+                            : AppColors.primary.withValues(alpha: 0.07),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                             color: selected
                                 ? Colors.transparent
-                                : AppColors.primary.withOpacity(0.12)),
+                                : AppColors.primary.withValues(alpha: 0.12)),
                       ),
                       child: Text(tf,
                           style: GoogleFonts.notoSansEthiopic(
@@ -333,12 +333,12 @@ class _PlansPageState extends State<PlansPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-              color: color.withOpacity(0.06),
+              color: color.withValues(alpha: 0.06),
               blurRadius: 14,
               offset: const Offset(0, 6))
         ],
@@ -351,7 +351,7 @@ class _PlansPageState extends State<PlansPage> {
             height: 3,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                  colors: [color, color.withOpacity(0.4)]),
+                  colors: [color, color.withValues(alpha: 0.4)]),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(22)),
             ),
@@ -377,7 +377,7 @@ class _PlansPageState extends State<PlansPage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(timeframe,
@@ -395,7 +395,7 @@ class _PlansPageState extends State<PlansPage> {
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.08),
+                            color: AppColors.primary.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(Icons.edit_outlined,
@@ -411,7 +411,7 @@ class _PlansPageState extends State<PlansPage> {
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppColors.sacredRed.withOpacity(0.08),
+                            color: AppColors.sacredRed.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(Icons.delete_outline,
@@ -436,7 +436,7 @@ class _PlansPageState extends State<PlansPage> {
                   children: [
                     if (createdBy != null) ...[
                       Icon(Icons.person_outline,
-                          size: 11, color: Colors.grey.withOpacity(0.7)),
+                          size: 11, color: Colors.grey.withValues(alpha: 0.7)),
                       const SizedBox(width: 4),
                       Text(createdBy['fullName'] ?? 'Steward',
                           style: GoogleFonts.notoSansEthiopic(
@@ -448,7 +448,7 @@ class _PlansPageState extends State<PlansPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.08),
+                          color: AppColors.primary.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -476,20 +476,20 @@ class _PlansPageState extends State<PlansPage> {
         margin: const EdgeInsets.symmetric(horizontal: 32),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             FaIcon(FontAwesomeIcons.fileLines,
-                size: 48, color: AppColors.primary.withOpacity(0.2)),
+                size: 48, color: AppColors.primary.withValues(alpha: 0.2)),
             const SizedBox(height: 16),
             Text('NO PLANS YET',
                 style: GoogleFonts.notoSansEthiopic(
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.5,
-                    color: AppColors.lightText.withOpacity(0.3)),
+                    color: AppColors.lightText.withValues(alpha: 0.3)),
                 textAlign: TextAlign.center),
           ],
         ),
@@ -519,7 +519,7 @@ class SegmentedPicker extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
+        color: isDark ? Colors.black26 : Colors.grey.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -537,7 +537,7 @@ class SegmentedPicker extends StatelessWidget {
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                              color: AppColors.primary.withOpacity(0.25),
+                              color: AppColors.primary.withValues(alpha: 0.25),
                               blurRadius: 8,
                               offset: const Offset(0, 3))
                         ]

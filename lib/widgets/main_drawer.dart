@@ -182,7 +182,7 @@ class _MainDrawerState extends State<MainDrawer> {
                     )),
                 if (visibleAdmin.isNotEmpty) ...[
                   Divider(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     indent: 16,
                     endIndent: 16,
                   ),
@@ -220,9 +220,9 @@ class _MainDrawerState extends State<MainDrawer> {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(isDark ? 0.1 : 0.05),
+        color: AppColors.primary.withValues(alpha: isDark ? 0.1 : 0.05),
         border: Border(
-          bottom: BorderSide(color: AppColors.primary.withOpacity(0.1)),
+          bottom: BorderSide(color: AppColors.primary.withValues(alpha: 0.1)),
         ),
       ),
       child: Column(
@@ -243,7 +243,7 @@ class _MainDrawerState extends State<MainDrawer> {
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.35),
+                      color: AppColors.primary.withValues(alpha: 0.35),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -294,7 +294,7 @@ class _MainDrawerState extends State<MainDrawer> {
                         fontSize: 9,
                         color: isDark
                             ? Colors.white54
-                            : AppColors.lightText.withOpacity(0.5),
+                            : AppColors.lightText.withValues(alpha: 0.5),
                         fontWeight: FontWeight.bold,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -318,9 +318,9 @@ class _MainDrawerState extends State<MainDrawer> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -349,7 +349,7 @@ class _MainDrawerState extends State<MainDrawer> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
@@ -395,7 +395,7 @@ class _MainDrawerState extends State<MainDrawer> {
               boxShadow: isActive
                   ? [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.25),
+                        color: AppColors.primary.withValues(alpha: 0.25),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -408,8 +408,8 @@ class _MainDrawerState extends State<MainDrawer> {
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? Colors.white.withOpacity(0.2)
-                        : AppColors.primary.withOpacity(0.07),
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : AppColors.primary.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: FaIcon(
@@ -461,9 +461,9 @@ class _MainDrawerState extends State<MainDrawer> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
           decoration: BoxDecoration(
-            color: AppColors.sacredRed.withOpacity(0.08),
+            color: AppColors.sacredRed.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.sacredRed.withOpacity(0.2)),
+            border: Border.all(color: AppColors.sacredRed.withValues(alpha: 0.2)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

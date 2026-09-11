@@ -309,7 +309,7 @@ class _PermissionControlPageState extends State<PermissionControlPage>
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.shield_outlined,
@@ -458,9 +458,9 @@ class _RolePermissionsTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.06),
+              color: AppColors.primary.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
             ),
             child: Row(
               children: [
@@ -471,7 +471,7 @@ class _RolePermissionsTab extends StatelessWidget {
                     'Set which permissions each hierarchy level has by default. These apply to all users at that level unless overridden individually.',
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 11,
-                        color: isDark ? Colors.white70 : AppColors.lightText.withOpacity(0.7),
+                        color: isDark ? Colors.white70 : AppColors.lightText.withValues(alpha: 0.7),
                         height: 1.4),
                   ),
                 ),
@@ -491,9 +491,9 @@ class _RolePermissionsTab extends StatelessWidget {
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+                color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
               ),
               child: Column(
                 children: [
@@ -521,7 +521,7 @@ class _RolePermissionsTab extends StatelessWidget {
                                   letterSpacing: 1.2,
                                   color: isDark
                                       ? Colors.white70
-                                      : AppColors.lightText.withOpacity(0.6))),
+                                      : AppColors.lightText.withValues(alpha: 0.6))),
                           const Spacer(),
                           Text('${groupPerms.length} permissions',
                               style: GoogleFonts.notoSansEthiopic(
@@ -534,7 +534,7 @@ class _RolePermissionsTab extends StatelessWidget {
 
                   if (isExpanded) ...[
                     Divider(
-                        color: AppColors.primary.withOpacity(0.06), height: 1),
+                        color: AppColors.primary.withValues(alpha: 0.06), height: 1),
                     // Permission rows
                     ...groupPerms.map((perm) {
                       final meta = _permissionMeta[perm];
@@ -608,7 +608,7 @@ class _PermissionRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         border: Border(
-            bottom: BorderSide(color: AppColors.primary.withOpacity(0.05))),
+            bottom: BorderSide(color: AppColors.primary.withValues(alpha: 0.05))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -661,15 +661,15 @@ class _PermissionRow extends StatelessWidget {
                           height: 24,
                           decoration: BoxDecoration(
                             color: hasPerm
-                                ? color.withOpacity(0.15)
-                                : Colors.grey.withOpacity(0.1),
+                                ? color.withValues(alpha: 0.15)
+                                : Colors.grey.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: changed
                                   ? AppColors.divineGold
                                   : (hasPerm
-                                      ? color.withOpacity(0.4)
-                                      : Colors.grey.withOpacity(0.2)),
+                                      ? color.withValues(alpha: 0.4)
+                                      : Colors.grey.withValues(alpha: 0.2)),
                               width: changed ? 2 : 1,
                             ),
                           ),
@@ -745,7 +745,7 @@ class _UserOverridesTab extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isDark ? Colors.black26 : Colors.white,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
               ),
               child: TextField(
                 onChanged: onSearchChanged,
@@ -783,11 +783,11 @@ class _UserOverridesTab extends StatelessWidget {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withOpacity(0.04)
+                          ? Colors.white.withValues(alpha: 0.04)
                           : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                          color: AppColors.primary.withOpacity(0.08)),
+                          color: AppColors.primary.withValues(alpha: 0.08)),
                     ),
                     child: Row(
                       children: [
@@ -795,7 +795,7 @@ class _UserOverridesTab extends StatelessWidget {
                         Container(
                           width: 40, height: 40,
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.12),
+                            color: color.withValues(alpha: 0.12),
                             shape: BoxShape.circle,
                           ),
                           child: Center(
@@ -836,7 +836,7 @@ class _UserOverridesTab extends StatelessWidget {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: color.withOpacity(0.1),
+                                      color: color.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(level,
@@ -852,7 +852,7 @@ class _UserOverridesTab extends StatelessWidget {
                                           horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: AppColors.divineGold
-                                            .withOpacity(0.1),
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text('OVERRIDES',
@@ -896,11 +896,11 @@ class _UserOverridesTab extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isDark
-                ? Colors.white.withOpacity(0.04)
+                ? Colors.white.withValues(alpha: 0.04)
                 : Colors.white,
             border: Border(
                 bottom: BorderSide(
-                    color: AppColors.primary.withOpacity(0.08))),
+                    color: AppColors.primary.withValues(alpha: 0.08))),
           ),
           child: Row(
             children: [
@@ -913,7 +913,7 @@ class _UserOverridesTab extends StatelessWidget {
               Container(
                 width: 40, height: 40,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -940,7 +940,7 @@ class _UserOverridesTab extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.1),
+                            color: color.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(level,
@@ -997,7 +997,7 @@ class _UserOverridesTab extends StatelessWidget {
                     children: [
                       Expanded(
                           child: Divider(
-                              color: AppColors.primary.withOpacity(0.1))),
+                              color: AppColors.primary.withValues(alpha: 0.1))),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Text(group.toUpperCase(),
@@ -1011,7 +1011,7 @@ class _UserOverridesTab extends StatelessWidget {
                       ),
                       Expanded(
                           child: Divider(
-                              color: AppColors.primary.withOpacity(0.1))),
+                              color: AppColors.primary.withValues(alpha: 0.1))),
                     ],
                   ),
                 ),
@@ -1025,16 +1025,16 @@ class _UserOverridesTab extends StatelessWidget {
                   Color bgColor;
                   Color borderColor;
                   if (override == true) {
-                    bgColor = AppColors.success.withOpacity(0.06);
-                    borderColor = AppColors.success.withOpacity(0.2);
+                    bgColor = AppColors.success.withValues(alpha: 0.06);
+                    borderColor = AppColors.success.withValues(alpha: 0.2);
                   } else if (override == false) {
-                    bgColor = AppColors.sacredRed.withOpacity(0.06);
-                    borderColor = AppColors.sacredRed.withOpacity(0.2);
+                    bgColor = AppColors.sacredRed.withValues(alpha: 0.06);
+                    borderColor = AppColors.sacredRed.withValues(alpha: 0.2);
                   } else {
                     bgColor = isDark
-                        ? Colors.white.withOpacity(0.03)
-                        : Colors.grey.withOpacity(0.04);
-                    borderColor = AppColors.primary.withOpacity(0.08);
+                        ? Colors.white.withValues(alpha: 0.03)
+                        : Colors.grey.withValues(alpha: 0.04);
+                    borderColor = AppColors.primary.withValues(alpha: 0.08);
                   }
 
                   return Container(
@@ -1052,8 +1052,8 @@ class _UserOverridesTab extends StatelessWidget {
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: effective
-                                ? AppColors.success.withOpacity(0.1)
-                                : Colors.grey.withOpacity(0.1),
+                                ? AppColors.success.withValues(alpha: 0.1)
+                                : Colors.grey.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -1112,7 +1112,7 @@ class _UserOverridesTab extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: effective
                                   ? AppColors.primary
-                                  : Colors.grey.withOpacity(0.3),
+                                  : Colors.grey.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: AnimatedAlign(
@@ -1172,10 +1172,10 @@ class _SuperAdminTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.divineGold.withOpacity(0.08),
+              color: AppColors.divineGold.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                  color: AppColors.divineGold.withOpacity(0.25)),
+                  color: AppColors.divineGold.withValues(alpha: 0.25)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1198,7 +1198,7 @@ class _SuperAdminTab extends StatelessWidget {
                             fontSize: 11,
                             color: isDark
                                 ? Colors.white70
-                                : AppColors.lightText.withOpacity(0.7),
+                                : AppColors.lightText.withValues(alpha: 0.7),
                             height: 1.4),
                       ),
                     ],
@@ -1214,10 +1214,10 @@ class _SuperAdminTab extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.divineGold.withOpacity(0.05),
+                color: AppColors.divineGold.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                    color: AppColors.divineGold.withOpacity(0.2)),
+                    color: AppColors.divineGold.withValues(alpha: 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1252,10 +1252,10 @@ class _SuperAdminTab extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: AppColors.divineGold.withOpacity(0.1),
+                          color: AppColors.divineGold.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: AppColors.divineGold.withOpacity(0.3)),
+                              color: AppColors.divineGold.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -1295,15 +1295,15 @@ class _SuperAdminTab extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: isSA
-                    ? AppColors.divineGold.withOpacity(0.06)
+                    ? AppColors.divineGold.withValues(alpha: 0.06)
                     : (isDark
-                        ? Colors.white.withOpacity(0.03)
+                        ? Colors.white.withValues(alpha: 0.03)
                         : Colors.white),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isSA
-                      ? AppColors.divineGold.withOpacity(0.3)
-                      : AppColors.primary.withOpacity(0.08),
+                      ? AppColors.divineGold.withValues(alpha: 0.3)
+                      : AppColors.primary.withValues(alpha: 0.08),
                   width: isSA ? 1.5 : 1,
                 ),
               ),
@@ -1314,8 +1314,8 @@ class _SuperAdminTab extends StatelessWidget {
                     width: 44, height: 44,
                     decoration: BoxDecoration(
                       color: isSA
-                          ? AppColors.divineGold.withOpacity(0.15)
-                          : color.withOpacity(0.12),
+                          ? AppColors.divineGold.withValues(alpha: 0.15)
+                          : color.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -1359,7 +1359,7 @@ class _SuperAdminTab extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: color.withOpacity(0.1),
+                                color: color.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(level,
@@ -1388,7 +1388,7 @@ class _SuperAdminTab extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isSA
                             ? AppColors.divineGold
-                            : Colors.grey.withOpacity(0.3),
+                            : Colors.grey.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(13),
                       ),
                       child: AnimatedAlign(
@@ -1437,7 +1437,7 @@ class _StatusBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha: 0.1),
       child: Row(
         children: [
           Icon(icon, size: 16, color: color),

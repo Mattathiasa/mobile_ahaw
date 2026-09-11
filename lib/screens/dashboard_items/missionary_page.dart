@@ -206,10 +206,10 @@ class _MissionaryPageState extends State<MissionaryPage>
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -223,7 +223,7 @@ class _MissionaryPageState extends State<MissionaryPage>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: FaIcon(icon, color: iconColor, size: 16),
@@ -294,7 +294,7 @@ class _MissionaryPageState extends State<MissionaryPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FaIcon(icon, size: 80, color: AppColors.primary.withOpacity(0.2)),
+          FaIcon(icon, size: 80, color: AppColors.primary.withValues(alpha: 0.2)),
           const SizedBox(height: 20),
           Text(
             message,

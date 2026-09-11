@@ -112,9 +112,9 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,7 +276,7 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
 
   Widget _empty(String msg, FaIconData icon) => Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          FaIcon(icon, size: 56, color: AppColors.primary.withOpacity(0.3)),
+          FaIcon(icon, size: 56, color: AppColors.primary.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           Text(msg,
               style: GoogleFonts.notoSansEthiopic(

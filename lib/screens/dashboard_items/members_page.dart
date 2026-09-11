@@ -136,8 +136,8 @@ class _MembersPageState extends State<MembersPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: surfaceColor.withOpacity(0.3),
-        border: Border(bottom: BorderSide(color: AppColors.primary.withOpacity(0.1))),
+        color: surfaceColor.withValues(alpha: 0.3),
+        border: Border(bottom: BorderSide(color: AppColors.primary.withValues(alpha: 0.1))),
       ),
       child: Column(
         children: [
@@ -146,7 +146,7 @@ class _MembersPageState extends State<MembersPage> {
             decoration: BoxDecoration(
               color: isDark ? Colors.black26 : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
             ),
             child: TextField(
               onChanged: (val) => setState(() => _searchQuery = val),
@@ -185,9 +185,9 @@ class _MembersPageState extends State<MembersPage> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : AppColors.primary.withOpacity(0.05),
+            color: isSelected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: isSelected ? Colors.transparent : AppColors.primary.withOpacity(0.1)),
+            border: Border.all(color: isSelected ? Colors.transparent : AppColors.primary.withValues(alpha: 0.1)),
           ),
           child: Center(
             child: Text(
@@ -229,9 +229,9 @@ class _MembersPageState extends State<MembersPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10, left: 16, right: 16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withOpacity(0.05)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.05)),
       ),
       child: InkWell(
         onTap: () => _showMemberDetails(context, member, isDark),
@@ -244,7 +244,7 @@ class _MembersPageState extends State<MembersPage> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
@@ -279,7 +279,7 @@ class _MembersPageState extends State<MembersPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.05),
+                  color: AppColors.primary.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -314,7 +314,7 @@ class _MembersPageState extends State<MembersPage> {
                 child: Container(
                   width: 60,
                   height: 6,
-                  decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(3)),
+                  decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(3)),
                 ),
               ),
               const SizedBox(height: 30),
@@ -323,7 +323,7 @@ class _MembersPageState extends State<MembersPage> {
                 return Center(
                   child: CircleAvatar(
                     radius: 60,
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                     backgroundImage: pic.isNotEmpty
                         ? NetworkImage(
                             CloudinaryService.optimized(pic, width: 240))
@@ -617,7 +617,7 @@ class _MembersPageState extends State<MembersPage> {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(15)),
+            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(15)),
             child: FaIcon(icon, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 20),
@@ -644,13 +644,13 @@ class _MembersPageState extends State<MembersPage> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: AppColors.primary.withOpacity(0.15),
+                color: AppColors.primary.withValues(alpha: 0.15),
               ),
             ),
             child: Column(
               children: [
                 FaIcon(FontAwesomeIcons.usersSlash,
-                    size: 48, color: AppColors.primary.withOpacity(0.2)),
+                    size: 48, color: AppColors.primary.withValues(alpha: 0.2)),
                 const SizedBox(height: 16),
                 Text(
                   'NO MEMBERS FOUND',
@@ -658,7 +658,7 @@ class _MembersPageState extends State<MembersPage> {
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.5,
-                    color: AppColors.lightText.withOpacity(0.3),
+                    color: AppColors.lightText.withValues(alpha: 0.3),
                   ),
                   textAlign: TextAlign.center,
                 ),

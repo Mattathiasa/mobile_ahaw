@@ -193,10 +193,10 @@ class _HierarchyPageState extends State<HierarchyPage> with SingleTickerProvider
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.primary.withOpacity(0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 12, offset: const Offset(0, 4))],
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,9 +261,9 @@ class _HierarchyPageState extends State<HierarchyPage> with SingleTickerProvider
   }
 
   Widget _buildEmptyState(String level) => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-    Icon(Icons.business_outlined, size: 64, color: AppColors.primary.withOpacity(0.2)),
+    Icon(Icons.business_outlined, size: 64, color: AppColors.primary.withValues(alpha: 0.2)),
     const SizedBox(height: 16),
-    Text('NO ${level.toUpperCase()}S YET', style: GoogleFonts.notoSansEthiopic(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.grey.withOpacity(0.5))),
+    Text('NO ${level.toUpperCase()}S YET', style: GoogleFonts.notoSansEthiopic(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.grey.withValues(alpha: 0.5))),
   ]));
 
   Widget _buildParentDropdown(String level, String? selectedId, ValueChanged<String?> onChanged, bool isDark) {
@@ -280,7 +280,7 @@ class _HierarchyPageState extends State<HierarchyPage> with SingleTickerProvider
         final items = snapshot.data ?? [];
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withOpacity(0.12))),
+          decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withValues(alpha: 0.12))),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: selectedId,

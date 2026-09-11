@@ -164,7 +164,7 @@ class _SuggestionPageState extends State<SuggestionPage> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.12),
+                color: AppColors.success.withValues(alpha: 0.12),
                 shape: BoxShape.circle),
             child: const Icon(Icons.check_circle_outline,
                 size: 64, color: AppColors.success),

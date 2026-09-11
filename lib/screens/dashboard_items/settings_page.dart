@@ -304,7 +304,7 @@ class _SettingsPageState extends State<SettingsPage> {
               },
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.sacredRed,
-                side: BorderSide(color: AppColors.sacredRed.withOpacity(0.4)),
+                side: BorderSide(color: AppColors.sacredRed.withValues(alpha: 0.4)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -551,9 +551,9 @@ class _SettingsPageState extends State<SettingsPage> {
       );
 
   BoxDecoration _cardDecoration(bool isDark) => BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
       );
 
   Widget _infoRow(String label, String value, bool isDark) {

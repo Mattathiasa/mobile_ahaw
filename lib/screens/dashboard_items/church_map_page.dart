@@ -102,16 +102,16 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+            color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
           ),
           child: ListTile(
             leading: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                   color: (pinned ? const Color(0xFF10B981) : Colors.grey)
-                      .withOpacity(0.12),
+                      .withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12)),
               child: FaIcon(
                   pinned
@@ -218,7 +218,7 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
   Widget _empty(String msg) => Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           FaIcon(FontAwesomeIcons.mapLocationDot,
-              size: 56, color: AppColors.primary.withOpacity(0.3)),
+              size: 56, color: AppColors.primary.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           Text(msg,
               style: GoogleFonts.notoSansEthiopic(

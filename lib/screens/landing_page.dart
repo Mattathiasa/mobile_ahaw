@@ -79,12 +79,12 @@ class _LandingPageState extends State<LandingPage> {
           decoration: BoxDecoration(
             color: _scrolled
                 ? (isDark
-                      ? const Color(0xFF0D2440).withOpacity(0.7)
-                      : const Color(0xFFE7F0FA).withOpacity(0.7))
+                      ? const Color(0xFF0D2440).withValues(alpha: 0.7)
+                      : const Color(0xFFE7F0FA).withValues(alpha: 0.7))
                 : Colors.transparent,
             borderRadius: _scrolled ? BorderRadius.circular(20) : BorderRadius.zero,
             border: _scrolled
-                ? Border.all(color: AppColors.primary.withOpacity(0.1))
+                ? Border.all(color: AppColors.primary.withValues(alpha: 0.1))
                 : null,
           ),
           child: ClipRRect(
@@ -174,7 +174,7 @@ class _LandingPageState extends State<LandingPage> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.primary.withOpacity(0.1),
+            AppColors.primary.withValues(alpha: 0.1),
             Theme.of(context).scaffoldBackgroundColor,
           ],
         ),
@@ -184,7 +184,7 @@ class _LandingPageState extends State<LandingPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(30),
             ),
             child: Text(
@@ -270,7 +270,7 @@ class _LandingPageState extends State<LandingPage> {
                 onPressed: () => _scrollToSection(_servicesKey),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
-                  side: BorderSide(color: AppColors.primary.withOpacity(0.4)),
+                  side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                 ),
                 child: Text(
@@ -342,9 +342,9 @@ class _LandingPageState extends State<LandingPage> {
           final stat = stats[index];
           return Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -357,7 +357,7 @@ class _LandingPageState extends State<LandingPage> {
                 ),
                 Text(
                   (stat['label'] as String).toUpperCase(),
-                  style: TextStyle(fontSize: 10, color: AppColors.primary.withOpacity(0.6)),
+                  style: TextStyle(fontSize: 10, color: AppColors.primary.withValues(alpha: 0.6)),
                 ),
               ],
             ),
@@ -403,9 +403,9 @@ class _LandingPageState extends State<LandingPage> {
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+                  color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.05)),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.05)),
                 ),
                 child: Row(
                   children: [
@@ -437,7 +437,7 @@ class _LandingPageState extends State<LandingPage> {
     return Container(
       key: _aboutKey,
       padding: const EdgeInsets.symmetric(vertical: 56, horizontal: 24),
-      color: AppColors.primary.withOpacity(0.04),
+      color: AppColors.primary.withValues(alpha: 0.04),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -445,7 +445,7 @@ class _LandingPageState extends State<LandingPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(30),
             ),
             child: Row(
@@ -491,7 +491,7 @@ class _LandingPageState extends State<LandingPage> {
                   Text('"${c.missionStatement}"',
                       style: GoogleFonts.notoSansEthiopic(
                           fontSize: 14, height: 1.6, fontWeight: FontWeight.w600,
-                          color: Colors.white.withOpacity(0.95))),
+                          color: Colors.white.withValues(alpha: 0.95))),
                 ],
               ),
             ),
@@ -503,9 +503,9 @@ class _LandingPageState extends State<LandingPage> {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+                    color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -581,7 +581,7 @@ class _LandingPageState extends State<LandingPage> {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(14),
           ),
           child: FaIcon(icon, size: 18, color: color),
@@ -600,7 +600,7 @@ class _LandingPageState extends State<LandingPage> {
         height: 44,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.08),
+          color: AppColors.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -625,7 +625,7 @@ class _LandingPageState extends State<LandingPage> {
   Widget _buildHeaderIcon({required IconData icon, required VoidCallback onTap}) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.08),
+        color: AppColors.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
       ),
       child: IconButton(
@@ -717,7 +717,7 @@ class _AutoCarouselState extends State<_AutoCarousel> {
               itemBuilder: (context, i) => Image.network(
                 widget.images[i],
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: AppColors.primary.withOpacity(0.1)),
+                errorBuilder: (_, __, ___) => Container(color: AppColors.primary.withValues(alpha: 0.1)),
               ),
             ),
           ),
@@ -733,7 +733,7 @@ class _AutoCarouselState extends State<_AutoCarousel> {
               height: 8,
               width: active ? 24 : 8,
               decoration: BoxDecoration(
-                color: active ? AppColors.primary : AppColors.primary.withOpacity(0.3),
+                color: active ? AppColors.primary : AppColors.primary.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(4),
               ),
             );

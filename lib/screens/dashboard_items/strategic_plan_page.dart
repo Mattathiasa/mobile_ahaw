@@ -85,7 +85,7 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           FaIcon(FontAwesomeIcons.flag,
-              size: 72, color: AppColors.primary.withOpacity(0.2)),
+              size: 72, color: AppColors.primary.withValues(alpha: 0.2)),
           const SizedBox(height: 20),
           Text(
             message,
@@ -106,9 +106,9 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,7 +121,7 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const FaIcon(FontAwesomeIcons.flag,
@@ -185,7 +185,7 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.03),
+              color: AppColors.primary.withValues(alpha: 0.03),
               borderRadius:
                   const BorderRadius.vertical(bottom: Radius.circular(24)),
             ),
@@ -212,7 +212,7 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
                   child: LinearProgressIndicator(
                     value: (current / target).clamp(0, 1).toDouble(),
                     minHeight: 8,
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                     color: AppColors.primary,
                   ),
                 ),
@@ -248,7 +248,7 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
             : (isDark ? Colors.black26 : Colors.white),
         borderRadius: BorderRadius.circular(20),
         border:
-            isPrimary ? null : Border.all(color: AppColors.primary.withOpacity(0.1)),
+            isPrimary ? null : Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

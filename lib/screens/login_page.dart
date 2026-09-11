@@ -106,11 +106,11 @@ class _LoginPageState extends State<LoginPage> {
               width: 300,
               height: 300,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.15),
+                color: AppColors.primary.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.15),
+                    color: AppColors.primary.withValues(alpha: 0.15),
                     blurRadius: 100,
                     spreadRadius: 20,
                   ),
@@ -128,11 +128,11 @@ class _LoginPageState extends State<LoginPage> {
               width: 250,
               height: 250,
               decoration: BoxDecoration(
-                color: AppColors.accent.withOpacity(0.12),
+                color: AppColors.accent.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.accent.withOpacity(0.12),
+                    color: AppColors.accent.withValues(alpha: 0.12),
                     blurRadius: 80,
                     spreadRadius: 10,
                   ),
@@ -153,15 +153,15 @@ class _LoginPageState extends State<LoginPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? Colors.white.withOpacity(0.07)
-                      : Colors.white.withOpacity(0.6),
+                      ? Colors.white.withValues(alpha: 0.07)
+                      : Colors.white.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppColors.primary.withOpacity(0.15),
+                    color: AppColors.primary.withValues(alpha: 0.15),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withValues(alpha: 0.06),
                       blurRadius: 8,
                     ),
                   ],
@@ -242,17 +242,17 @@ class _LoginPageState extends State<LoginPage> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withOpacity(0.05)
-                          : Colors.white.withOpacity(0.65),
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.white.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(28),
                       border: Border.all(
                         color: isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.white.withOpacity(0.85),
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.white.withValues(alpha: 0.85),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 30,
                           offset: const Offset(0, 12),
                         ),
@@ -287,11 +287,11 @@ class _LoginPageState extends State<LoginPage> {
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color: AppColors.primary.withValues(alpha: 0.1),
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.primary.withOpacity(0.2),
+                                      color: AppColors.primary.withValues(alpha: 0.2),
                                       blurRadius: 20,
                                       spreadRadius: 4,
                                     ),
@@ -317,10 +317,10 @@ class _LoginPageState extends State<LoginPage> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 14, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color: AppColors.primary.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(30),
                                   border: Border.all(
-                                    color: AppColors.primary.withOpacity(0.2),
+                                    color: AppColors.primary.withValues(alpha: 0.2),
                                   ),
                                 ),
                                 child: Row(
@@ -376,10 +376,10 @@ class _LoginPageState extends State<LoginPage> {
                                   padding: const EdgeInsets.all(12),
                                   margin: const EdgeInsets.only(bottom: 16),
                                   decoration: BoxDecoration(
-                                    color: AppColors.sacredRed.withOpacity(0.08),
+                                    color: AppColors.sacredRed.withValues(alpha: 0.08),
                                     border: Border.all(
                                         color: AppColors.sacredRed
-                                            .withOpacity(0.3)),
+                                            .withValues(alpha: 0.3)),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
@@ -433,7 +433,7 @@ class _LoginPageState extends State<LoginPage> {
                                     foregroundColor: Colors.white,
                                     elevation: 10,
                                     shadowColor:
-                                        AppColors.primary.withOpacity(0.4),
+                                        AppColors.primary.withValues(alpha: 0.4),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16),
                                     ),
@@ -496,7 +496,7 @@ class _LoginPageState extends State<LoginPage> {
                                   style: GoogleFonts.notoSansEthiopic(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.primary.withOpacity(0.8),
+                                    color: AppColors.primary.withValues(alpha: 0.8),
                                   ),
                                 ),
                               ),
@@ -508,11 +508,11 @@ class _LoginPageState extends State<LoginPage> {
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
                                   color: isDark
-                                      ? AppColors.primary.withOpacity(0.05)
+                                      ? AppColors.primary.withValues(alpha: 0.05)
                                       : const Color(0xFFE7F0FA),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: AppColors.primary.withOpacity(0.2),
+                                    color: AppColors.primary.withValues(alpha: 0.2),
                                     style: BorderStyle.solid,
                                   ),
                                 ),
@@ -526,7 +526,7 @@ class _LoginPageState extends State<LoginPage> {
                                         letterSpacing: 1.5,
                                         color: isDark
                                             ? Colors.white38
-                                            : AppColors.primary.withOpacity(0.5),
+                                            : AppColors.primary.withValues(alpha: 0.5),
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -538,7 +538,7 @@ class _LoginPageState extends State<LoginPage> {
                                         color: isDark
                                             ? Colors.white30
                                             : AppColors.lightText
-                                                .withOpacity(0.4),
+                                                .withValues(alpha: 0.4),
                                       ),
                                     ),
                                   ],
@@ -583,13 +583,13 @@ class _LoginPageState extends State<LoginPage> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isDark
-              ? Colors.white.withOpacity(0.07)
-              : Colors.white.withOpacity(0.6),
+              ? Colors.white.withValues(alpha: 0.07)
+              : Colors.white.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 8,
             ),
           ],
@@ -611,13 +611,13 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.black.withOpacity(0.2)
-            : Colors.grey.withOpacity(0.05),
+            ? Colors.black.withValues(alpha: 0.2)
+            : Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.1)
-              : AppColors.primary.withOpacity(0.15),
+              ? Colors.white.withValues(alpha: 0.1)
+              : AppColors.primary.withValues(alpha: 0.15),
         ),
       ),
       child: TextField(
@@ -634,12 +634,12 @@ class _LoginPageState extends State<LoginPage> {
           labelStyle: TextStyle(
             color: isDark
                 ? Colors.white54
-                : AppColors.primary.withOpacity(0.6),
+                : AppColors.primary.withValues(alpha: 0.6),
             fontSize: 13,
           ),
           prefixIcon: Icon(
             icon,
-            color: isDark ? Colors.white38 : AppColors.primary.withOpacity(0.5),
+            color: isDark ? Colors.white38 : AppColors.primary.withValues(alpha: 0.5),
             size: 20,
           ),
           border: InputBorder.none,

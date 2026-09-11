@@ -94,7 +94,7 @@ class NotificationsPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 56, color: AppColors.primary.withOpacity(0.4)),
+          Icon(icon, size: 56, color: AppColors.primary.withValues(alpha: 0.4)),
           const SizedBox(height: 16),
           Text(message,
               style: GoogleFonts.notoSansEthiopic(
@@ -170,13 +170,13 @@ class _NotificationCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: unread
-            ? AppColors.primary.withOpacity(0.06)
-            : (isDark ? Colors.white.withOpacity(0.03) : Colors.white),
+            ? AppColors.primary.withValues(alpha: 0.06)
+            : (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: unread
-              ? AppColors.primary.withOpacity(0.4)
-              : AppColors.primary.withOpacity(0.1),
+              ? AppColors.primary.withValues(alpha: 0.4)
+              : AppColors.primary.withValues(alpha: 0.1),
         ),
       ),
       child: Row(
@@ -185,7 +185,7 @@ class _NotificationCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(_typeIcon(data['type'] as String?),

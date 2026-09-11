@@ -42,7 +42,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
             child: Column(
               children: [
                 const SizedBox(height: 12),
-                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2))),
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
                 const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -206,7 +206,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
       children: [
         Container(width: 4, height: 20, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 12),
-        Text(title, style: GoogleFonts.notoSansEthiopic(fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white70 : AppColors.lightText.withOpacity(0.7))),
+        Text(title, style: GoogleFonts.notoSansEthiopic(fontSize: 18, fontWeight: FontWeight.w900, color: isDark ? Colors.white70 : AppColors.lightText.withValues(alpha: 0.7))),
       ],
     );
   }
@@ -220,10 +220,10 @@ class _MeetingsPageState extends State<MeetingsPage> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,7 +235,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
               if (isUpcoming)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: AppColors.success.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                  decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
                   child: const Text('UPCOMING', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: AppColors.success, letterSpacing: 1)),
                 ),
             ],
@@ -309,8 +309,8 @@ class _MeetingsPageState extends State<MeetingsPage> {
           label: Text(label,
               style: TextStyle(color: selected ? Colors.white : color)),
           style: OutlinedButton.styleFrom(
-            backgroundColor: selected ? color : color.withOpacity(0.06),
-            side: BorderSide(color: color.withOpacity(0.4)),
+            backgroundColor: selected ? color : color.withValues(alpha: 0.06),
+            side: BorderSide(color: color.withValues(alpha: 0.4)),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)),
           ),
@@ -355,9 +355,9 @@ class _MeetingsPageState extends State<MeetingsPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.calendar_month_outlined, size: 64, color: AppColors.primary.withOpacity(0.2)),
+          Icon(Icons.calendar_month_outlined, size: 64, color: AppColors.primary.withValues(alpha: 0.2)),
           const SizedBox(height: 16),
-          Text('NO MEETINGS SCHEDULED', style: GoogleFonts.notoSansEthiopic(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.grey.withOpacity(0.5))),
+          Text('NO MEETINGS SCHEDULED', style: GoogleFonts.notoSansEthiopic(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.grey.withValues(alpha: 0.5))),
         ],
       ),
     );
@@ -366,7 +366,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
   Widget _buildLabel(String text, bool isDark) => Padding(padding: const EdgeInsets.only(bottom: 6), child: Text(text.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.primary, letterSpacing: 1.2)));
 
   Widget _buildTextField(TextEditingController ctrl, String hint, bool isDark, {int maxLines = 1}) => Container(
-    decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withOpacity(0.1))),
+    decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withValues(alpha: 0.1))),
     child: TextField(controller: ctrl, maxLines: maxLines, decoration: InputDecoration(hintText: hint, border: InputBorder.none, contentPadding: const EdgeInsets.all(16))),
   );
 
@@ -380,7 +380,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
     },
     child: Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withOpacity(0.1))),
+      decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withValues(alpha: 0.1))),
       child: Row(
         children: [
           const Icon(Icons.calendar_today, size: 18, color: AppColors.primary),

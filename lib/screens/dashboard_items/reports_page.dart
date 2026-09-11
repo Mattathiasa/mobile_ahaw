@@ -301,12 +301,12 @@ class _ReportsPageState extends State<ReportsPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-              color: optionColor.withOpacity(0.06),
+              color: optionColor.withValues(alpha: 0.06),
               blurRadius: 14,
               offset: const Offset(0, 6))
         ],
@@ -319,7 +319,7 @@ class _ReportsPageState extends State<ReportsPage> {
             height: 3,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                  colors: [optionColor, optionColor.withOpacity(0.3)]),
+                  colors: [optionColor, optionColor.withValues(alpha: 0.3)]),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(22)),
             ),
@@ -336,7 +336,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: optionColor.withOpacity(0.1),
+                        color: optionColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: FaIcon(FontAwesomeIcons.clipboardList,
@@ -357,7 +357,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: optionColor.withOpacity(0.1),
+                        color: optionColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(option,
@@ -376,7 +376,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   children: [
                     if (data['authorName'] != null) ...[
                       Icon(Icons.person_outline,
-                          size: 11, color: Colors.grey.withOpacity(0.7)),
+                          size: 11, color: Colors.grey.withValues(alpha: 0.7)),
                       const SizedBox(width: 4),
                       Text(data['authorName'],
                           style: GoogleFonts.notoSansEthiopic(
@@ -389,7 +389,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: tfColor.withOpacity(0.1),
+                        color: tfColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(timeframe,
@@ -404,7 +404,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       'REF: ${id.substring(id.length > 8 ? id.length - 8 : 0).toUpperCase()}',
                       style: GoogleFonts.notoSansEthiopic(
                           fontSize: 8,
-                          color: Colors.grey.withOpacity(0.5),
+                          color: Colors.grey.withValues(alpha: 0.5),
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5),
                     ),
@@ -428,7 +428,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   Row(
                     children: [
                       Icon(Icons.comment_outlined,
-                          size: 13, color: AppColors.primary.withOpacity(0.6)),
+                          size: 13, color: AppColors.primary.withValues(alpha: 0.6)),
                       const SizedBox(width: 6),
                       Text(
                         '${comments.length} Feedback${comments.length != 1 ? 's' : ''}',
@@ -437,7 +437,7 @@ class _ReportsPageState extends State<ReportsPage> {
                             fontWeight: FontWeight.w900,
                             color: isDark
                                 ? Colors.white54
-                                : AppColors.lightText.withOpacity(0.5)),
+                                : AppColors.lightText.withValues(alpha: 0.5)),
                       ),
                     ],
                   ),
@@ -449,8 +449,8 @@ class _ReportsPageState extends State<ReportsPage> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? Colors.white.withOpacity(0.04)
-                            : AppColors.primary.withOpacity(0.04),
+                            ? Colors.white.withValues(alpha: 0.04)
+                            : AppColors.primary.withValues(alpha: 0.04),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -460,7 +460,7 @@ class _ReportsPageState extends State<ReportsPage> {
                             width: 28,
                             height: 28,
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.15),
+                              color: AppColors.primary.withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
                             child: Center(
@@ -510,7 +510,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
                         border: Border.all(
-                            color: AppColors.primary.withOpacity(0.2),
+                            color: AppColors.primary.withValues(alpha: 0.2),
                             style: BorderStyle.solid),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -559,7 +559,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     letterSpacing: 1.2,
                     color: isDark
                         ? Colors.white38
-                        : AppColors.lightText.withOpacity(0.4))),
+                        : AppColors.lightText.withValues(alpha: 0.4))),
           ],
         ),
         const SizedBox(height: 6),
@@ -568,8 +568,8 @@ class _ReportsPageState extends State<ReportsPage> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isDark
-                ? Colors.white.withOpacity(0.03)
-                : accentColor.withOpacity(0.04),
+                ? Colors.white.withValues(alpha: 0.03)
+                : accentColor.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(content,
@@ -589,20 +589,20 @@ class _ReportsPageState extends State<ReportsPage> {
         margin: const EdgeInsets.symmetric(horizontal: 32),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             FaIcon(FontAwesomeIcons.fileCircleExclamation,
-                size: 48, color: AppColors.primary.withOpacity(0.2)),
+                size: 48, color: AppColors.primary.withValues(alpha: 0.2)),
             const SizedBox(height: 16),
             Text('NO REPORTS YET',
                 style: GoogleFonts.notoSansEthiopic(
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.5,
-                    color: AppColors.lightText.withOpacity(0.3)),
+                    color: AppColors.lightText.withValues(alpha: 0.3)),
                 textAlign: TextAlign.center),
           ],
         ),
@@ -637,9 +637,9 @@ class _PlanDropdown extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           decoration: BoxDecoration(
-            color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.06),
+            color: isDark ? Colors.black26 : Colors.grey.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(

@@ -149,9 +149,9 @@ class _NewsPageState extends State<NewsPage> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+          color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -182,7 +182,7 @@ class _NewsPageState extends State<NewsPage> {
                             color: (status == 'published'
                                     ? const Color(0xFF10B981)
                                     : AppColors.divineGold)
-                                .withOpacity(0.14),
+                                .withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(8)),
                         child: Text(status.toUpperCase(),
                             style: GoogleFonts.notoSansEthiopic(
@@ -205,7 +205,7 @@ class _NewsPageState extends State<NewsPage> {
                   const SizedBox(height: 8),
                   Row(children: [
                     Icon(Icons.person_outline,
-                        size: 12, color: Colors.grey.withOpacity(0.7)),
+                        size: 12, color: Colors.grey.withValues(alpha: 0.7)),
                     const SizedBox(width: 4),
                     Text(p['authorName'] ?? '',
                         style: GoogleFonts.notoSansEthiopic(
@@ -279,7 +279,7 @@ class _NewsPageState extends State<NewsPage> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.4),
+                      color: Colors.grey.withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(2))),
             ),
             const SizedBox(height: 16),
@@ -477,7 +477,7 @@ class _NewsPageState extends State<NewsPage> {
   Widget _empty(String msg) => Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           FaIcon(FontAwesomeIcons.newspaper,
-              size: 56, color: AppColors.primary.withOpacity(0.3)),
+              size: 56, color: AppColors.primary.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           Text(msg,
               style: GoogleFonts.notoSansEthiopic(

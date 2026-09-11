@@ -99,7 +99,7 @@ class _MyAtbiyaPageState extends State<MyAtbiyaPage> {
             decoration: BoxDecoration(
               gradient: LinearGradient(colors: [
                 AppColors.primary,
-                AppColors.primary.withOpacity(0.7)
+                AppColors.primary.withValues(alpha: 0.7)
               ]),
               borderRadius: BorderRadius.circular(24),
             ),
@@ -153,9 +153,9 @@ class _MyAtbiyaPageState extends State<MyAtbiyaPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Icon(icon, color: AppColors.primary, size: 18),
@@ -180,15 +180,15 @@ class _MyAtbiyaPageState extends State<MyAtbiyaPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
       ),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12)),
           child: Icon(icon, color: AppColors.primary, size: 18),
         ),

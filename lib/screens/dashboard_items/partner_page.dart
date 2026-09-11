@@ -106,7 +106,7 @@ class _PartnerPageState extends State<PartnerPage> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const FaIcon(FontAwesomeIcons.handshake,
@@ -230,9 +230,9 @@ class _PartnerPageState extends State<PartnerPage> {
       );
 
   BoxDecoration _boxDecoration(bool isDark) => BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
       );
 
   Widget _textField(
@@ -257,16 +257,16 @@ class _PartnerPageState extends State<PartnerPage> {
         hintStyle:
             GoogleFonts.notoSansEthiopic(fontSize: 12, color: Colors.grey),
         filled: true,
-        fillColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        fillColor: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.primary.withOpacity(0.12)),
+          borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.12)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppColors.primary.withOpacity(0.12)),
+          borderSide: BorderSide(color: AppColors.primary.withValues(alpha: 0.12)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),

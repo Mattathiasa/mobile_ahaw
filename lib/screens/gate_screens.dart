@@ -27,7 +27,7 @@ class MaintenanceScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.build_circle_outlined,
@@ -52,7 +52,7 @@ class MaintenanceScreen extends StatelessWidget {
                   height: 1.6,
                   color: isDark
                       ? Colors.white60
-                      : AppColors.lightText.withOpacity(0.6),
+                      : AppColors.lightText.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -92,7 +92,7 @@ class PendingApprovalScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.divineGold.withOpacity(0.12),
+                  color: AppColors.divineGold.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.hourglass_top,
@@ -119,7 +119,7 @@ class PendingApprovalScreen extends StatelessWidget {
                   height: 1.6,
                   color: isDark
                       ? Colors.white60
-                      : AppColors.lightText.withOpacity(0.6),
+                      : AppColors.lightText.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: 28),
@@ -130,7 +130,7 @@ class PendingApprovalScreen extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.sacredRed,
                     side:
-                        BorderSide(color: AppColors.sacredRed.withOpacity(0.4)),
+                        BorderSide(color: AppColors.sacredRed.withValues(alpha: 0.4)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   icon: const Icon(Icons.logout, size: 18),
@@ -183,7 +183,7 @@ class ForceUpdateScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.system_update,
@@ -210,7 +210,7 @@ class ForceUpdateScreen extends StatelessWidget {
                   height: 1.6,
                   color: isDark
                       ? Colors.white60
-                      : AppColors.lightText.withOpacity(0.6),
+                      : AppColors.lightText.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: 28),

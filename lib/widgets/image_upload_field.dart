@@ -91,9 +91,9 @@ class _ImageUploadFieldState extends State<ImageUploadField> {
             width: widget.size,
             height: widget.size,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               borderRadius: radius,
-              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
             ),
             clipBehavior: Clip.antiAlias,
             child: _uploading

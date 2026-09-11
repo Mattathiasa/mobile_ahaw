@@ -262,7 +262,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
               decoration: BoxDecoration(
                 color: isDark ? Colors.black26 : Colors.white,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
               ),
               child: TextField(
                 controller: _searchCtrl,
@@ -335,15 +335,15 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
             color: isExpired
-                ? AppColors.sacredRed.withOpacity(0.2)
-                : AppColors.primary.withOpacity(0.1)),
+                ? AppColors.sacredRed.withValues(alpha: 0.2)
+                : AppColors.primary.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4))
         ],
@@ -356,7 +356,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const FaIcon(FontAwesomeIcons.bullhorn,
@@ -428,7 +428,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
             children: [
               if (data['authorName'] != null) ...[
                 Icon(Icons.person_outline,
-                    size: 11, color: Colors.grey.withOpacity(0.7)),
+                    size: 11, color: Colors.grey.withValues(alpha: 0.7)),
                 const SizedBox(width: 4),
                 Text(data['authorName'],
                     style: GoogleFonts.notoSansEthiopic(
@@ -444,7 +444,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: (isExpired ? AppColors.sacredRed : AppColors.warning)
-                        .withOpacity(0.1),
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -472,20 +472,20 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
         margin: const EdgeInsets.symmetric(horizontal: 32),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             FaIcon(FontAwesomeIcons.solidEnvelopeOpen,
-                size: 48, color: AppColors.primary.withOpacity(0.2)),
+                size: 48, color: AppColors.primary.withValues(alpha: 0.2)),
             const SizedBox(height: 16),
             Text('NO ANNOUNCEMENTS YET',
                 style: GoogleFonts.notoSansEthiopic(
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.5,
-                    color: AppColors.lightText.withOpacity(0.3)),
+                    color: AppColors.lightText.withValues(alpha: 0.3)),
                 textAlign: TextAlign.center),
           ],
         ),
@@ -515,9 +515,9 @@ Widget buildTextField(
 }) =>
     Container(
       decoration: BoxDecoration(
-        color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.06),
+        color: isDark ? Colors.black26 : Colors.grey.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
       ),
       child: TextField(
         controller: ctrl,
@@ -566,9 +566,9 @@ class _ExpiryPicker extends StatelessWidget {
         padding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.06),
+          color: isDark ? Colors.black26 : Colors.grey.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
         ),
         child: Row(
           children: [
@@ -639,7 +639,7 @@ class FormSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.3),
+                color: Colors.grey.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 20),
@@ -664,7 +664,7 @@ class FormSheet extends StatelessWidget {
                               fontSize: 12,
                               color: isDark
                                   ? Colors.white54
-                                  : AppColors.lightText.withOpacity(0.5))),
+                                  : AppColors.lightText.withValues(alpha: 0.5))),
                     ],
                   ),
                 ),
@@ -686,7 +686,7 @@ class FormSheet extends StatelessWidget {
           ),
 
           Divider(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               height: 24),
 
           // Form body
@@ -709,7 +709,7 @@ class FormSheet extends StatelessWidget {
                   : const Color(0xFFF8FAFF),
               border: Border(
                   top: BorderSide(
-                      color: AppColors.primary.withOpacity(0.08))),
+                      color: AppColors.primary.withValues(alpha: 0.08))),
             ),
             child: Row(
               children: [
@@ -718,7 +718,7 @@ class FormSheet extends StatelessWidget {
                     onPressed: saving ? null : () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                          color: AppColors.primary.withOpacity(0.2)),
+                          color: AppColors.primary.withValues(alpha: 0.2)),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -740,7 +740,7 @@ class FormSheet extends StatelessWidget {
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       elevation: 6,
-                      shadowColor: AppColors.primary.withOpacity(0.35),
+                      shadowColor: AppColors.primary.withValues(alpha: 0.35),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
