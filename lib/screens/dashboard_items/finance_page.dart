@@ -449,7 +449,7 @@ class _FinancePageState extends State<FinancePage>
     ]);
   }
 
-  Widget _emptyState(String msg, IconData icon) {
+  Widget _emptyState(String msg, FaIconData icon) {
     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       Container(
         padding: const EdgeInsets.all(32),
@@ -814,7 +814,7 @@ class _FinancePageState extends State<FinancePage>
     required VoidCallback onAdd,
     required bool empty,
     required String emptyMsg,
-    required IconData emptyIcon,
+    required FaIconData emptyIcon,
     required List<Map<String, dynamic>> items,
     required Widget Function(Map<String, dynamic>) itemBuilder,
   }) {

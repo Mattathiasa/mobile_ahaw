@@ -47,7 +47,7 @@ android {
 
     defaultConfig {
         applicationId "com.mahibereahaw.app"
-        minSdkVersion 23
+        minSdkVersion flutter.minSdkVersion
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName

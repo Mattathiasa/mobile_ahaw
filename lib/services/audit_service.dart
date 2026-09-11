@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'platform_compat.dart';
 import '../models/user_model.dart';
 
 /// Reports this device/user session to `mobileAudit/{uid}` so admins can
@@ -28,12 +27,17 @@ class AuditService {
       String osVersion = '';
       try {
         final deviceInfo = DeviceInfoPlugin();
-        if (Platform.isAndroid) {
+        if (kIsWeb) {
+          final web = await deviceInfo.webBrowserInfo;
+          platform = 'web';
+          deviceModel = web.browserName.name;
+          osVersion = web.appVersion ?? '';
+        } else if (PlatformCompat.isAndroid) {
           final android = await deviceInfo.androidInfo;
           platform = 'android';
           deviceModel = '${android.manufacturer} ${android.model}';
           osVersion = 'Android ${android.version.release}';
-        } else if (Platform.isIOS) {
+        } else if (PlatformCompat.isIOS) {
           final ios = await deviceInfo.iosInfo;
           platform = 'ios';
           deviceModel = ios.utsname.machine;

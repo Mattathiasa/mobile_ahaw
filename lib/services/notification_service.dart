@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'platform_compat.dart';
 import '../screens/dashboard_items/announcements_page.dart';
 import '../screens/dashboard_items/meetings_page.dart';
 import '../screens/dashboard_items/reports_page.dart';
@@ -21,6 +21,10 @@ class NotificationService {
       GlobalKey<NavigatorState>();
 
   static Future<void> initialize() async {
+    // Firebase Messaging has no web-ready local-notification bridge here; skip
+    // FCM setup entirely on web so the app boots cleanly in a browser.
+    if (kIsWeb) return;
+
     // 1. Request permissions
     final settings = await _messaging.requestPermission(
       alert: true,
@@ -47,7 +51,7 @@ class NotificationService {
     );
 
     // 3. Create Android notification channel
-    if (Platform.isAndroid) {
+    if (PlatformCompat.isAndroid) {
       const channel = AndroidNotificationChannel(
         'announcements_channel',
         'Announcements',

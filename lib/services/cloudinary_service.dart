@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 
@@ -47,10 +47,12 @@ class CloudinaryService {
     return _cached!;
   }
 
-  /// Uploads a local file (unsigned) and returns the delivered secure URL.
+  /// Uploads a file (unsigned) and returns the delivered secure URL.
   /// [resourceType] is 'image' for photos or 'auto'/'raw' for documents.
+  /// Works on all platforms — callers pass either bytes (web) or a path
+  /// (mobile/desktop).
   static Future<String> uploadFile(
-    File file, {
+    dynamic file, {
     String folder = 'mahibere-ahaw',
     String resourceType = 'image',
   }) async {
@@ -59,8 +61,15 @@ class CloudinaryService {
         'https://api.cloudinary.com/v1_1/${config.cloudName}/$resourceType/upload');
     final request = http.MultipartRequest('POST', uri)
       ..fields['upload_preset'] = config.uploadPreset
-      ..fields['folder'] = folder
-      ..files.add(await http.MultipartFile.fromPath('file', file.path));
+      ..fields['folder'] = folder;
+
+    if (file is Uint8List) {
+      request.files
+          .add(http.MultipartFile.fromBytes('file', file, filename: 'upload'));
+    } else {
+      request.files.add(
+          await http.MultipartFile.fromPath('file', (file as dynamic).path as String));
+    }
 
     final streamed = await request.send();
     final res = await http.Response.fromStream(streamed);

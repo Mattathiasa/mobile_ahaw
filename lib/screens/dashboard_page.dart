@@ -8,6 +8,7 @@ import '../services/dashboard_service.dart';
 import '../services/permission_service.dart';
 import '../services/role_registry_service.dart';
 import '../theme/app_colors.dart';
+import '../utils/responsive.dart';
 import '../theme/theme_provider.dart';
 import '../widgets/main_drawer.dart';
 import 'dashboard_items/announcements_page.dart';
@@ -206,8 +207,18 @@ class _DashboardPageState extends State<DashboardPage> {
             child: SingleChildScrollView(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 100, 20, 40),
-              child: FutureBuilder<DashboardData>(
+              padding: EdgeInsets.fromLTRB(
+                Responsive.pagePaddingOf(context).left,
+                100,
+                Responsive.pagePaddingOf(context).right,
+                40,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: Responsive.contentMaxWidthOf(context),
+                  ),
+                  child: FutureBuilder<DashboardData>(
                 future: _dashboardData,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -295,9 +306,11 @@ class _DashboardPageState extends State<DashboardPage> {
                       const SizedBox(height: 40),
                     ],
                   );
-                },
+                  },
+                ),
               ),
             ),
+          ),
           ),
         ],
       ),
@@ -552,6 +565,12 @@ class _DashboardPageState extends State<DashboardPage> {
   // ─────────────────────────────────────────────
   Widget _buildStatsGrid(
       BuildContext context, DashboardStats stats, bool isDark) {
+    // 2 columns on phones, 4 across on medium+ (matches web dashboard)
+    final crossAxisCount = Responsive.isExpandedOf(context) ||
+            Responsive.isMediumOf(context)
+        ? 4
+        : 2;
+
     final items = [
       {
         'title': 'Total Members',
@@ -582,11 +601,11 @@ class _DashboardPageState extends State<DashboardPage> {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        childAspectRatio: 1.15,
+        childAspectRatio: crossAxisCount == 4 ? 1.9 : 1.15,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
@@ -595,7 +614,7 @@ class _DashboardPageState extends State<DashboardPage> {
           context,
           title: item['title'] as String,
           value: item['value'] as String,
-          icon: item['icon'] as IconData,
+          icon: item['icon'] as FaIconData,
           color: item['color'] as Color,
           isDark: isDark,
           animDelay: index * 80,
@@ -608,7 +627,7 @@ class _DashboardPageState extends State<DashboardPage> {
     BuildContext context, {
     required String title,
     required String value,
-    required IconData icon,
+    required FaIconData icon,
     required Color color,
     required bool isDark,
     int animDelay = 0,
@@ -693,7 +712,7 @@ class _DashboardPageState extends State<DashboardPage> {
   // Section headers
   // ─────────────────────────────────────────────
   Widget _buildSectionHeader(BuildContext context, String title,
-      Color textColor, IconData icon) {
+      Color textColor, FaIconData icon) {
     return Row(
       children: [
         Container(
@@ -718,7 +737,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildSectionHeaderWithViewAll(BuildContext context, String title,
-      Color textColor, IconData icon, VoidCallback onViewAll) {
+      Color textColor, FaIconData icon, VoidCallback onViewAll) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -779,25 +798,43 @@ class _DashboardPageState extends State<DashboardPage> {
       },
     ];
 
+    // Vertical stack on phones; horizontal row on tablets/web
+    final horizontal = !Responsive.isCompactOf(context);
+
+    final cards = List.generate(actions.length, (index) {
+      final action = actions[index];
+      final color = action['color'] as Color;
+      return _buildQuickActionCard(
+        context,
+        page: action['page'] as Widget,
+        icon: action['icon'] as FaIconData,
+        title: action['title'] as String,
+        desc: action['desc'] as String,
+        color: color,
+        isDark: isDark,
+        animDelay: index * 80,
+      );
+    });
+
+    if (!horizontal) {
+      return Column(
+        children: [
+          for (var i = 0; i < cards.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            cards[i],
+          ],
+        ],
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: List.generate(actions.length, (index) {
-        final action = actions[index];
-        final color = action['color'] as Color;
+      children: List.generate(cards.length, (index) {
         return Expanded(
           child: Padding(
             padding: EdgeInsets.only(
-                right: index < actions.length - 1 ? 10 : 0),
-            child: _buildQuickActionCard(
-              context,
-              page: action['page'] as Widget,
-              icon: action['icon'] as IconData,
-              title: action['title'] as String,
-              desc: action['desc'] as String,
-              color: color,
-              isDark: isDark,
-              animDelay: index * 80,
-            ),
+                right: index < cards.length - 1 ? 10 : 0),
+            child: cards[index],
           ),
         );
       }),
@@ -807,7 +844,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildQuickActionCard(
     BuildContext context, {
     required Widget page,
-    required IconData icon,
+    required FaIconData icon,
     required String title,
     required String desc,
     required Color color,

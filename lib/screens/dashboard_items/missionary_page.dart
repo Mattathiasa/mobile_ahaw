@@ -192,7 +192,7 @@ class _MissionaryPageState extends State<MissionaryPage>
     required int index,
     required Color surfaceColor,
     required bool isDark,
-    required IconData icon,
+    required FaIconData icon,
     required Color iconColor,
     required String title,
     required String subtitle,
@@ -289,7 +289,7 @@ class _MissionaryPageState extends State<MissionaryPage>
     ).animate().fadeIn(delay: (index * 100).ms).slideY(begin: 0.1);
   }
 
-  Widget _emptyState(IconData icon, String message) {
+  Widget _emptyState(FaIconData icon, String message) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

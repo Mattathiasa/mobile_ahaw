@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/cloudinary_service.dart';
@@ -49,8 +49,16 @@ class _ImageUploadFieldState extends State<ImageUploadField> {
       );
       if (picked == null) return;
       setState(() => _uploading = true);
+
+      // On web there is no file path — read the bytes from the picked file.
+      final dynamic payload;
+      if (kIsWeb) {
+        payload = await picked.readAsBytes();
+      } else {
+        payload = picked;
+      }
       final url = await CloudinaryService.uploadFile(
-        File(picked.path),
+        payload,
         folder: widget.folder,
       );
       if (!mounted) return;

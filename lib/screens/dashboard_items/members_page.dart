@@ -610,7 +610,7 @@ class _MembersPageState extends State<MembersPage> {
     );
   }
 
-  Widget _buildDetailItem(IconData icon, String label, String value) {
+  Widget _buildDetailItem(FaIconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20.0),
       child: Row(

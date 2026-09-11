@@ -568,7 +568,7 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
-  Widget _socialIcon(IconData icon, Color color, String url) {
+  Widget _socialIcon(FaIconData icon, Color color, String url) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: GestureDetector(

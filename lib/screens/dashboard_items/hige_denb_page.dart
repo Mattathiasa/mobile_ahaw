@@ -96,7 +96,7 @@ class HigeDenbPage extends StatelessWidget {
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: FaIcon(rule['icon'] as IconData, color: color, size: 18),
+                child: FaIcon(rule['icon'] as FaIconData, color: color, size: 18),
               ),
               const SizedBox(width: 14),
               Expanded(

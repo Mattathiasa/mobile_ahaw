@@ -274,7 +274,7 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
         behavior: SnackBarBehavior.floating));
   }
 
-  Widget _empty(String msg, IconData icon) => Center(
+  Widget _empty(String msg, FaIconData icon) => Center(
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           FaIcon(icon, size: 56, color: AppColors.primary.withOpacity(0.3)),
           const SizedBox(height: 16),

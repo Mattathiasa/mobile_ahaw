@@ -366,7 +366,7 @@ class _MainDrawerState extends State<MainDrawer> {
 
   Widget _buildNavItem(
     BuildContext context, {
-    required IconData icon,
+    required FaIconData icon,
     required String title,
     Widget? page,
     required bool isDark,
@@ -491,7 +491,7 @@ class _MainDrawerState extends State<MainDrawer> {
 
 /// Simple data class for nav items
 class _NavItem {
-  final IconData icon;
+  final FaIconData icon;
   final String title;
   final Widget? page;
   final String? permission;

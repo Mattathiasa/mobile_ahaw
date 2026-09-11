@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'firebase_options.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'models/user_model.dart';
@@ -27,19 +28,24 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    // Uses google-services.json (Android) or GoogleService-Info.plist (iOS)
-    // automatically — no hardcoded keys needed.
-    await Firebase.initializeApp();
-    
-    // Initialize notifications
+    // Uses platform options derived from google-services.json (Android) and
+    // GoogleService-Info.plist (iOS); on web uses firebase_options.dart.
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
+
+    if (!kIsWeb) {
+      // FCM background handling is mobile-only.
+      FirebaseMessaging.onBackgroundMessage(
+          _firebaseMessagingBackgroundHandler);
+    }
+    // Initialize notifications (no-ops on web).
     await NotificationService.initialize();
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   } catch (e) {
     if (kDebugMode) print('Firebase initialization failed: $e');
   }

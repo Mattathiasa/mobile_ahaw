@@ -89,7 +89,7 @@ class AboutPage extends StatelessWidget {
           height: 1.7,
           color: isDark ? Colors.white70 : Colors.grey.shade700));
 
-  Widget _section(String title, String body, IconData icon, bool isDark) {
+  Widget _section(String title, String body, FaIconData icon, bool isDark) {
     if (title.isEmpty && body.isEmpty) return const SizedBox.shrink();
     return Container(
       margin: const EdgeInsets.only(bottom: 14),

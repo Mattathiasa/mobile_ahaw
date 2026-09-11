@@ -50,7 +50,7 @@ class TeachingsPage extends StatelessWidget {
           }
           if (snapshot.hasError) {
             return _emptyState(
-                isDark, Icons.error_outline, 'Could not load teachings');
+                isDark, FontAwesomeIcons.circleExclamation, 'Could not load teachings');
           }
 
           final docs = snapshot.data?.docs ?? [];
@@ -81,12 +81,12 @@ class TeachingsPage extends StatelessWidget {
     );
   }
 
-  Widget _emptyState(bool isDark, IconData icon, String message) {
+  Widget _emptyState(bool isDark, FaIconData icon, String message) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 56, color: AppColors.primary.withOpacity(0.4)),
+          FaIcon(icon, size: 56, color: AppColors.primary.withOpacity(0.4)),
           const SizedBox(height: 16),
           Text(message,
               style: GoogleFonts.notoSansEthiopic(

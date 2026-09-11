@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 
+import 'platform_compat.dart';
 import '../models/user_model.dart';
 
 /// Writes to the shared `auditLogs` collection (same one the web Software
@@ -19,11 +18,15 @@ class AuditLogService {
     _deviceResolved = true;
     try {
       final info = DeviceInfoPlugin();
-      if (Platform.isAndroid) {
+      if (kIsWeb) {
+        final w = await info.webBrowserInfo;
+        _platform = 'web';
+        _device = '${w.browserName.name} · ${w.appVersion ?? ''}';
+      } else if (PlatformCompat.isAndroid) {
         final a = await info.androidInfo;
         _platform = 'android';
         _device = '${a.manufacturer} ${a.model} · Android ${a.version.release}';
-      } else if (Platform.isIOS) {
+      } else if (PlatformCompat.isIOS) {
         final i = await info.iosInfo;
         _platform = 'ios';
         _device = '${i.utsname.machine} · ${i.systemName} ${i.systemVersion}';

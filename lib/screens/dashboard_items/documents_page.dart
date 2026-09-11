@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -66,13 +65,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   Future<void> _uploadFile() async {
     try {
-      final res = await FilePicker.platform.pickFiles(withData: false);
-      final path = res?.files.single.path;
-      if (res == null || path == null) return;
+      // withData: true is required on web (no file paths); on mobile it also
+      // works and simplifies the upload path for small/medium documents.
+      final res = await FilePicker.platform.pickFiles(withData: true);
+      if (res == null || res.files.single.path == null && !kIsWeb) return;
       final f = res.files.single;
       setState(() => _uploading = true);
       final url = await CloudinaryService.uploadFile(
-        File(path),
+        kIsWeb ? f.bytes! : f,
         folder: 'mahibere-ahaw/documents',
         resourceType: 'auto',
       );
@@ -280,7 +280,8 @@ class _DocumentsPageState extends State<DocumentsPage> {
                           CircularProgressIndicator(color: AppColors.primary));
                 }
                 if (snapshot.hasError) {
-                  return _message(Icons.error_outline, 'Could not load documents');
+                  return _message(
+                      FontAwesomeIcons.circleExclamation, 'Could not load documents');
                 }
 
                 var items = (snapshot.data?.docs ?? [])
@@ -324,12 +325,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
     );
   }
 
-  Widget _message(IconData icon, String text) {
+  Widget _message(FaIconData icon, String text) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 56, color: AppColors.primary.withOpacity(0.4)),
+          FaIcon(icon, size: 56, color: AppColors.primary.withOpacity(0.4)),
           const SizedBox(height: 16),
           Text(text,
               style: GoogleFonts.notoSansEthiopic(

@@ -288,7 +288,7 @@ class _Category {
   final String key;
   final String label;
   final String amharic;
-  final IconData icon;
+  final FaIconData icon;
   final Color color;
   final List<RuleItem> items;
   const _Category(
