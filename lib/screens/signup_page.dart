@@ -54,6 +54,7 @@ class _SignupPageState extends State<SignupPage> {
     setState(() => _saving = true);
     try {
       if (await _signup.isUsernameTaken(_usernameCtrl.text)) {
+        if (!mounted) return;
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('That username is already taken.')),

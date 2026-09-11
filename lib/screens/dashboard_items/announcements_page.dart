@@ -49,7 +49,9 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
             submitLabel: 'Post Announcement',
             onSubmit: () async {
               if (titleCtrl.text.trim().isEmpty ||
-                  contentCtrl.text.trim().isEmpty) return;
+                  contentCtrl.text.trim().isEmpty) {
+                return;
+              }
               setSheet(() => saving = true);
               try {
                 final data = <String, dynamic>{
@@ -119,7 +121,9 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
             submitLabel: 'Update',
             onSubmit: () async {
               if (titleCtrl.text.trim().isEmpty ||
-                  contentCtrl.text.trim().isEmpty) return;
+                  contentCtrl.text.trim().isEmpty) {
+                return;
+              }
               setSheet(() => saving = true);
               try {
                 final update = <String, dynamic>{

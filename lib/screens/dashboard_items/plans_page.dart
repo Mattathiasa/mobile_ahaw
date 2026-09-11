@@ -63,7 +63,9 @@ class _PlansPageState extends State<PlansPage> {
             submitLabel: isEditing ? 'Save Plan' : 'Create Plan',
             onSubmit: () async {
               if (nameCtrl.text.trim().isEmpty ||
-                  detailsCtrl.text.trim().isEmpty) return;
+                  detailsCtrl.text.trim().isEmpty) {
+                return;
+              }
               setSheet(() => saving = true);
               try {
                 if (isEditing) {

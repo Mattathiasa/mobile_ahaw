@@ -216,6 +216,7 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
       ),
     );
     if (confirmed != true) return;
+    if (!mounted) return;
     try {
       final approverId =
           Provider.of<AuthService>(context, listen: false).userModel?.id ?? '';
@@ -252,6 +253,7 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
       ),
     );
     if (confirmed != true) return;
+    if (!mounted) return;
     try {
       final approverId =
           Provider.of<AuthService>(context, listen: false).userModel?.id ?? '';
