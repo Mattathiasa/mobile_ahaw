@@ -61,9 +61,11 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug 2>&1 | tee /tmp/build.log || { tail -60 /tmp/build.log > "${GITHUB_STEP_SUMMARY:-/dev/null}"; exit 1; }
 
+      # flutter-apk/ only receives release builds; debug lands in apk/debug/
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: build/app/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
           retention-days: 7
