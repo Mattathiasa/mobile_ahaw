@@ -178,7 +178,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ])
                   SwitchListTile(
                     value: (user?.notificationPreferences?[pref[0]] ?? true) == true,
-                    activeColor: AppColors.primary,
+                    activeThumbColor: AppColors.primary,
                     dense: true,
                     title: Text(pref[1],
                         style: GoogleFonts.notoSansEthiopic(
@@ -201,29 +201,31 @@ class _SettingsPageState extends State<SettingsPage> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: _cardDecoration(isDark),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (final lang in LocalizationService.supportedLanguages)
-                  RadioListTile<String>(
-                    value: lang,
-                    groupValue: loc.language,
-                    onChanged: (v) {
-                      if (v != null) loc.setLanguage(v);
-                    },
-                    activeColor: AppColors.primary,
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(
-                      LocalizationService.languageNames[lang] ?? lang,
-                      style: GoogleFonts.notoSansEthiopic(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                        color: isDark ? Colors.white : AppColors.lightText,
+            child: RadioGroup<String>(
+              groupValue: loc.language,
+              onChanged: (v) {
+                if (v != null) loc.setLanguage(v);
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final lang in LocalizationService.supportedLanguages)
+                    RadioListTile<String>(
+                      value: lang,
+                      activeColor: AppColors.primary,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      title: Text(
+                        LocalizationService.languageNames[lang] ?? lang,
+                        style: GoogleFonts.notoSansEthiopic(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                          color: isDark ? Colors.white : AppColors.lightText,
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ).animate().fadeIn(delay: 50.ms),
 
@@ -233,10 +235,10 @@ class _SettingsPageState extends State<SettingsPage> {
           _sectionTitle('APPEARANCE'),
           Container(
             decoration: _cardDecoration(isDark),
-            child: SwitchListTile(
+            child:            SwitchListTile(
               value: themeProvider.isDarkMode,
               onChanged: (v) => themeProvider.toggleTheme(v),
-              activeColor: AppColors.primary,
+              activeThumbColor: AppColors.primary,
               title: Text('Dark Mode',
                   style: GoogleFonts.notoSansEthiopic(
                     fontWeight: FontWeight.w800,
