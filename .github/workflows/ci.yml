@@ -68,7 +68,7 @@ jobs:
           else
             code=$?
             echo "::error::flutter build apk --debug exited with code $code"
-            grep -E "(error:|^e: |FAILURE|What went wrong|Caused by|Exception|AAPT|AndroidManifest)" /tmp/build.log | head -8 | while IFS= read -r l; do echo "::error::${l:0:1000}"; done
+            { grep -A 6 "\* What went wrong" /tmp/build.log; grep -E "(error:|^e: |Caused by|Exception|AAPT|AndroidManifest)" /tmp/build.log; } | sort -u | head -10 | while IFS= read -r l; do echo "::error::${l:0:1000}"; done
             exit $code
           fi
 
