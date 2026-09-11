@@ -350,7 +350,7 @@ class _HRPageState extends State<HRPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
-        value: safe,
+        initialValue: safe,
         isExpanded: true,
         decoration: InputDecoration(
             labelText: label, border: const OutlineInputBorder()),

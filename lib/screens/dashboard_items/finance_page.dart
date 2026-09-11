@@ -504,7 +504,7 @@ class _FinancePageState extends State<FinancePage>
               _sheetField(amountCtrl, 'Amount (ETB)', Icons.attach_money, isDark, isNumber: true),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
-                value: selectedType,
+                initialValue: selectedType,
                 decoration: InputDecoration(
                   labelText: 'Type',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
@@ -886,7 +886,7 @@ class _FinancePageState extends State<FinancePage>
   Widget _dropdown(String label, String value, List<String> items,
       ValueChanged<String> onChanged) {
     return DropdownButtonFormField<String>(
-      value: items.contains(value) ? value : items.first,
+      initialValue: items.contains(value) ? value : items.first,
       isExpanded: true,
       decoration: InputDecoration(
         labelText: label,

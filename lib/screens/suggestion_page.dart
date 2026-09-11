@@ -98,7 +98,7 @@ class _SuggestionPageState extends State<SuggestionPage> {
                   fontSize: 13, color: Colors.grey, height: 1.5)),
           const SizedBox(height: 20),
           DropdownButtonFormField<String>(
-            value: _category,
+            initialValue: _category,
             decoration: const InputDecoration(
                 labelText: 'What is this about?',
                 border: OutlineInputBorder()),

@@ -137,7 +137,7 @@ class _SignupPageState extends State<SignupPage> {
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: DropdownButtonFormField<String>(
-                value: _gender,
+                initialValue: _gender,
                 decoration: const InputDecoration(
                     labelText: 'Gender', border: OutlineInputBorder()),
                 items: const [
@@ -155,7 +155,7 @@ class _SignupPageState extends State<SignupPage> {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: DropdownButtonFormField<String>(
-                    value: _atbiyaId,
+                    initialValue: _atbiyaId,
                     isExpanded: true,
                     decoration: InputDecoration(
                       labelText: atbiyas.isEmpty

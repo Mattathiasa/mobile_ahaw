@@ -598,7 +598,7 @@ class _MembersPageState extends State<MembersPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
-        value: safeValue,
+        initialValue: safeValue,
         isExpanded: true,
         decoration: InputDecoration(
             labelText: label, border: const OutlineInputBorder()),

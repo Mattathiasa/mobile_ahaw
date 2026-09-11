@@ -438,7 +438,7 @@ void showTeachingForm(BuildContext context,
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: DropdownButtonFormField<String>(
-                      value: serviceTypes.contains(serviceType)
+                      initialValue: serviceTypes.contains(serviceType)
                           ? serviceType
                           : (serviceTypes.isNotEmpty
                               ? serviceTypes.first
@@ -461,7 +461,7 @@ void showTeachingForm(BuildContext context,
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: DropdownButtonFormField<String>(
-                      value: status,
+                      initialValue: status,
                       isExpanded: true,
                       decoration: const InputDecoration(
                           labelText: 'Status', border: OutlineInputBorder()),

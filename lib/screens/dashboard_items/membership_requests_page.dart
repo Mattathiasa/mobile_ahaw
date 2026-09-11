@@ -194,7 +194,7 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
               Text('Assign a role to ${r['fullNameEnglish'] ?? 'this member'}:'),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: role,
+                initialValue: role,
                 isExpanded: true,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
                 items: _roles

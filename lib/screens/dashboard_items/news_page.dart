@@ -462,7 +462,7 @@ class _NewsPageState extends State<NewsPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
-        value: items.contains(value) ? value : items.first,
+        initialValue: items.contains(value) ? value : items.first,
         isExpanded: true,
         decoration: InputDecoration(
             labelText: label, border: const OutlineInputBorder()),

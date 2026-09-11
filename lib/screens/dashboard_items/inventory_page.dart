@@ -345,7 +345,7 @@ class _InventoryPageState extends State<InventoryPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
-        value: safe,
+        initialValue: safe,
         isExpanded: true,
         decoration: InputDecoration(
             labelText: label, border: const OutlineInputBorder()),

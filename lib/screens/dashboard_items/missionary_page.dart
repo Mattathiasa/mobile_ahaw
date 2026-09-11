@@ -322,7 +322,7 @@ class _MissionaryPageState extends State<MissionaryPage>
         builder: (ctx, setLocal) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: DropdownButtonFormField<String>(
-            value: type,
+            initialValue: type,
             decoration: const InputDecoration(
                 labelText: 'Type', border: OutlineInputBorder()),
             items: const [
