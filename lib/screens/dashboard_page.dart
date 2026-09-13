@@ -11,6 +11,7 @@ import '../theme/app_colors.dart';
 import '../utils/responsive.dart';
 import '../theme/app_theme.dart';
 import '../widgets/main_drawer.dart';
+import 'dashboard_items/mahderat_manager_page.dart' show ChooseMahderCard;
 import 'dashboard_items/announcements_page.dart';
 import 'dashboard_items/reports_page.dart';
 import 'dashboard_items/members_page.dart';
@@ -248,6 +249,13 @@ class _DashboardPageState extends State<DashboardPage> {
                         Provider.of<AuthService>(context).userData,
                         isDark,
                       ),
+                      const SizedBox(height: 20),
+
+                      // Renders itself only for a newly approved member who
+                      // has not joined a Mahedher yet — the nearest-first
+                      // suggestion lands here rather than during sign-up, so
+                      // the group pins never become public.
+                      const ChooseMahderCard(),
                       const SizedBox(height: 20),
 
                       // Stats grid
