@@ -56,7 +56,7 @@ class TeachingsPage extends StatelessWidget {
           final docs = snapshot.data?.docs ?? [];
           if (docs.isEmpty) {
             return _emptyState(isDark, FontAwesomeIcons.bookOpenReader,
-                'No teachings published yet');
+                'No sermons published yet');
           }
 
           return ListView.builder(
