@@ -80,10 +80,16 @@ class CloudinaryService {
     return json['secure_url'] as String;
   }
 
-  /// Optimised, responsive delivery (auto format + quality). Mirrors
-  /// `optimized()` in cloudinary.ts.
-  static String optimized(String url, {int width = 1200}) {
+  /// Optimised, responsive delivery (auto format + quality + optional
+  /// rotation angle). Mirrors `optimized()` in cloudinary.ts.
+  ///
+  /// [rotation] bakes the angle into the delivery URL, which is why the
+  /// gallery only applies a client-side `Transform.rotate` to photos that are
+  /// NOT Cloudinary-hosted — see HomeGallery.tsx:36.
+  static String optimized(String url, {int width = 1200, int? rotation}) {
     if (!url.contains('/upload/')) return url;
-    return url.replaceFirst('/upload/', '/upload/w_$width,f_auto,q_auto,c_limit/');
+    final rot = (rotation != null && rotation != 0) ? 'a_$rotation,' : '';
+    return url.replaceFirst(
+        '/upload/', '/upload/${rot}w_$width,f_auto,q_auto,c_limit/');
   }
 }

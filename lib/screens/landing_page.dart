@@ -1,16 +1,35 @@
-import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
+
 import '../services/landing_content_service.dart';
 import '../services/localization_service.dart';
+import '../widgets/branded_loader.dart';
+import '../widgets/home/about_section.dart';
+import '../widgets/home/contact_section.dart';
+import '../widgets/home/features_section.dart';
+import '../widgets/home/gallery_section.dart';
+import '../widgets/home/hero_section.dart';
+import '../widgets/home/home_footer.dart';
+import '../widgets/home/home_nav.dart';
+import '../widgets/home/news_section.dart';
+import '../widgets/home/sermons_section.dart';
+import '../widgets/home/stats_section.dart';
+import '../widgets/home/support_section.dart';
+import '../widgets/home/suggestion_section.dart';
 
+/// The public landing page — the mobile counterpart of the web homepage
+/// (mahibere-ahaw/src/pages/Home.tsx).
+///
+/// Both clients render the same Firestore documents: `siteConfig/landingPage`
+/// for the copy, `siteConfig/gallery` for the photographs, `siteConfig/
+/// pageStrings` for the UI strings, plus the public `news` and `teachings`
+/// collections. Everything is a live listener or a published-only query, so an
+/// edit saved in the web admin reaches a running phone without a restart.
+///
+/// Section order matches `SECTIONS` in Home.tsx: about sits directly under the
+/// hero because who the church is answers the first question a visitor actually
+/// has, and suggestions sits last because asking the visitor for something
+/// before the page has introduced itself gets a worse answer.
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
 
@@ -21,725 +40,141 @@ class LandingPage extends StatefulWidget {
 class _LandingPageState extends State<LandingPage> {
   final ScrollController _scrollController = ScrollController();
   bool _scrolled = false;
+  String _activeSection = kHomeSections.first;
 
-  final GlobalKey _homeKey = GlobalKey();
-  final GlobalKey _aboutKey = GlobalKey();
-  final GlobalKey _servicesKey = GlobalKey();
-  final GlobalKey _contactKey = GlobalKey();
+  /// One key per navigable section, so both the menu and the scroll spy can
+  /// find them. Keyed by the same ids the nav uses.
+  final Map<String, GlobalKey> _sectionKeys = {
+    for (final id in kHomeSections) id: GlobalKey(),
+  };
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(() {
-      if (_scrollController.offset > 50 && !_scrolled) {
-        setState(() => _scrolled = true);
-      } else if (_scrollController.offset <= 50 && _scrolled) {
-        setState(() => _scrolled = false);
-      }
-    });
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _scrollToSection(GlobalKey key) {
-    Scrollable.ensureVisible(
-      key.currentContext!,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
+  void _onScroll() {
+    final scrolled = _scrollController.offset > 50;
+    if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+    _updateActiveSection();
   }
 
-  /// Live landing content for the current language (edited in the web admin).
-  LandingContent _content(BuildContext context) {
-    final lang = Provider.of<LocalizationService>(context).language;
-    final raw = Provider.of<LandingContentService>(context).forLanguage(lang);
-    return LandingContent(raw);
+  /// Scroll spy: the section whose top is nearest to — but not far below — the
+  /// nav bar is the current one. The Flutter equivalent of the
+  /// `IntersectionObserver` at Home.tsx:146, with the same intent: a section
+  /// only counts as current once it is actually visible below the bar.
+  void _updateActiveSection() {
+    const navHeight = 96.0;
+    String? best;
+    double bestTop = double.negativeInfinity;
+
+    for (final entry in _sectionKeys.entries) {
+      final ctx = entry.value.currentContext;
+      if (ctx == null) continue;
+      final box = ctx.findRenderObject() as RenderBox?;
+      if (box == null || !box.hasSize) continue;
+      final top = box.localToGlobal(Offset.zero).dy - navHeight;
+      // The topmost section that has already reached the bar wins; ties and
+      // sections still below it are ignored.
+      if (top <= 0 && top > bestTop) {
+        bestTop = top;
+        best = entry.key;
+      }
+    }
+
+    final next = best ?? kHomeSections.first;
+    if (next != _activeSection) setState(() => _activeSection = next);
+  }
+
+  void _scrollTo(String sectionId) {
+    final ctx = _sectionKeys[sectionId]?.currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+      // Keeps a section's heading clear of the fixed navigation, the same job
+      // `scroll-mt-24` does on the web.
+      alignment: 0.05,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDark = themeProvider.isDarkMode;
-    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final service = Provider.of<LandingContentService>(context);
+    final lang = Provider.of<LocalizationService>(context).language;
+    final content = LandingContent(service.forLanguage(lang));
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(80),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          margin: _scrolled 
-            ? const EdgeInsets.fromLTRB(16, 40, 16, 0)
-            : EdgeInsets.zero,
-          decoration: BoxDecoration(
-            color: _scrolled
-                ? (isDark
-                      ? const Color(0xFF0D2440).withValues(alpha: 0.7)
-                      : const Color(0xFFE7F0FA).withValues(alpha: 0.7))
-                : Colors.transparent,
-            borderRadius: _scrolled ? BorderRadius.circular(20) : BorderRadius.zero,
-            border: _scrolled
-                ? Border.all(color: AppColors.primary.withValues(alpha: 0.1))
-                : null,
-          ),
-          child: ClipRRect(
-            borderRadius: _scrolled ? BorderRadius.circular(20) : BorderRadius.zero,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => _scrollToSection(_homeKey),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircleAvatar(
-                              radius: 18,
-                              backgroundColor: Colors.transparent,
-                              backgroundImage: AssetImage('assets/logo.png'),
-                            ),
-                            SizedBox(width: 10),
-                            Text(
-                              'AHAW',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1.5,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          _buildLangButton(context),
-                          const SizedBox(width: 8),
-                          _buildHeaderIcon(
-                            icon: isDark ? Icons.light_mode : Icons.dark_mode,
-                            onTap: () => themeProvider.toggleTheme(!isDark),
-                          ),
-                          const SizedBox(width: 8),
-                          _buildHeaderIcon(
-                            icon: Icons.menu,
-                            onTap: () => _showMobileMenu(context),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
+      appBar: HomeNav(
+        scrolled: _scrolled,
+        activeSection: _activeSection,
+        onNavigate: _scrollTo,
       ),
-      body: SingleChildScrollView(
-        controller: _scrollController,
-        child: Column(
-          children: [
-            _buildHeroSection(context),
-            _buildCarouselSection(context),
-            _buildStatsSection(context),
-            _buildFeaturesSection(context),
-            _buildBenefitsSection(context),
-            _buildFooter(context),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeroSection(BuildContext context) {
-    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
-    final c = _content(context);
-    final title = c.heroTitle;
-    final highlight = c.heroTitleHighlight;
-
-    return Container(
-      key: _homeKey,
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 160, 24, 80),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.primary.withValues(alpha: 0.1),
-            Theme.of(context).scaffoldBackgroundColor,
-          ],
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Text(
-              c.heroBadge.toUpperCase(),
-              style: GoogleFonts.notoSansEthiopic(
-                color: AppColors.primary,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ).animate().fadeIn().moveY(begin: -20),
-
-          const SizedBox(height: 32),
-
-          RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: GoogleFonts.notoSansEthiopic(
-                fontSize: 40,
-                fontWeight: FontWeight.w900,
-                height: 1.15,
-                color: isDark ? Colors.white : AppColors.lightText,
-              ),
-              children: [
-                TextSpan(text: title),
-                if (highlight.isNotEmpty)
-                  TextSpan(text: '\n$highlight', style: const TextStyle(color: AppColors.primary)),
-              ],
-            ),
-          ).animate().fadeIn(delay: 200.ms).moveY(begin: 20),
-
-          const SizedBox(height: 24),
-
-          Text(
-            c.heroDescription,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.notoSansEthiopic(
-              fontSize: 16,
-              color: isDark ? Colors.white70 : Colors.black54,
-              height: 1.6,
-            ),
-          ).animate().fadeIn(delay: 400.ms).moveY(begin: 20),
-
-          if (c.heroImageUrl.isNotEmpty) ...[
-            const SizedBox(height: 36),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Image.network(
-                c.heroImageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            ).animate().fadeIn(delay: 500.ms).scale(begin: const Offset(0.96, 0.96)),
-          ],
-
-          const SizedBox(height: 48),
-
-          SizedBox(
-            width: double.infinity,
-            height: 60,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/login'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                elevation: 0,
-              ),
-              child: Text(
-                c.ctaPrimary,
-                style: GoogleFonts.notoSansEthiopic(fontSize: 18, fontWeight: FontWeight.w900),
-              ),
-            ),
-          ).animate().fadeIn(delay: 600.ms).scale(),
-
-          if (c.ctaSecondary.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: OutlinedButton(
-                onPressed: () => _scrollToSection(_servicesKey),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                ),
-                child: Text(
-                  c.ctaSecondary,
-                  style: GoogleFonts.notoSansEthiopic(fontSize: 16, fontWeight: FontWeight.w800),
-                ),
-              ),
-            ).animate().fadeIn(delay: 700.ms),
-          ],
-        ],
-      ),
-    );
-  }
-
-  IconData _iconFor(String? name) {
-    switch (name) {
-      case 'MapPin': return Icons.location_on_outlined;
-      case 'Shield': return Icons.shield_outlined;
-      case 'Heart': return Icons.favorite_outline;
-      case 'Languages': return Icons.public;
-      case 'Users': return Icons.people_outline;
-      case 'Calendar': return Icons.calendar_today_outlined;
-      case 'BarChart3': return Icons.bar_chart;
-      case 'FileText': return Icons.description_outlined;
-      default: return Icons.star_outline;
-    }
-  }
-
-  Widget _buildCarouselSection(BuildContext context) {
-    final images = _content(context).carousel;
-    if (images.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-      child: _AutoCarousel(images: images),
-    );
-  }
-
-  Widget _buildStatsSection(BuildContext context) {
-    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
-    final c = _content(context);
-
-    final stats = c.stats.isNotEmpty
-        ? c.stats.map((s) => {
-              'val': s['value']?.toString() ?? '',
-              'label': s['label']?.toString() ?? '',
-              'icon': _iconFor(s['icon']?.toString()),
-            }).toList()
-        : <Map<String, dynamic>>[
-            {'val': '850', 'label': 'አጥቢያዎች', 'icon': Icons.church},
-            {'val': '2.4k', 'label': 'አገልጋዮች', 'icon': Icons.people},
-            {'val': '40%', 'label': 'ዕድገት', 'icon': Icons.trending_up},
-            {'val': '120+', 'label': 'ሃገረ ስብከቶች', 'icon': Icons.public},
-          ];
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-      child: GridView.builder(
-        padding: EdgeInsets.zero,
-        physics: const NeverScrollableScrollPhysics(),
-        shrinkWrap: true,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.2,
-        ),
-        itemCount: stats.length,
-        itemBuilder: (context, index) {
-          final stat = stats[index];
-          return Container(
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(stat['icon'] as IconData, color: AppColors.primary, size: 24),
-                const SizedBox(height: 8),
-                Text(
-                  stat['val'] as String,
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  (stat['label'] as String).toUpperCase(),
-                  style: TextStyle(fontSize: 10, color: AppColors.primary.withValues(alpha: 0.6)),
-                ),
-              ],
-            ),
-          ).animate().fadeIn(delay: (index * 100).ms).scale();
-        },
-      ),
-    );
-  }
-
-  Widget _buildFeaturesSection(BuildContext context) {
-    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
-    final c = _content(context);
-
-    final features = c.featureItems.isNotEmpty
-        ? c.featureItems.map((f) => {
-              'title': f['title']?.toString() ?? '',
-              'desc': f['description']?.toString() ?? '',
-              'icon': _iconFor(f['icon']?.toString()),
-            }).toList()
-        : <Map<String, dynamic>>[
-            {'title': 'አባላት አስተዳደር', 'desc': 'የአባላትን መረጃ በቀላሉ ይያዙ', 'icon': Icons.people_outline},
-            {'title': 'ዕቅድና ሪፖርት', 'desc': 'ተግባራትን ያቅዱ፣ ሪፖርት ያውጡ', 'icon': Icons.assignment_outlined},
-            {'title': 'ፋይናንስ', 'desc': 'የገቢና ወጪ ሂሳቦችን ይቆጣጠሩ', 'icon': Icons.account_balance_wallet_outlined},
-          ];
-
-    return Container(
-      key: _servicesKey,
-      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            c.featuresTitle,
-            style: GoogleFonts.notoSansEthiopic(fontSize: 28, fontWeight: FontWeight.bold),
-          ).animate().fadeIn(),
-          const SizedBox(height: 32),
-          ...features.map((f) => Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () => Navigator.pushNamed(context, '/login'),
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.05)),
-                ),
-                child: Row(
+      body: !service.loaded
+          ? const BrandedLoader()
+          : NotificationListener<ScrollMetricsNotification>(
+              // Section geometry is only known after the first layout, so seed
+              // the spy once the scroll view reports its metrics.
+              onNotification: (_) {
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _updateActiveSection());
+                return false;
+              },
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                child: Column(
                   children: [
-                    Icon(f['icon'] as IconData, color: AppColors.primary, size: 30),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(f['title'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                          Text(f['desc'] as String, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                        ],
-                      ),
+                    KeyedSubtree(
+                      key: _sectionKeys['home'],
+                      child: HeroSection(content: content, onAnchor: _scrollTo),
                     ),
-                    const Icon(Icons.chevron_right, color: AppColors.primary, size: 20),
+                    StatsSection(content: content),
+                    const GallerySection(),
+                    KeyedSubtree(
+                      key: _sectionKeys['about'],
+                      child: AboutSection(content: content),
+                    ),
+                    KeyedSubtree(
+                      key: _sectionKeys['services'],
+                      child: FeaturesSection(
+                          content: content, onAnchor: _scrollTo),
+                    ),
+                    KeyedSubtree(
+                      key: _sectionKeys['support'],
+                      child: SupportSection(content: content),
+                    ),
+                    KeyedSubtree(
+                      key: _sectionKeys['news'],
+                      child: NewsSection(content: content),
+                    ),
+                    KeyedSubtree(
+                      key: _sectionKeys['sermons'],
+                      child: SermonsSection(content: content),
+                    ),
+                    KeyedSubtree(
+                      key: _sectionKeys['contact'],
+                      child: ContactSection(content: content),
+                    ),
+                    KeyedSubtree(
+                      key: _sectionKeys['suggestions'],
+                      child: SuggestionSection(content: content),
+                    ),
+                    HomeFooter(content: content, onAnchor: _scrollTo),
                   ],
                 ),
               ),
             ),
-          ).animate().fadeIn().moveX(begin: 20)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBenefitsSection(BuildContext context) {
-    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
-    final c = _content(context);
-    return Container(
-      key: _aboutKey,
-      padding: const EdgeInsets.symmetric(vertical: 56, horizontal: 24),
-      color: AppColors.primary.withValues(alpha: 0.04),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.favorite, size: 12, color: AppColors.primary),
-                const SizedBox(width: 6),
-                Text(c.supportTitle.isNotEmpty ? c.supportTitle : 'Support the Ministry',
-                    style: GoogleFonts.notoSansEthiopic(
-                        fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.primary)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (c.supportDescription.isNotEmpty)
-            Text(c.supportDescription,
-                style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 14, height: 1.6,
-                    color: isDark ? Colors.white70 : Colors.black54)),
-          const SizedBox(height: 24),
-
-          // Mission statement card
-          if (c.missionStatement.isNotEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.primaryLight],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.favorite, color: Colors.white54, size: 28),
-                  const SizedBox(height: 12),
-                  Text(c.missionTitle.isNotEmpty ? c.missionTitle : 'Our Mission',
-                      style: GoogleFonts.notoSansEthiopic(
-                          fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white)),
-                  const SizedBox(height: 8),
-                  Text('"${c.missionStatement}"',
-                      style: GoogleFonts.notoSansEthiopic(
-                          fontSize: 14, height: 1.6, fontWeight: FontWeight.w600,
-                          color: Colors.white.withValues(alpha: 0.95))),
-                ],
-              ),
-            ),
-
-          // Bank accounts grid
-          if (c.banks.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            ...c.banks.map((b) => Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(b['name']?.toString() ?? '',
-                          style: GoogleFonts.notoSansEthiopic(
-                              fontSize: 11, fontWeight: FontWeight.w900,
-                              color: AppColors.primary)),
-                      Text(b['account']?.toString() ?? '',
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.bold,
-                              fontFeatures: [FontFeature.tabularFigures()])),
-                    ],
-                  ),
-                )),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFooter(BuildContext context) {
-    final c = _content(context);
-    return Container(
-      key: _contactKey,
-      padding: const EdgeInsets.all(40),
-      child: Column(
-        children: [
-          const Text('አሃው', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
-          if (c.footerDescription.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              c.footerDescription,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.notoSansEthiopic(fontSize: 12, color: Colors.grey, height: 1.5),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (c.footerYoutube.isNotEmpty)
-                _socialIcon(FontAwesomeIcons.youtube, const Color(0xFFFF0000), c.footerYoutube),
-              if (c.footerTelegram.isNotEmpty)
-                _socialIcon(FontAwesomeIcons.telegram, const Color(0xFF229ED9), c.footerTelegram),
-              if (c.footerEmail.isNotEmpty)
-                _socialIcon(FontAwesomeIcons.envelope, AppColors.primary, 'mailto:${c.footerEmail}'),
-              if (c.footerPhone.isNotEmpty)
-                _socialIcon(FontAwesomeIcons.phone, AppColors.primary, 'tel:${c.footerPhone}'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            c.footerCopyright,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.notoSansEthiopic(fontSize: 12, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _socialIcon(FaIconData icon, Color color, String url) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: GestureDetector(
-        onTap: () async {
-          final uri = Uri.tryParse(url);
-          if (uri != null && await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          }
-        },
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: FaIcon(icon, size: 18, color: color),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLangButton(BuildContext context) {
-    final loc = Provider.of<LocalizationService>(context);
-    const langs = LocalizationService.supportedLanguages;
-    final next = langs[(langs.indexOf(loc.language) + 1) % langs.length];
-    return GestureDetector(
-      onTap: () => loc.setLanguage(next),
-      child: Container(
-        height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.language, size: 16, color: AppColors.primary),
-            const SizedBox(width: 4),
-            Text(
-              next.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                color: AppColors.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeaderIcon({required IconData icon, required VoidCallback onTap}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: IconButton(
-        icon: Icon(icon, size: 20, color: AppColors.primary),
-        onPressed: onTap,
-      ),
-    );
-  }
-
-  void _showMobileMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildMenuLink('ዋና ገፅ', _homeKey, context),
-              _buildMenuLink('ስለ እኛ', _aboutKey, context),
-              _buildMenuLink('አገልግሎቶች', _servicesKey, context),
-              _buildMenuLink('ግንኙነት', _contactKey, context),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMenuLink(String text, GlobalKey key, BuildContext context) {
-    return ListTile(
-      title: Text(text, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      onTap: () {
-        Navigator.pop(context);
-        _scrollToSection(key);
-      },
-    );
-  }
-}
-
-/// Auto-advancing image carousel for the landing page.
-class _AutoCarousel extends StatefulWidget {
-  final List<String> images;
-  const _AutoCarousel({required this.images});
-
-  @override
-  State<_AutoCarousel> createState() => _AutoCarouselState();
-}
-
-class _AutoCarouselState extends State<_AutoCarousel> {
-  final PageController _controller = PageController();
-  Timer? _timer;
-  int _index = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.images.length > 1) {
-      _timer = Timer.periodic(const Duration(seconds: 4), (_) {
-        if (!mounted) return;
-        _index = (_index + 1) % widget.images.length;
-        _controller.animateToPage(_index,
-            duration: const Duration(milliseconds: 600), curve: Curves.easeInOut);
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: PageView.builder(
-              controller: _controller,
-              itemCount: widget.images.length,
-              onPageChanged: (i) => setState(() => _index = i),
-              itemBuilder: (context, i) => Image.network(
-                widget.images[i],
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: AppColors.primary.withValues(alpha: 0.1)),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.images.length, (i) {
-            final active = i == _index;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              height: 8,
-              width: active ? 24 : 8,
-              decoration: BoxDecoration(
-                color: active ? AppColors.primary : AppColors.primary.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            );
-          }),
-        ),
-      ],
     );
   }
 }
