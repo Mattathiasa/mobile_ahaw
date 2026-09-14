@@ -9,7 +9,10 @@ import '../../services/role_registry_service.dart';
 import '../../services/module_config_service.dart';
 import '../../services/cloudinary_service.dart';
 import '../../widgets/image_upload_field.dart';
+import '../../services/localization_service.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
+import '../../widgets/dashboard/dashboard_widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class MembersPage extends StatefulWidget {
@@ -20,6 +23,9 @@ class MembersPage extends StatefulWidget {
 }
 
 class _MembersPageState extends State<MembersPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final MemberService _memberService = MemberService();
   String _searchQuery = '';
   String _filterHierarchy = 'all';
@@ -68,27 +74,14 @@ class _MembersPageState extends State<MembersPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? AppColors.darkBackground : AppColors.lightBackground;
     final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'Church Members',
-          style: GoogleFonts.notoSansEthiopic(
-            fontWeight: FontWeight.w900,
-            color: isDark ? Colors.white : AppColors.lightText,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+    return DashboardScaffold(
+      titleKey: 'nav.members',
+      moduleKey: 'members',
+      constrainWidth: false,
       body: Column(
         children: [
           _buildSearchAndFilters(context, surfaceColor, isDark),
@@ -153,7 +146,7 @@ class _MembersPageState extends State<MembersPage> {
               style: GoogleFonts.notoSansEthiopic(fontSize: 13),
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 18),
-                hintText: 'Search members...',
+                hintText: loc.t('admin.searchMembers'),
                 hintStyle: GoogleFonts.notoSansEthiopic(fontSize: 13, color: Colors.grey),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -375,7 +368,7 @@ class _MembersPageState extends State<MembersPage> {
                           _openMemberForm(context, member: member);
                         },
                         icon: const Icon(Icons.edit, size: 16),
-                        label: const Text('Edit'),
+                        label: Text(loc.t('admin.edit')),
                       ),
                     ),
                   if (Provider.of<PermissionService>(context, listen: false)
@@ -390,7 +383,7 @@ class _MembersPageState extends State<MembersPage> {
                           await _confirmSuspend(member);
                         },
                         icon: const Icon(Icons.block, size: 16),
-                        label: const Text('Suspend'),
+                        label: Text(loc.t('admin.suspend')),
                       ),
                     ),
                   ],
@@ -407,17 +400,17 @@ class _MembersPageState extends State<MembersPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Suspend member?'),
+        title: Text(loc.t('admin.suspend')),
         content: Text(
             'This suspends ${member['fullNameEnglish'] ?? member['fullName'] ?? 'this member'} and revokes their access.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(loc.t('admin.cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Suspend',
-                  style: TextStyle(color: AppColors.sacredRed))),
+              child: Text(loc.t('admin.suspend'),
+                  style: const TextStyle(color: AppColors.sacredRed))),
         ],
       ),
     );
@@ -633,40 +626,9 @@ class _MembersPageState extends State<MembersPage> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(32),
-            margin: const EdgeInsets.symmetric(horizontal: 32),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.15),
-              ),
-            ),
-            child: Column(
-              children: [
-                FaIcon(FontAwesomeIcons.usersSlash,
-                    size: 48, color: AppColors.primary.withValues(alpha: 0.2)),
-                const SizedBox(height: 16),
-                Text(
-                  'NO MEMBERS FOUND',
-                  style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
-                    color: AppColors.lightText.withValues(alpha: 0.3),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildEmptyState() => const DashboardEmpty(
+        icon: Icons.people_outline,
+        messageKey: 'pages.noMembersFound',
+        detailKey: 'pages.memberSearchDesc',
+      );
 }
