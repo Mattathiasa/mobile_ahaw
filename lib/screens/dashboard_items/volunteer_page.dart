@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../services/localization_service.dart';
 import '../../services/module_config_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Volunteer page: pick ministry preferences, saved to
@@ -19,6 +20,9 @@ class VolunteerPage extends StatefulWidget {
 }
 
 class _VolunteerPageState extends State<VolunteerPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   /// Friendly label/description for the built-in ministry ids. The actual list
   /// of ministries comes from Module Config (`volunteer.ministries`) so admins
   /// can add/remove them; ids not in this map fall back to the id as the label.
@@ -93,25 +97,13 @@ class _VolunteerPageState extends State<VolunteerPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(Provider.of<LocalizationService>(context).t('volunteer'),
-            style: GoogleFonts.notoSansEthiopic(
-              fontWeight: FontWeight.w900,
-              color: isDark ? Colors.white : AppColors.lightText,
-            )),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+    return DashboardScaffold(
+      titleKey: 'nav.volunteer',
+      moduleKey: 'volunteer',
+      constrainWidth: false,
       body: _loading
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.primary))

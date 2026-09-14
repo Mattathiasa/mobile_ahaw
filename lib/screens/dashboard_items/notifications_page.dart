@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 
 import '../../services/auth_service.dart';
 import '../../services/localization_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
+import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Notifications page: per-user notifications from the
@@ -16,34 +18,21 @@ class NotificationsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = context.watch<AuthService>().userModel;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(Provider.of<LocalizationService>(context).t('notifications'),
-            style: GoogleFonts.notoSansEthiopic(
-              fontWeight: FontWeight.w900,
-              color: isDark ? Colors.white : AppColors.lightText,
-            )),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          if (user != null)
-            IconButton(
-              tooltip: 'Mark all as read',
-              icon: const Icon(Icons.done_all, color: AppColors.primary),
-              onPressed: () => _markAllRead(context, user.id),
-            ),
-        ],
-      ),
+    return DashboardScaffold(
+      titleKey: 'nav.notifications',
+      constrainWidth: false,
+      actions: [
+        if (user != null)
+          IconButton(
+            tooltip: 'Mark all as read',
+            icon: const Icon(Icons.done_all, color: AppColors.primary),
+            onPressed: () => _markAllRead(context, user.id),
+          ),
+      ],
       body: user == null
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.primary))
@@ -59,8 +48,9 @@ class NotificationsPage extends StatelessWidget {
                           CircularProgressIndicator(color: AppColors.primary));
                 }
                 if (snapshot.hasError) {
-                  return _empty(Icons.error_outline,
-                      'Could not load notifications');
+                  return const DashboardEmpty(
+                      icon: Icons.error_outline,
+                      messageKey: 'admin.unitLoadFailed');
                 }
 
                 final docs = (snapshot.data?.docs ?? []).toList()
@@ -74,8 +64,9 @@ class NotificationsPage extends StatelessWidget {
                   });
 
                 if (docs.isEmpty) {
-                  return _empty(
-                      Icons.notifications_none, 'No notifications yet');
+                  return const DashboardEmpty(
+                      icon: Icons.notifications_none,
+                      messageKey: 'pages.noNotifications');
                 }
 
                 return ListView.builder(
@@ -89,23 +80,6 @@ class NotificationsPage extends StatelessWidget {
     );
   }
 
-  Widget _empty(IconData icon, String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 56, color: AppColors.primary.withValues(alpha: 0.4)),
-          const SizedBox(height: 16),
-          Text(message,
-              style: GoogleFonts.notoSansEthiopic(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              )),
-        ],
-      ),
-    );
-  }
 
   Future<void> _markAllRead(BuildContext context, String userId) async {
     final db = FirebaseFirestore.instance;

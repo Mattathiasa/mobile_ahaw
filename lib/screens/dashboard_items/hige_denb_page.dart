@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/localization_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web HigeDenb page: the four governance rule cards plus the
@@ -45,25 +46,13 @@ class HigeDenbPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(Provider.of<LocalizationService>(context).t('higeDenb'),
-            style: GoogleFonts.notoSansEthiopic(
-              fontWeight: FontWeight.w900,
-              color: isDark ? Colors.white : AppColors.lightText,
-            )),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+    return DashboardScaffold(
+      titleKey: 'nav.higeDenb',
+      moduleKey: 'higeDenb',
+      constrainWidth: false,
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
