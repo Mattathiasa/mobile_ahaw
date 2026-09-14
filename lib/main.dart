@@ -1,8 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'models/user_model.dart';
 import 'screens/dashboard_page.dart';
@@ -14,6 +15,8 @@ import 'services/audit_service.dart';
 import 'services/audit_log_service.dart';
 import 'services/auth_service.dart';
 import 'services/church_rules_service.dart';
+import 'services/connectivity_service.dart';
+import 'services/gallery_service.dart';
 import 'services/landing_content_service.dart';
 import 'services/localization_service.dart';
 import 'services/notification_service.dart';
@@ -22,8 +25,9 @@ import 'services/remote_config_service.dart';
 import 'services/role_registry_service.dart';
 import 'services/module_config_service.dart';
 import 'services/software_control_service.dart';
-import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
+import 'widgets/branded_loader.dart';
+import 'widgets/offline_banner.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 @pragma('vm:entry-point')
@@ -33,11 +37,29 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Date symbols for every locale, so a date can be formatted in the reader's
+  // language rather than the device's. Bundled with `intl` — no network, and
+  // without it DateFormat only knows en_US. See formatLandingDate().
+  await initializeDateFormatting();
+
   try {
     // Uses platform options derived from google-services.json (Android) and
     // GoogleService-Info.plist (iOS); on web uses firebase_options.dart.
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
+
+    // Offline cache, stated explicitly rather than left to the library default.
+    //
+    // cloud_firestore already enables disk persistence on Android/iOS, but caps
+    // it at 40 MB and evicts silently — so whether a screen works offline
+    // depended on how much else had been read since. Unlimited makes the
+    // behaviour predictable. On web, persistence is OFF by default and this is
+    // what turns it on.
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
 
     if (!kIsWeb) {
       // FCM background handling is mobile-only.
@@ -62,6 +84,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => SoftwareControlService()),
         ChangeNotifierProvider(create: (_) => LocalizationService()),
         ChangeNotifierProvider(create: (_) => LandingContentService()),
+        ChangeNotifierProvider(create: (_) => GalleryService()),
+        ChangeNotifierProvider(create: (_) => ConnectivityService()),
         ChangeNotifierProvider(create: (_) => ChurchRulesService()),
       ],
       child: const MyApp(),
@@ -83,6 +107,9 @@ class MyApp extends StatelessWidget {
           themeMode: themeProvider.themeMode,
           theme: themeProvider.lightTheme,
           darkTheme: themeProvider.darkTheme,
+          builder: (context, child) => OfflineBanner(
+            child: child ?? const SizedBox.shrink(),
+          ),
           routes: {
             '/': (context) => const AuthWrapper(),
             '/login': (context) => const LoginPage(),
@@ -107,6 +134,35 @@ class AuthWrapper extends StatefulWidget {
 class _AuthWrapperState extends State<AuthWrapper> {
   String? _lastLoadedUid;
   UserModel? _lastUserModel;
+  bool _statusHookAttached = false;
+
+  /// Turns a live `users/{uid}.status` transition into a device notification.
+  ///
+  /// This is the free half of "tell the member their request was decided": the
+  /// app is already watching its own user document, so when an approver acts in
+  /// the web the client raises the notification itself. No Cloud Function, no
+  /// Blaze plan. It only fires while the app is alive — see
+  /// NotificationService.showLocal for why that limit is unavoidable here.
+  void _attachStatusHook(AuthService auth, LocalizationService loc) {
+    if (_statusHookAttached) return;
+    _statusHookAttached = true;
+    auth.onStatusChanged = (previous, next) {
+      if (previous != 'pending') return;
+      if (next == 'active') {
+        NotificationService.showLocal(
+          id: 90001,
+          title: loc.t('pages.approvedNotificationTitle'),
+          body: loc.t('pages.approvedNotificationBody'),
+        );
+      } else if (next == 'rejected') {
+        NotificationService.showLocal(
+          id: 90002,
+          title: loc.t('pages.rejectedNotificationTitle'),
+          body: loc.t('pages.rejectedGeneric'),
+        );
+      }
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +170,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
     final permissionService =
         Provider.of<PermissionService>(context, listen: false);
     final remoteConfig = Provider.of<RemoteConfigService>(context);
+
+    _attachStatusHook(
+        authService, Provider.of<LocalizationService>(context, listen: false));
 
     // Remote gates controlled from the web admin (Mobile App Control)
     if (remoteConfig.killSwitch) {
@@ -171,49 +230,40 @@ class _AuthWrapperState extends State<AuthWrapper> {
       });
     }
 
-    // Show splash/loading while Firebase auth state is being determined
+    // Show the welcome screen while Firebase auth state is being determined.
     if (authService.isLoading) {
-      return Scaffold(
-        backgroundColor: AppColors.lightBackground,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'AHAW',
-                style: GoogleFonts.notoSansEthiopic(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primary,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return const Scaffold(body: BrandedLoader());
     }
 
-    // Authenticated but still pending approval → holding screen. Data access is
-    // denied server-side until an approver activates them, so keep them here.
-    if (authService.isAuthenticated &&
-        authService.userModel?.status == 'pending') {
-      return PendingApprovalScreen(
-        parishName: authService.userModel?.atbiyaName,
-        onSignOut: () => authService.signOut(),
-      );
+    // Authenticated but not yet an active member. Data access is denied
+    // server-side in every one of these states, so each gets its own screen
+    // rather than a dashboard whose every query fails.
+    if (authService.isAuthenticated) {
+      final status = authService.userModel?.status;
+
+      if (status == 'pending') {
+        return PendingApprovalScreen(
+          parishName: authService.userModel?.atbiyaName,
+          onSignOut: () => authService.signOut(),
+        );
+      }
+
+      // Previously fell through to the dashboard, which looked like breakage
+      // rather than a decision.
+      if (status == 'rejected') {
+        return RejectedScreen(
+          reason: authService.userModel?.rejectedReason,
+          onSignOut: () => authService.signOut(),
+        );
+      }
+
+      // 'suspended', or an Auth account with no users/{uid} document at all.
+      if (status == 'suspended' || status == 'missing') {
+        return RejectedScreen(
+          reason: null,
+          onSignOut: () => authService.signOut(),
+        );
+      }
     }
 
     // Authenticated → Dashboard

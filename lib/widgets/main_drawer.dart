@@ -9,6 +9,7 @@ import '../services/remote_config_service.dart';
 import '../services/software_control_service.dart';
 import '../services/role_registry_service.dart';
 import '../theme/app_colors.dart';
+import 'home/home_common.dart';
 import '../theme/app_theme.dart';
 import '../screens/dashboard_items/announcements_page.dart';
 import '../screens/dashboard_items/plans_page.dart';
@@ -36,7 +37,9 @@ import '../screens/dashboard_items/inventory_page.dart';
 import '../screens/dashboard_items/hr_page.dart';
 import '../screens/dashboard_items/news_page.dart';
 import '../screens/suggestion_page.dart';
+
 import '../screens/about_page.dart';
+import '../services/landing_content_service.dart';
 
 class MainDrawer extends StatefulWidget {
   const MainDrawer({super.key});
@@ -155,9 +158,14 @@ class _MainDrawerState extends State<MainDrawer> {
             return perms.isSuperAdmin || roleRegistry.isApproverRole(level);
           }
           if (i.permission == 'parishConsole') {
-            return perms.isSuperAdmin ||
-                roleRegistry.isApproverRole(level) ||
-                (authService.userModel?.parishId ?? '').isNotEmpty;
+            // Having a parish is not the same as running one. The trailing
+            // `parishId.isNotEmpty` used to admit every self-signed-up member —
+            // they all have an atbiyaId — so the parish console, and the
+            // Membership Requests and Hierarchy screens it deep-links to, were
+            // reachable by rank-and-file members. The reads are denied
+            // server-side, but the page swallows that and renders blank counts,
+            // which reads as breakage rather than as a closed door.
+            return perms.isSuperAdmin || roleRegistry.isApproverRole(level);
           }
           return i.permission == null || perms.can(i.permission!);
         })
@@ -197,6 +205,7 @@ class _MainDrawerState extends State<MainDrawer> {
               ],
             ),
           ),
+          _buildWebsiteLink(context),
           _buildLogoutButton(context, authService, isDark),
         ],
       ),
@@ -445,6 +454,53 @@ class _MainDrawerState extends State<MainDrawer> {
                   ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// A way through to the public site.
+  ///
+  /// The URL prefers whatever an admin set in the Landing Editor's contact
+  /// block (the same `contact.website` the homepage Contact section renders),
+  /// falling back to the domain in the web repo's CNAME.
+  Widget _buildWebsiteLink(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
+    final content = LandingContent(
+      Provider.of<LandingContentService>(context).forLanguage(loc.language),
+    );
+    final url = content.websiteUrl;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => openExternal(url, context: context),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.language, color: AppColors.primary, size: 18),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  loc.t('common.visitWebsite').toUpperCase(),
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.notoSansEthiopic(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

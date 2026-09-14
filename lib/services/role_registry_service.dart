@@ -72,6 +72,7 @@ class RoleRegistryService extends ChangeNotifier {
             scope: _parseScope(r['scope']?.toString()),
             isAdmin: r['isAdmin'] == true,
             canApproveMembers: r['canApproveMembers'] == true,
+            active: r['active'] != false,
             labels: (r['labels'] is Map)
                 ? Map<String, dynamic>.from(r['labels'] as Map)
                 : const {},
@@ -114,6 +115,28 @@ class RoleRegistryService extends ChangeNotifier {
     return _roles[key]?.canApproveMembers ?? _seedApprovers.contains(key);
   }
 
+  /// The roles an approver may hand out, mirroring `assignableRoles` in the
+  /// web's MembershipRequests.tsx: everything active, minus the admin roles
+  /// unless the approver is head office (the rules refuse an admin role
+  /// assigned by anyone else, so offering one would only produce a denial).
+  ///
+  /// Falls back to the seed keys before `siteConfig/roles` resolves, so the
+  /// dialog is never empty. The mobile page used to carry its own hardcoded
+  /// list, which meant any role added in Software Control was invisible here
+  /// and approvers saw raw keys instead of labels.
+  List<String> assignableRoles({required bool isHeadOffice}) {
+    if (_roles.isNotEmpty) {
+      final keys = _roles.entries
+          .where((e) => e.value.active && (isHeadOffice || !e.value.isAdmin))
+          .map((e) => e.key)
+          .toList();
+      if (keys.isNotEmpty) return keys;
+    }
+    return _seedScopes.keys
+        .where((k) => isHeadOffice || !_seedAdmins.contains(k))
+        .toList();
+  }
+
   String roleLabel(String? key, String lang) {
     if (key == null) return '';
     final labels = _roles[key]?.labels;
@@ -147,10 +170,16 @@ class _RoleInfo {
   final bool isAdmin;
   final bool canApproveMembers;
   final Map<String, dynamic> labels;
+
+  /// A role switched off in Software Control is still readable but must not be
+  /// offered when approving somebody.
+  final bool active;
+
   const _RoleInfo({
     required this.scope,
     required this.isAdmin,
     required this.canApproveMembers,
     required this.labels,
+    this.active = true,
   });
 }

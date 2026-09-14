@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/church_map_service.dart';
 import '../../services/hierarchy_service.dart';
@@ -10,6 +9,7 @@ import '../../services/auth_service.dart';
 import '../../services/permission_service.dart';
 import '../../services/role_registry_service.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/home/home_common.dart';
 
 /// Lightweight Church Map: lists congregations with their pin status, opens a
 /// pin in the phone's maps app, and lets admins set/edit coordinates. Pins are
@@ -141,19 +141,21 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
                     ? const Icon(Icons.open_in_new,
                         size: 18, color: AppColors.primary)
                     : null),
-            onTap: pinned ? () => _openInMaps(coords.lat, coords.lng) : null,
+            onTap: pinned
+                ? () => _openInMaps(context, coords.lat, coords.lng)
+                : null,
           ),
         );
       },
     );
   }
 
-  Future<void> _openInMaps(double lat, double lng) async {
-    final uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+  Future<void> _openInMaps(
+      BuildContext context, double lat, double lng) async {
+    await openExternal(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+      context: context,
+    );
   }
 
   Future<void> _editPin(

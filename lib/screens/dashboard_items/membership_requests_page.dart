@@ -7,6 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../services/membership_requests_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/permission_service.dart';
+import '../../services/localization_service.dart';
 import '../../services/role_registry_service.dart';
 import '../../theme/app_colors.dart';
 
@@ -23,13 +24,17 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
   final MembershipRequestsService _service = MembershipRequestsService();
   late Future<List<Map<String, dynamic>>> _future;
 
-  static const _roles = [
-    'HiyawanMahderat',
-    'EnkesekaseMaikel',
-    'Atbiya',
-    'Zone',
-    'Memriya',
-  ];
+  /// The assignable roles come from RoleRegistryService (`siteConfig/roles`),
+  /// not a const list: roles are dynamic, so a hardcoded set hid any role an
+  /// admin added in Software Control and showed raw keys instead of labels.
+  List<String> _assignableRoles(BuildContext context) {
+    final registry = Provider.of<RoleRegistryService>(context, listen: false);
+    final perms = Provider.of<PermissionService>(context, listen: false);
+    final me = Provider.of<AuthService>(context, listen: false).userModel;
+    final headOffice = perms.isSuperAdmin ||
+        registry.scopeOf(me?.hierarchyLevel) == RoleScope.global;
+    return registry.assignableRoles(isHeadOffice: headOffice);
+  }
 
   @override
   void initState() {
@@ -86,16 +91,31 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
                 child: CircularProgressIndicator(color: AppColors.primary));
           }
           if (snapshot.hasError) {
-            return _empty('Could not load requests', FontAwesomeIcons.userClock);
+            // The web distinguishes these too: a composite index that is still
+            // building looks exactly like an empty queue otherwise, and an
+            // approver waits for requests that were there all along.
+            final message = snapshot.error.toString().toLowerCase();
+            final building =
+                message.contains('index') || message.contains('failed-precondition');
+            return _empty(
+              building
+                  ? 'The request list is still being prepared. Try again shortly.'
+                  : 'Could not load requests',
+              FontAwesomeIcons.userClock,
+            );
           }
           final requests = snapshot.data ?? [];
           if (requests.isEmpty) {
             return _empty('No pending requests', FontAwesomeIcons.userCheck);
           }
-          return ListView.builder(
-            padding: const EdgeInsets.all(20),
-            itemCount: requests.length,
-            itemBuilder: (context, i) => _card(requests[i], isDark, i),
+          return RefreshIndicator(
+            onRefresh: () async => _reload(),
+            color: AppColors.primary,
+            child: ListView.builder(
+              padding: const EdgeInsets.all(20),
+              itemCount: requests.length,
+              itemBuilder: (context, i) => _card(requests[i], isDark, i),
+            ),
           );
         },
       ),
@@ -179,9 +199,16 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
       );
 
   Future<void> _approve(Map<String, dynamic> r) async {
-    String role = _roles.contains(r['hierarchyLevel'])
-        ? r['hierarchyLevel']
-        : 'HiyawanMahderat';
+    final roles = _assignableRoles(context);
+    if (roles.isEmpty) {
+      _snack('No assignable roles are configured.', AppColors.sacredRed);
+      return;
+    }
+    final registry = Provider.of<RoleRegistryService>(context, listen: false);
+    final lang = Provider.of<LocalizationService>(context, listen: false).language;
+    String role = roles.contains(r['hierarchyLevel'])
+        ? r['hierarchyLevel'] as String
+        : roles.last;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -197,8 +224,9 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
                 initialValue: role,
                 isExpanded: true,
                 decoration: const InputDecoration(border: OutlineInputBorder()),
-                items: _roles
-                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                items: roles
+                    .map((e) => DropdownMenuItem(
+                        value: e, child: Text(registry.roleLabel(e, lang))))
                     .toList(),
                 onChanged: (v) => setD(() => role = v ?? role),
               ),
@@ -231,6 +259,7 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
 
   Future<void> _reject(Map<String, dynamic> r) async {
     final reasonCtrl = TextEditingController();
+    // Disposed in the finally below — this leaked a controller per rejection.
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -252,15 +281,16 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
         ],
       ),
     );
+    final reason = reasonCtrl.text;
+    reasonCtrl.dispose();
+
     if (confirmed != true) return;
     if (!mounted) return;
     try {
       final approverId =
           Provider.of<AuthService>(context, listen: false).userModel?.id ?? '';
       await _service.reject(
-          uid: r['id'] as String,
-          approverId: approverId,
-          reason: reasonCtrl.text);
+          uid: r['id'] as String, approverId: approverId, reason: reason);
       _reload();
       _snack('Request rejected', AppColors.divineGold);
     } catch (e) {

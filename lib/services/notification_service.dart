@@ -147,6 +147,49 @@ class NotificationService {
 
   /// Save the device FCM token to the current user's Firestore document.
   /// This enables the Cloud Function to send direct notifications.
+  /// Raises a notification on this device, with no server involved.
+  ///
+  /// Sending a *push* to a specific device needs a service-account credential,
+  /// which can only live on a server — and Cloud Functions require the Blaze
+  /// plan. So for events this app can observe itself (an approver flipping
+  /// `users/{uid}.status` while the member has the app open), the client raises
+  /// the notification locally instead. Free, no backend.
+  ///
+  /// The honest limit: this cannot fire when the app is fully closed. Waking a
+  /// terminated app needs a real push, and therefore a sender.
+  static Future<void> showLocal({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    if (kIsWeb) return;
+    try {
+      await _localNotifications.show(
+        id,
+        title,
+        body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'membership_channel',
+            'Membership',
+            channelDescription:
+                'Updates about your membership request',
+            icon: '@mipmap/ic_launcher',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (kDebugMode) print('[Notifications] local show failed: $e');
+    }
+  }
+
   static Future<void> _saveFcmToken() async {
     try {
       final token = await _messaging.getToken();
