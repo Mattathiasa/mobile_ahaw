@@ -27,8 +27,20 @@ class UserModel {
   final String? hierarchyEntityId;
   /// Name of the parish the member belongs to / requested.
   final String? atbiyaName;
-  /// Account status: 'active' | 'pending' | 'suspended'.
+  /// Account status: 'active' | 'pending' | 'rejected' | 'suspended', plus the
+  /// synthetic 'missing' the auth layer uses for an Auth account that has no
+  /// `users/{uid}` document.
+  ///
+  /// A MISSING `status` field on an existing document means 'active' — that is
+  /// the rules' own convention (`myStatus()` defaults to 'active') and legacy
+  /// records predate the field. But the constructor no longer defaults to it:
+  /// a model built *without* a document is not an active member, and defaulting
+  /// there let a profile-less account walk straight past the pending gate.
   final String status;
+
+  /// Why an approver turned the request down, when they gave a reason. Written
+  /// by `membership_requests_service.reject`; shown on the rejected gate.
+  final String? rejectedReason;
   /// Per-user notification toggles (push/meetings/reports/announcements/…).
   final Map<String, dynamic>? notificationPreferences;
   final dynamic createdAt;
@@ -59,7 +71,8 @@ class UserModel {
     this.atbiyaId,
     this.hierarchyEntityId,
     this.atbiyaName,
-    this.status = 'active',
+    required this.status,
+    this.rejectedReason,
     this.notificationPreferences,
     this.createdAt,
     this.updatedAt,
@@ -109,6 +122,7 @@ class UserModel {
       hierarchyEntityId: data['hierarchyEntityId'] as String?,
       atbiyaName: data['atbiyaName'] as String?,
       status: data['status'] as String? ?? 'active',
+      rejectedReason: data['rejectedReason'] as String?,
       notificationPreferences:
           data['notificationPreferences'] as Map<String, dynamic>?,
       createdAt: data['createdAt'],

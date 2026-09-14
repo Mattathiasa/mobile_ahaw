@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -15,6 +17,12 @@ class AuthService extends ChangeNotifier {
   User? _firebaseUser;
   UserModel? _userModel;
   bool _isLoading = true;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _profileSub;
+
+  /// Fired when the signed-in member's `status` changes while the app is open —
+  /// `(previous, next)`. main.dart uses it to raise a local notification the
+  /// moment an approver accepts or rejects the request.
+  void Function(String previous, String next)? onStatusChanged;
 
   AuthService() {
     _auth.authStateChanges().listen(_onAuthStateChanged);
@@ -63,19 +71,32 @@ class AuthService extends ChangeNotifier {
     _firebaseUser = firebaseUser;
 
     if (firebaseUser != null && !firebaseUser.isAnonymous) {
-      await _loadUserData(firebaseUser);
+      _listenToUserDoc(firebaseUser);
     } else {
+      await _profileSub?.cancel();
+      _profileSub = null;
       _userModel = null;
+      _isLoading = false;
+      notifyListeners();
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
-  Future<void> _loadUserData(User firebaseUser) async {
-    try {
-      final doc =
-          await _db.collection('users').doc(firebaseUser.uid).get();
+  /// Watches `users/{uid}` for the life of the session.
+  ///
+  /// This was a one-shot `.get()`, and that is what made approval invisible on
+  /// the phone: a member sitting on the pending screen when an approver flipped
+  /// `status` to `active` saw nothing until they killed and reopened the app.
+  /// A listener also means a suspension takes effect immediately rather than at
+  /// next launch.
+  void _listenToUserDoc(User firebaseUser) {
+    _profileSub?.cancel();
+    _profileSub = _db
+        .collection('users')
+        .doc(firebaseUser.uid)
+        .snapshots()
+        .listen((doc) {
+      final previous = _userModel?.status;
+
       if (doc.exists && doc.data() != null) {
         _userModel = UserModel.fromFirestore(
           firebaseUser.uid,
@@ -83,19 +104,32 @@ class AuthService extends ChangeNotifier {
           firebaseUser.email ?? '',
         );
       } else {
-        // User exists in Auth but not Firestore — create minimal model
+        // Authenticated with no profile document. This is NOT an ordinary
+        // member: the web signs such an account straight back out, and the
+        // status must not default to 'active' or the pending gate is bypassed
+        // entirely by anyone whose record was deleted.
         _userModel = UserModel(
           id: firebaseUser.uid,
           username: firebaseUser.email?.split('@')[0] ?? 'user',
           email: firebaseUser.email ?? '',
           role: 'user',
           hierarchyLevel: 'HiyawanMahderat',
+          status: 'missing',
         );
       }
-    } catch (e) {
-      if (kDebugMode) print('[AuthService] Error loading user data: $e');
-      _userModel = null;
-    }
+
+      final next = _userModel?.status;
+      if (previous != null && next != null && previous != next) {
+        onStatusChanged?.call(previous, next);
+      }
+
+      _isLoading = false;
+      notifyListeners();
+    }, onError: (e) {
+      if (kDebugMode) print('[AuthService] profile listen failed: $e');
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 
   // ── Sign in ─────────────────────────────────────────────────────────────────
@@ -103,9 +137,9 @@ class AuthService extends ChangeNotifier {
 
   Future<void> signIn(String usernameOrEmail, String password) async {
     String email = usernameOrEmail.trim();
+    final typedAUsername = !email.contains('@');
 
-    // If not an email, resolve username → email via Firestore
-    if (!email.contains('@')) {
+    if (typedAUsername) {
       email = await _resolveUsernameToEmail(email);
     }
 
@@ -114,57 +148,104 @@ class AuthService extends ChangeNotifier {
       await _auth.signInWithEmailAndPassword(
           email: email, password: password);
     } on FirebaseAuthException catch (e) {
+      throw _mapFirebaseError(e, typedAUsername: typedAUsername);
+    }
+  }
+
+  /// The deterministic login address for a username.
+  ///
+  /// Self-service signup always creates the Auth account here, storing any real
+  /// address the member gave as a *contact* field instead. Mirrors
+  /// `syntheticEmail` in the web's src/services/signup.ts.
+  static String syntheticEmail(String username) {
+    final clean =
+        username.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    return '$clean@mahibereahaw.local';
+  }
+
+  static bool isSyntheticEmail(String email) =>
+      email.toLowerCase().endsWith('@mahibereahaw.local');
+
+  /// Resolves a typed username to the address the Auth account actually uses.
+  ///
+  /// A port of `resolveEmail` in the web's src/services/auth.ts. The previous
+  /// implementation queried `users` where `username ==` and returned that
+  /// document's `email` — which is the member's *contact* address, not their
+  /// login address, so it was wrong for every self-signed-up account. It also
+  /// compared case-sensitively while the `usernames/` reservation is
+  /// lowercased. It only worked because firestore.rules denies that pre-auth
+  /// read, so it always fell through to the synthetic fallback.
+  ///
+  /// `usernames/{lowercased}` is world-readable by `get` precisely so this
+  /// lookup can happen before sign-in.
+  Future<String> _resolveUsernameToEmail(String username) async {
+    final key = username.trim().toLowerCase();
+    final deterministic = syntheticEmail(key);
+    try {
+      final row = await _db.collection('usernames').doc(key).get();
+      final mapped = row.data()?['email'];
+      if (mapped is String && mapped.trim().isNotEmpty) return mapped.trim();
+      return deterministic;
+    } catch (e) {
+      if (kDebugMode) print('[AuthService] username lookup failed: $e');
+      return deterministic;
+    }
+  }
+
+  /// Sends a password-reset email, porting `sendPasswordReset` from the web.
+  ///
+  /// Returns the address it was sent to, so the caller can name it. Two
+  /// deliberate behaviours are carried over: an account that only has a
+  /// synthetic login address cannot receive a reset and is told so plainly,
+  /// and `user-not-found` is swallowed rather than reported — otherwise this
+  /// form becomes an account-enumeration oracle.
+  Future<String> sendPasswordReset(String usernameOrEmail) async {
+    var email = usernameOrEmail.trim();
+    if (!email.contains('@')) {
+      email = await _resolveUsernameToEmail(email);
+    }
+    if (isSyntheticEmail(email)) {
+      throw _ResetWithoutEmail();
+    }
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') return email;
       throw _mapFirebaseError(e);
     }
+    return email;
   }
 
-  Future<String> _resolveUsernameToEmail(String username) async {
-    try {
-      final snapshot = await _db
-          .collection('users')
-          .where('username', isEqualTo: username)
-          .limit(1)
-          .get();
-
-      if (snapshot.docs.isNotEmpty) {
-        final data = snapshot.docs.first.data();
-        if (data['email'] != null && (data['email'] as String).isNotEmpty) {
-          return data['email'] as String;
-        }
-        // User exists but no email field — use deterministic fallback
-        final clean = username.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-        return '$clean@mahibereahaw.local';
-      } else {
-        // Not found — try deterministic fallback (legacy accounts)
-        final clean = username.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-        return '$clean@mahibereahaw.local';
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('[AuthService] Firestore username lookup failed: $e');
-      }
-      // Firestore permission denied before auth — use deterministic fallback
-      final clean = username.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-      return '$clean@mahibereahaw.local';
-    }
-  }
-
-  String _mapFirebaseError(FirebaseAuthException e) {
+  /// Maps a Firebase auth code to an i18n key the UI resolves through
+  /// `LocalizationService.t`. These were English literals, so an Amharic
+  /// reader hit a wall of English the moment anything went wrong.
+  ///
+  /// `wrongPasswordTryEmail` is the web's nicety: when somebody typed a
+  /// username, the likelier cause is that they registered with an email.
+  AuthErrorKey _mapFirebaseError(FirebaseAuthException e,
+      {bool typedAUsername = false}) {
     switch (e.code) {
       case 'invalid-login-credentials':
       case 'invalid-credential':
       case 'wrong-password':
-        return 'Incorrect password. Please try again.';
+        return AuthErrorKey(typedAUsername
+            ? 'errors.wrongPasswordTryEmail'
+            : 'errors.wrongPassword');
       case 'user-not-found':
-        return 'No account found with this username or email.';
+        return AuthErrorKey('errors.noAccount');
       case 'invalid-email':
-        return 'The email or username format is invalid.';
+        return AuthErrorKey('errors.invalidIdentifier');
       case 'user-disabled':
-        return 'This account has been disabled. Contact your administrator.';
+        return AuthErrorKey('errors.accountDisabled');
       case 'too-many-requests':
-        return 'Too many failed attempts. Please wait a few minutes and try again.';
+        return AuthErrorKey('errors.tooManyAttempts');
+      case 'network-request-failed':
+        // Sign-in is the one thing the offline cache cannot serve, so say so
+        // rather than surfacing a raw Firebase string.
+        return AuthErrorKey('errors.networkProblem');
       default:
-        return 'Login failed: ${e.message}';
+        return AuthErrorKey('errors.loginFailedDetail',
+            params: {'detail': e.message ?? e.code});
     }
   }
 
@@ -174,14 +255,39 @@ class AuthService extends ChangeNotifier {
   Future<void> refreshUser() async {
     final firebaseUser = _auth.currentUser;
     if (firebaseUser == null) return;
-    await _loadUserData(firebaseUser);
-    notifyListeners();
+    // The snapshot listener already pushes every change; re-attaching is only
+    // useful if it had errored out.
+    _listenToUserDoc(firebaseUser);
   }
 
   // ── Sign out ────────────────────────────────────────────────────────────────
 
+  /// Signs out and drops the local Firestore cache.
+  ///
+  /// The cache is not partitioned by user: without this, every document the
+  /// previous member had read stays readable on the device after somebody else
+  /// signs in. Server rules would deny a *fresh* read, but the SDK answers from
+  /// disk first, so on a shared phone this was a real disclosure.
+  ///
+  /// `clearPersistence` only works with no active listeners, which is why the
+  /// profile subscription is cancelled first and the whole thing is
+  /// best-effort — failing to clear must never trap someone in a session.
   Future<void> signOut() async {
+    await _profileSub?.cancel();
+    _profileSub = null;
     await _auth.signOut();
+    try {
+      await _db.terminate();
+      await _db.clearPersistence();
+    } catch (e) {
+      if (kDebugMode) print('[AuthService] cache clear failed: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _profileSub?.cancel();
+    super.dispose();
   }
 
   // ── Change password ─────────────────────────────────────────────────────────
@@ -192,10 +298,10 @@ class AuthService extends ChangeNotifier {
   }) async {
     final firebaseUser = _auth.currentUser;
     if (firebaseUser == null || firebaseUser.email == null) {
-      throw 'No user is currently signed in.';
+      throw AuthErrorKey('errors.notSignedIn');
     }
     if (newPassword.length < 6) {
-      throw 'New password must be at least 6 characters long.';
+      throw AuthErrorKey('errors.passwordTooShort');
     }
     final credential = EmailAuthProvider.credential(
       email: firebaseUser.email!,
@@ -204,8 +310,34 @@ class AuthService extends ChangeNotifier {
     try {
       await firebaseUser.reauthenticateWithCredential(credential);
     } catch (_) {
-      throw 'Current password is incorrect.';
+      throw AuthErrorKey('errors.currentPasswordWrong');
     }
     await firebaseUser.updatePassword(newPassword);
   }
+}
+
+/// An auth failure carrying an i18n key rather than an English sentence.
+///
+/// The UI resolves it with `LocalizationService.t(key)` and substitutes
+/// `{param}` placeholders, matching how the web's `AppError` + `errorMessage`
+/// pair works.
+class AuthErrorKey implements Exception {
+  final String key;
+  final Map<String, String> params;
+  AuthErrorKey(this.key, {this.params = const {}});
+
+  /// The resolved sentence. [translate] is normally `LocalizationService.t`.
+  String resolve(String Function(String) translate) {
+    var out = translate(key);
+    params.forEach((k, v) => out = out.replaceAll('{$k}', v));
+    return out;
+  }
+
+  @override
+  String toString() => key;
+}
+
+/// Thrown when a reset is asked for on an account that has no real email.
+class _ResetWithoutEmail extends AuthErrorKey {
+  _ResetWithoutEmail() : super('errors.noEmailOnAccount');
 }

@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../utils/phone.dart';
+
 /// Public member self sign-up, mirroring the web's src/services/signup.ts.
 ///
 /// Creates the Firebase Auth account immediately but writes the Firestore
@@ -43,6 +45,16 @@ class SignupService {
     String dateOfBirth = '',
     required String atbiyaId,
     required String atbiyaName,
+    String maritalStatus = '',
+    bool hasChildren = false,
+    int childrenCount = 0,
+    String workSchool = '',
+    String region = '',
+    String zone = '',
+    String woreda = '',
+    double? lat,
+    double? lng,
+    List<String> ministryType = const [],
   }) async {
     final auth = FirebaseAuth.instance;
     final db = FirebaseFirestore.instance;
@@ -72,7 +84,7 @@ class SignupService {
         'fullNameEnglish': fullNameEnglish.trim(),
         'fullNameAmharic': fullNameAmharic.trim(),
         'fullName': fullNameEnglish.trim(),
-        'phone': phone.trim(),
+        'phone': normalizeEthiopianPhone(phone) ?? phone.trim(),
         'dateOfBirth': dateOfBirth,
         'gender': gender,
         'maritalStatus': '',

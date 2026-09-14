@@ -20,7 +20,9 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isResetting = false;
   String? _errorMessage;
+  String? _resetNotice;
 
   @override
   void dispose() {
@@ -30,9 +32,20 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _signIn() async {
+    final loc = Provider.of<LocalizationService>(context, listen: false);
+
+    // The web refuses to submit an empty form rather than round-tripping to
+    // Firebase for an answer it already knows.
+    if (_emailController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
+      setState(() => _errorMessage = loc.t('errors.enterIdentifierFirst'));
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _resetNotice = null;
     });
 
     try {
@@ -41,27 +54,58 @@ class _LoginPageState extends State<LoginPage> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      // ── Success: pop back to AuthWrapper which will show DashboardPage ──
+      // ── Success: pop back to AuthWrapper, which routes by membership status ──
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        if (_errorMessage!.contains('firebase_auth')) {
-          _errorMessage = _errorMessage!.split('] ').last;
-        }
-        // Clean up common Firebase error prefixes
-        if (_errorMessage!.startsWith('Exception: ')) {
-          _errorMessage = _errorMessage!.replaceFirst('Exception: ', '');
-        }
-      });
+      if (!mounted) return;
+      setState(() => _errorMessage = _describe(e, loc));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
   }
+
+  /// AuthService throws [AuthErrorKey] so the sentence can be localized here.
+  /// Anything else is shown as-is, minus the framework noise.
+  String _describe(Object e, LocalizationService loc) {
+    if (e is AuthErrorKey) return e.resolve(loc.t);
+    var msg = e.toString();
+    if (msg.startsWith('Exception: ')) {
+      msg = msg.replaceFirst('Exception: ', '');
+    }
+    return msg;
+  }
+
+  Future<void> _forgotPassword() async {
+    final loc = Provider.of<LocalizationService>(context, listen: false);
+    final typed = _emailController.text.trim();
+    if (typed.isEmpty) {
+      setState(() => _errorMessage = loc.t('errors.enterIdentifierFirst'));
+      return;
+    }
+
+    setState(() {
+      _isResetting = true;
+      _errorMessage = null;
+      _resetNotice = null;
+    });
+    try {
+      final auth = Provider.of<AuthService>(context, listen: false);
+      final sentTo = await auth.sendPasswordReset(typed);
+      if (!mounted) return;
+      setState(() => _resetNotice =
+          loc.t('pages.resetLinkSent').replaceAll('{email}', sentTo));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _errorMessage = _describe(e, loc));
+    } finally {
+      if (mounted) setState(() => _isResetting = false);
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -70,8 +114,11 @@ class _LoginPageState extends State<LoginPage> {
     final loc = Provider.of<LocalizationService>(context);
 
     // Real 4-way language cycle (EN → AM → OM → TI) wired to the app locale.
-    const langs = LocalizationService.supportedLanguages;
-    final nextLang = langs[(langs.indexOf(loc.language) + 1) % langs.length];
+    // The button names the language you are READING, and moves to the next on
+    // tap — the web's behaviour, and what the landing nav does. It used to show
+    // the next language's code, so a reader on Amharic saw a button marked
+    // "OM" and had no idea the app was already in their language.
+    final nextLang = LocalizationService.nextLanguageAfter(loc.language);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -216,7 +263,8 @@ class _LoginPageState extends State<LoginPage> {
                           color: isDark ? AppColors.accent : AppColors.primary),
                       const SizedBox(width: 4),
                       Text(
-                        nextLang.toUpperCase(),
+                        LocalizationService.languageEndonyms[loc.language] ??
+                            loc.language.toUpperCase(),
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
@@ -403,6 +451,7 @@ class _LoginPageState extends State<LoginPage> {
                               _buildTextField(
                                 controller: _emailController,
                                 label: loc.t('loginUsernameLabel'),
+                                hint: loc.t('pages.loginUsernamePlaceholder'),
                                 icon: Icons.mail_outline,
                                 isDark: isDark,
                               ).animate().fadeIn(delay: 300.ms).moveX(begin: -20),
@@ -413,6 +462,7 @@ class _LoginPageState extends State<LoginPage> {
                               _buildTextField(
                                 controller: _passwordController,
                                 label: loc.t('loginPasswordLabel'),
+                                hint: loc.t('pages.loginPasswordPlaceholder'),
                                 icon: Icons.lock_outline,
                                 isObscure: true,
                                 isLast: true,
@@ -420,7 +470,69 @@ class _LoginPageState extends State<LoginPage> {
                                 onSubmitted: (_) => _signIn(),
                               ).animate().fadeIn(delay: 400.ms).moveX(begin: -20),
 
-                              const SizedBox(height: 24),
+                              // ── Forgot password ──
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: (_isLoading || _isResetting)
+                                      ? null
+                                      : _forgotPassword,
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 4, vertical: 8),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Text(
+                                    _isResetting
+                                        ? loc.t('pages.loginSendingReset')
+                                        : loc.t('pages.loginForgotPassword'),
+                                    style: GoogleFonts.notoSansEthiopic(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary
+                                          .withValues(alpha: 0.85),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              // ── Reset confirmation ──
+                              if (_resetNotice != null)
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  margin: const EdgeInsets.only(bottom: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.success
+                                        .withValues(alpha: 0.08),
+                                    border: Border.all(
+                                        color: AppColors.success
+                                            .withValues(alpha: 0.3)),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.check_circle_outline,
+                                          size: 18, color: AppColors.success),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _resetNotice!,
+                                          style: GoogleFonts.notoSansEthiopic(
+                                            fontSize: 12,
+                                            height: 1.5,
+                                            color: AppColors.success,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ).animate().fadeIn(),
+
+                              const SizedBox(height: 16),
 
                               // ── Sign In button ──
                               SizedBox(
@@ -451,7 +563,7 @@ class _LoginPageState extends State<LoginPage> {
                                               MainAxisAlignment.center,
                                           children: [
                                             Text(
-                                              loc.t('loginSignIn'),
+                                              loc.t('pages.loginSignIn'),
                                               style: const TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.bold),
@@ -473,7 +585,8 @@ class _LoginPageState extends State<LoginPage> {
                                     : () => Navigator.pushNamed(
                                         context, '/signup'),
                                 child: Text(
-                                  "Don't have an account? Create one",
+                                  '${loc.t('pages.loginNewMember')} '
+                                  '${loc.t('pages.loginCreateAccount')}',
                                   style: GoogleFonts.notoSansEthiopic(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w800,
@@ -492,7 +605,7 @@ class _LoginPageState extends State<LoginPage> {
                                             builder: (_) =>
                                                 const SuggestionPage())),
                                 child: Text(
-                                  'Send us a suggestion',
+                                  loc.t('nav.suggestions'),
                                   style: GoogleFonts.notoSansEthiopic(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
@@ -549,7 +662,7 @@ class _LoginPageState extends State<LoginPage> {
 
                               // ── Footer ──
                               Text(
-                                '© 2025 Mahibere Ahaw',
+                                '© ${DateTime.now().year} Mahibere Ahaw',
                                 style: GoogleFonts.notoSansEthiopic(
                                   fontSize: 11,
                                   color: isDark
@@ -602,6 +715,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
+    String? hint,
     required IconData icon,
     bool isObscure = false,
     bool isLast = false,
@@ -631,6 +745,13 @@ class _LoginPageState extends State<LoginPage> {
         onSubmitted: onSubmitted,
         decoration: InputDecoration(
           labelText: label,
+          hintText: hint,
+          hintStyle: TextStyle(
+            color: isDark
+                ? Colors.white24
+                : AppColors.primary.withValues(alpha: 0.35),
+            fontSize: 13,
+          ),
           labelStyle: TextStyle(
             color: isDark
                 ? Colors.white54
