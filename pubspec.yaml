@@ -52,19 +52,66 @@ dependencies:
   http: ^1.2.0
   image_picker: ^1.1.2
   file_picker: '>=8.0.0 <8.1.0'
+  connectivity_plus: ^7.3.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
 
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/logo.png"
+  image_path_android: "assets/logo_seal_full_bleed.png"
+  image_path_ios: "assets/logo_icon_ios.png"
   min_sdk_android: 21
+
+  # ── Android: the seal filling the icon, no plate ─────────────────────────
+  # A *legacy* bitmap icon is not enough on Android 8+: with no adaptive icon
+  # the launcher supplies its own backdrop, which is where the white circle
+  # came from. Hence the adaptive icon.
+  #
+  # The background is NOT transparent and cannot usefully be: Android always
+  # fills the mask with the background layer, compositing #00000000 as solid
+  # black — which is exactly the black ring this started with. The launcher
+  # also lightens whatever colour it is given (a magenta test rendered as pale
+  # pink), so the background is never reliably invisible. The only way to be
+  # rid of it is for the foreground to cover the mask completely, which is what
+  # the asset and inset below are for; the navy is just what shows in the
+  # corners of a non-circular mask, where a round seal cannot reach.
+  #
+  # The foreground is a SEPARATE asset, twice-processed, because inset alone
+  # could not do this. logo_icon_1024.png wastes ~8% of its canvas on
+  # transparent padding, and even at inset 0 the seal still stopped ~4px short
+  # of the mask on a Pixel launcher — leaving the ring of background this was
+  # meant to remove. So logo_seal_edge.png is the artwork cropped square to the
+  # seal AND scaled 1.06x, which pushes it past the mask on every side.
+  #
+  # The 1.06 is measured, not picked. Radially the seal reads: black inner line
+  # at 0.76 of its radius, white rim-text band 0.78-0.96 with the lettering at
+  # 0.86-0.88, black outer rim 0.97-1.00. Cropping at 0.943 therefore sacrifices
+  # the black rim and a sliver of empty band while leaving the lettering whole.
+  # The rim is the part that reads as a border at icon size anyway.
+  # Split per platform. Android's legacy pre-Oreo bitmap keeps the transparent
+  # full-bleed seal; iOS gets a pre-flattened opaque file (see below).
+  # ── iOS: opaque, because Apple requires it ───────────────────────────────
+  # iOS app icons may not carry an alpha channel — App Store Connect rejects
+  # them outright ("the app icon can't contain an alpha channel or
+  # transparency"). This previously shipped WITH alpha, which would have failed
+  # submission.
+  #
+  # logo_icon_ios.png is the seal already composited onto the navy, rather than
+  # letting the generator flatten it: its alpha removal left a bright green
+  # fringe around the seal (1.3% of the icon was strongly green). Compositing
+  # by hand in premultiplied space avoids that, because a transparent pixel's
+  # colour can never bleed into the anti-aliased edge.
+  #
+  # A round seal cannot fill a rounded SQUARE, so the four corners show navy.
+  # That is geometry, not a setting — but the seal does touch all four edge
+  # midpoints, which is where iOS's superellipse reaches full width.
   remove_alpha_ios: true
+  background_color_ios: "#0D2440"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
