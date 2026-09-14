@@ -33,5 +33,40 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+
+        <!--
+          Package visibility for the schemes url_launcher opens.
+
+          On Android 11+ (this app targets 36) `canLaunchUrl` can only see
+          activities the manifest declares an interest in, and
+          url_launcher_android ships no <queries> of its own. Without these,
+          canLaunchUrl returned false and every link failed silently: the
+          website, all four social icons, "Open in Maps", the mailto: contact
+          addresses, the parish map links, and — worst — the "Update now"
+          button on the force-update gate, which left a user the admin had
+          deliberately gated with no way forward.
+
+          Verified on a Pixel emulator: before this block the https and mailto
+          icons did nothing while the tel: icon opened the dialer, because the
+          default dialer is auto-visible to every app and browsers and mail
+          clients are not. tel: is declared anyway rather than relying on that
+          exemption.
+        -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="http"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO"/>
+            <data android:scheme="mailto"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.DIAL"/>
+            <data android:scheme="tel"/>
+        </intent>
     </queries>
 </manifest>
