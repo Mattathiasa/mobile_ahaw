@@ -3,7 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import '../../services/localization_service.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
+import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../services/auth_service.dart';
 import '../../services/permission_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -16,6 +19,12 @@ class AnnouncementsPage extends StatefulWidget {
 }
 
 class _AnnouncementsPageState extends State<AnnouncementsPage> {
+  /// The catalog, reachable from dialogs and sheets as well as `build`.
+  /// `build` separately watches it (below) so a language change rebuilds the
+  /// screen; this accessor only reads, so it is safe outside the build phase.
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final _searchCtrl = TextEditingController();
   String _search = '';
@@ -170,14 +179,14 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete Announcement',
+        title: Text(loc.t('pages.deleteAnnouncement'),
             style: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.w900)),
-        content: Text('Delete "$title"? This cannot be undone.',
+        content: Text('${loc.t('pages.deleteAnnouncement')}: "$title"',
             style: GoogleFonts.notoSansEthiopic()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
+            child: Text(loc.t('admin.cancel'),
                 style: GoogleFonts.notoSansEthiopic(color: Colors.grey)),
           ),
           ElevatedButton(
@@ -191,7 +200,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
               await _db.collection('announcements').doc(id).delete();
               _showSnack('Announcement deleted', success: true);
             },
-            child: Text('Delete',
+            child: Text(loc.t('pages.delete'),
                 style: GoogleFonts.notoSansEthiopic(
                     color: Colors.white, fontWeight: FontWeight.bold)),
           ),
@@ -212,6 +221,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final perms = Provider.of<PermissionService>(context);
     // SuperAdmin always gets all actions; otherwise check specific permission
@@ -219,43 +229,31 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
     final canEdit   = perms.isSuperAdmin || perms.can('canEditAnnouncement');
     final canDelete = perms.isSuperAdmin || perms.can('canDeleteAnnouncement');
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('Announcements',
-            style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : AppColors.lightText)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          if (canCreate)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: ElevatedButton.icon(
-                onPressed: () => _showCreateSheet(context),
-                icon: const Icon(Icons.add, size: 18),
-                label: Text('New',
-                    style: GoogleFonts.notoSansEthiopic(
-                        fontWeight: FontWeight.bold, fontSize: 12)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                ),
+    return DashboardScaffold(
+      titleKey: 'nav.announcements',
+      moduleKey: 'announcements',
+      constrainWidth: false,
+      actions: [
+        if (canCreate)
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: ElevatedButton.icon(
+              onPressed: () => _showCreateSheet(context),
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(loc.t('pages.create'),
+                  style: GoogleFonts.notoSansEthiopic(
+                      fontWeight: FontWeight.bold, fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               ),
             ),
-        ],
-      ),
+          ),
+      ],
       body: Column(
         children: [
           // Search bar
@@ -275,7 +273,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.search,
                       color: AppColors.primary, size: 18),
-                  hintText: 'Search announcements...',
+                  hintText: loc.t('pages.searchAnnouncements'),
                   hintStyle: GoogleFonts.notoSansEthiopic(
                       fontSize: 13, color: Colors.grey),
                   border: InputBorder.none,
@@ -397,20 +395,20 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                           const Icon(Icons.edit_outlined,
                               size: 16, color: AppColors.primary),
                           const SizedBox(width: 8),
-                          Text('Edit',
+                          Text(loc.t('admin.edit'),
                               style: GoogleFonts.notoSansEthiopic(
                                   fontWeight: FontWeight.bold)),
                         ]),
                       ),
                     if (canDelete)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
                         child: Row(children: [
-                          Icon(Icons.delete_outline,
+                          const Icon(Icons.delete_outline,
                               size: 16, color: AppColors.sacredRed),
-                          SizedBox(width: 8),
-                          Text('Delete',
-                              style: TextStyle(
+                          const SizedBox(width: 8),
+                          Text(loc.t('pages.delete'),
+                              style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.sacredRed)),
                         ]),
@@ -469,33 +467,10 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
     ).animate().fadeIn(delay: (index * 40).ms).slideY(begin: 0.04);
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FaIcon(FontAwesomeIcons.solidEnvelopeOpen,
-                size: 48, color: AppColors.primary.withValues(alpha: 0.2)),
-            const SizedBox(height: 16),
-            Text('NO ANNOUNCEMENTS YET',
-                style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
-                    color: AppColors.lightText.withValues(alpha: 0.3)),
-                textAlign: TextAlign.center),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildEmptyState() => const DashboardEmpty(
+        icon: Icons.mark_email_unread_outlined,
+        messageKey: 'dashboard.noAnnouncementsAvailable',
+      );
 }
 
 // ── Shared form helpers ────────────────────────────────────────────────────────
@@ -629,6 +604,7 @@ class FormSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = context.watch<LocalizationService>();
     return Container(
       height: MediaQuery.of(context).size.height * 0.92,
       decoration: BoxDecoration(
@@ -727,7 +703,7 @@ class FormSheet extends StatelessWidget {
                           borderRadius: BorderRadius.circular(14)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text('Cancel',
+                    child: Text(loc.t('admin.cancel'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontWeight: FontWeight.bold,
                             color: isDark
