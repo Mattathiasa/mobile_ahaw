@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import '../../services/localization_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
+import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../../services/permission_service.dart';
@@ -19,6 +22,9 @@ class PlansPage extends StatefulWidget {
 }
 
 class _PlansPageState extends State<PlansPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final _searchCtrl = TextEditingController();
   String _search = '';
@@ -127,14 +133,14 @@ class _PlansPageState extends State<PlansPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete Plan',
+        title: Text(loc.t('permissions.canDeletePlanLabel'),
             style: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.w900)),
-        content: Text('Delete "$name"? This cannot be undone.',
+        content: Text(loc.t('pages.cannotUndo'),
             style: GoogleFonts.notoSansEthiopic()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
+            child: Text(loc.t('common.cancel'),
                 style: GoogleFonts.notoSansEthiopic(color: Colors.grey)),
           ),
           ElevatedButton(
@@ -148,7 +154,7 @@ class _PlansPageState extends State<PlansPage> {
               await _db.collection('plans').doc(id).delete();
               _showSnack('Plan deleted', success: true);
             },
-            child: Text('Delete',
+            child: Text(loc.t('common.delete'),
                 style: GoogleFonts.notoSansEthiopic(
                     color: Colors.white, fontWeight: FontWeight.bold)),
           ),
@@ -169,48 +175,37 @@ class _PlansPageState extends State<PlansPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final perms = Provider.of<PermissionService>(context);
     final canCreate = perms.isSuperAdmin || perms.can('canCreatePlan');
     final canDelete = perms.isSuperAdmin || perms.can('canDeletePlan');
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('Plans',
-            style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : AppColors.lightText)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          if (canCreate)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: ElevatedButton.icon(
-                onPressed: () => _showPlanSheet(context),
-                icon: const Icon(Icons.add, size: 18),
-                label: Text('New',
-                    style: GoogleFonts.notoSansEthiopic(
-                        fontWeight: FontWeight.bold, fontSize: 12)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                ),
+    return DashboardScaffold(
+      titleKey: 'nav.plans',
+      moduleKey: 'plans',
+      constrainWidth: false,
+      actions: [
+        if (canCreate)
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: ElevatedButton.icon(
+              onPressed: () => _showPlanSheet(context),
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(loc.t('pages.create'),
+                  style: GoogleFonts.notoSansEthiopic(
+                      fontWeight: FontWeight.bold, fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               ),
             ),
-        ],
-      ),
+          ),
+      ],
       body: Column(
         children: [
           // Search
@@ -230,7 +225,7 @@ class _PlansPageState extends State<PlansPage> {
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.search,
                       color: AppColors.primary, size: 18),
-                  hintText: 'Search plans...',
+                  hintText: loc.t('admin.search'),
                   hintStyle: GoogleFonts.notoSansEthiopic(
                       fontSize: 13, color: Colors.grey),
                   border: InputBorder.none,
@@ -471,33 +466,10 @@ class _PlansPageState extends State<PlansPage> {
     ).animate().fadeIn(delay: (index * 40).ms).moveY(begin: 10);
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FaIcon(FontAwesomeIcons.fileLines,
-                size: 48, color: AppColors.primary.withValues(alpha: 0.2)),
-            const SizedBox(height: 16),
-            Text('NO PLANS YET',
-                style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
-                    color: AppColors.lightText.withValues(alpha: 0.3)),
-                textAlign: TextAlign.center),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildEmptyState() => const DashboardEmpty(
+        icon: Icons.description_outlined,
+        messageKey: 'pages.noRoadmapsFound',
+      );
 }
 
 // ── Segmented picker for timeframe ────────────────────────────────────────────

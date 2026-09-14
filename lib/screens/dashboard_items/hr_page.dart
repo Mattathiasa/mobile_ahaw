@@ -7,6 +7,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../services/hr_service.dart';
 import '../../services/permission_service.dart';
 import '../../services/module_config_service.dart';
+import '../../services/localization_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
+import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 
 /// Employee/HR management: list, search, and (for HR roles) add/edit/delete.
@@ -19,6 +22,9 @@ class HRPage extends StatefulWidget {
 }
 
 class _HRPageState extends State<HRPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final HrService _service = HrService();
   String _search = '';
 
@@ -31,33 +37,15 @@ class _HRPageState extends State<HRPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final perms = Provider.of<PermissionService>(context);
     final canManage = perms.isSuperAdmin || perms.can('canViewHR');
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('Human Resources',
-            style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : AppColors.lightText)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      floatingActionButton: canManage
-          ? FloatingActionButton(
-              onPressed: () => _openForm(context),
-              backgroundColor: AppColors.primary,
-              child: const Icon(Icons.add, color: Colors.white),
-            )
-          : null,
+    return DashboardScaffold(
+      titleKey: 'nav.hr',
+      moduleKey: 'hr',
+      constrainWidth: false,
       body: Column(
         children: [
           Padding(
@@ -66,7 +54,7 @@ class _HRPageState extends State<HRPage> {
               onChanged: (v) => setState(() => _search = v.toLowerCase()),
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search, size: 18),
-                hintText: 'Search employees...',
+                hintText: loc.t('admin.search'),
                 filled: true,
                 fillColor: isDark ? Colors.white10 : Colors.white,
                 border: OutlineInputBorder(
@@ -173,9 +161,9 @@ class _HRPageState extends State<HRPage> {
                   if (v == 'edit') _openForm(context, existing: e);
                   if (v == 'delete') _confirmDelete(e);
                 },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+                itemBuilder: (_) => [
+                  PopupMenuItem(value: 'edit', child: Text(loc.t('common.edit'))),
+                  PopupMenuItem(value: 'delete', child: Text(loc.t('common.delete'))),
                 ],
               ),
             ),
@@ -188,12 +176,12 @@ class _HRPageState extends State<HRPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete employee?'),
-        content: Text('Delete "${e['fullName'] ?? ''}"?'),
+        title: Text(loc.t('pages.areYouSure')),
+        content: Text(loc.t('pages.cannotUndo')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(loc.t('common.cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
               child: const Text('Delete',

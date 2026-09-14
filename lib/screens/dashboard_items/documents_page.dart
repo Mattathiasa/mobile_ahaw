@@ -11,6 +11,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/localization_service.dart';
 import '../../services/permission_service.dart';
 import '../../services/cloudinary_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
+import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Memriya Documents page: folder/file browsing of the
@@ -24,6 +26,9 @@ class DocumentsPage extends StatefulWidget {
 }
 
 class _DocumentsPageState extends State<DocumentsPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   // Breadcrumb trail: list of (id, name); empty = root
   final List<MapEntry<String, String>> _path = [];
   String _search = '';
@@ -37,19 +42,19 @@ class _DocumentsPageState extends State<DocumentsPage> {
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('New Folder'),
+        title: Text(loc.t('pages.createNewFolder')),
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          decoration: const InputDecoration(hintText: 'Folder name'),
+          decoration: InputDecoration(hintText: loc.t('pages.folderName')),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: Text(loc.t('common.cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              child: const Text('Create')),
+              child: Text(loc.t('pages.create'))),
         ],
       ),
     );
@@ -100,12 +105,12 @@ class _DocumentsPageState extends State<DocumentsPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete?'),
-        content: Text('Delete "$name"?'),
+        title: Text(loc.t('pages.areYouSure')),
+        content: Text(loc.t('pages.cannotUndo')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(loc.t('common.cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
               child: const Text('Delete',
@@ -128,7 +133,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             ListTile(
               leading: const Icon(Icons.create_new_folder_outlined,
                   color: AppColors.primary),
-              title: const Text('New Folder'),
+              title: Text(loc.t('pages.createNewFolder')),
               onTap: () {
                 Navigator.pop(ctx);
                 _createFolder();
@@ -151,47 +156,16 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final perms = Provider.of<PermissionService>(context);
     final canUpload = perms.isSuperAdmin || perms.can('canUploadDocuments');
     final canDelete = perms.isSuperAdmin || perms.can('canDeleteDocuments');
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      floatingActionButton: canUpload
-          ? FloatingActionButton(
-              onPressed: _uploading ? null : () => _showAddSheet(canUpload),
-              backgroundColor: AppColors.primary,
-              child: _uploading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.add, color: Colors.white),
-            )
-          : null,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(Provider.of<LocalizationService>(context).t('documents'),
-            style: GoogleFonts.notoSansEthiopic(
-              fontWeight: FontWeight.w900,
-              color: isDark ? Colors.white : AppColors.lightText,
-            )),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () {
-            if (_path.isNotEmpty) {
-              setState(() => _path.removeLast());
-            } else {
-              Navigator.pop(context);
-            }
-          },
-        ),
-      ),
+    return DashboardScaffold(
+      titleKey: 'nav.documents',
+      moduleKey: 'documents',
+      constrainWidth: false,
       body: Column(
         children: [
           // Search

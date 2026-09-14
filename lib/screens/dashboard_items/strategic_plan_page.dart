@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
+import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 import '../../services/strategic_plan_service.dart';
 import '../../services/localization_service.dart';
@@ -16,10 +18,14 @@ class StrategicPlanPage extends StatefulWidget {
 }
 
 class _StrategicPlanPageState extends State<StrategicPlanPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final StrategicPlanService _service = StrategicPlanService();
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = Provider.of<LocalizationService>(context);
     final canManage = Provider.of<PermissionService>(context).isSuperAdmin;
@@ -27,24 +33,10 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
         isDark ? AppColors.darkBackground : AppColors.lightBackground;
     final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          loc.t('strategicPlan'),
-          style: GoogleFonts.notoSansEthiopic(
-            fontWeight: FontWeight.w900,
-            color: isDark ? Colors.white : AppColors.lightText,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+    return DashboardScaffold(
+      titleKey: 'nav.strategicPlan',
+      moduleKey: 'strategicPlan',
+      constrainWidth: false,
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _service.watchGoals(),
         builder: (context, snapshot) {
@@ -153,7 +145,7 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
                 ),
                 Column(
                   children: [
-                    Text('TARGET',
+                    Text(loc.t('pages.target').toUpperCase(),
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 7,
                             fontWeight: FontWeight.w900,
@@ -174,9 +166,9 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
                       if (v == 'edit') _openGoalForm(context, goal: goal);
                       if (v == 'delete') _confirmDelete(context, goal);
                     },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'edit', child: Text('Edit')),
-                      PopupMenuItem(value: 'delete', child: Text('Delete')),
+                    itemBuilder: (_) => [
+                      PopupMenuItem(value: 'edit', child: Text(loc.t('common.edit'))),
+                      PopupMenuItem(value: 'delete', child: Text(loc.t('common.delete'))),
                     ],
                   ),
               ],
@@ -279,12 +271,12 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete goal?'),
-        content: Text('Delete "${goal['title'] ?? ''}"? This cannot be undone.'),
+        title: Text(loc.t('pages.areYouSure')),
+        content: Text(loc.t('pages.cannotUndo')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(loc.t('common.cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
               child:

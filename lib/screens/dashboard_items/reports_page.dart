@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import '../../services/localization_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
+import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../../services/permission_service.dart';
@@ -19,6 +22,9 @@ class ReportsPage extends StatefulWidget {
 }
 
 class _ReportsPageState extends State<ReportsPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   static const _optionColors = {
@@ -62,7 +68,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   workDoneCtrl.text.trim().isEmpty ||
                   resultCtrl.text.trim().isEmpty) {
                 ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                  content: Text('Please fill all required fields',
+                  content: Text(loc.t('admin.required'),
                       style: GoogleFonts.notoSansEthiopic()),
                   backgroundColor: AppColors.sacredRed,
                   behavior: SnackBarBehavior.floating,
@@ -216,48 +222,37 @@ class _ReportsPageState extends State<ReportsPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final perms = Provider.of<PermissionService>(context);
     final canCreate  = perms.isSuperAdmin || perms.can('canCreateReport');
     final canComment = perms.isSuperAdmin || perms.can('canCommentOnReport');
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('Reports',
-            style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : AppColors.lightText)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          if (canCreate)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: ElevatedButton.icon(
-                onPressed: () => _showCreateSheet(context),
-                icon: const Icon(Icons.add, size: 18),
-                label: Text('New',
-                    style: GoogleFonts.notoSansEthiopic(
-                        fontWeight: FontWeight.bold, fontSize: 12)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                ),
+    return DashboardScaffold(
+      titleKey: 'nav.reports',
+      moduleKey: 'reports',
+      constrainWidth: false,
+      actions: [
+        if (canCreate)
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: ElevatedButton.icon(
+              onPressed: () => _showCreateSheet(context),
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(loc.t('pages.create'),
+                  style: GoogleFonts.notoSansEthiopic(
+                      fontWeight: FontWeight.bold, fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               ),
             ),
-        ],
-      ),
+          ),
+      ],
       body: StreamBuilder<QuerySnapshot>(
         stream: _db
             .collection('reports')
@@ -520,7 +515,7 @@ class _ReportsPageState extends State<ReportsPage> {
                           const Icon(Icons.add_comment_outlined,
                               size: 14, color: AppColors.primary),
                           const SizedBox(width: 6),
-                          Text('Add Feedback',
+                          Text(loc.t('pages.addComment'),
                               style: GoogleFonts.notoSansEthiopic(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w900,
@@ -582,33 +577,10 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FaIcon(FontAwesomeIcons.fileCircleExclamation,
-                size: 48, color: AppColors.primary.withValues(alpha: 0.2)),
-            const SizedBox(height: 16),
-            Text('NO REPORTS YET',
-                style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
-                    color: AppColors.lightText.withValues(alpha: 0.3)),
-                textAlign: TextAlign.center),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildEmptyState() => const DashboardEmpty(
+        icon: Icons.assignment_outlined,
+        messageKey: 'pages.noReportsYet',
+      );
 }
 
 // ── Plan dropdown (fetches from Firestore) ────────────────────────────────────
@@ -626,6 +598,7 @@ class _PlanDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = context.watch<LocalizationService>();
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('plans')
@@ -645,7 +618,7 @@ class _PlanDropdown extends StatelessWidget {
             child: DropdownButton<String>(
               value: selectedId,
               isExpanded: true,
-              hint: Text('Select a plan',
+              hint: Text(loc.t('forms.selectPlanPlaceholder'),
                   style: GoogleFonts.notoSansEthiopic(
                       fontSize: 13, color: Colors.grey)),
               dropdownColor:

@@ -1,9 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../services/localization_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
+import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Partner & Job Contact page: a form that submits to the
@@ -16,6 +20,9 @@ class PartnerPage extends StatefulWidget {
 }
 
 class _PartnerPageState extends State<PartnerPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -59,7 +66,7 @@ class _PartnerPageState extends State<PartnerPage> {
         _messageController.clear();
         setState(() => _type = 'Partnership');
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Request submitted successfully!',
+          content: Text(loc.t('pages.requestSubmitted'),
               style: GoogleFonts.notoSansEthiopic()),
           backgroundColor: Colors.green,
         ));
@@ -79,25 +86,13 @@ class _PartnerPageState extends State<PartnerPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('Partner & Jobs',
-            style: GoogleFonts.notoSansEthiopic(
-              fontWeight: FontWeight.w900,
-              color: isDark ? Colors.white : AppColors.lightText,
-            )),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+    return DashboardScaffold(
+      titleKey: 'pages.partnershipRequest',
+      moduleKey: 'partner',
+      constrainWidth: false,
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -202,7 +197,7 @@ class _PartnerPageState extends State<PartnerPage> {
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white),
                           )
-                        : Text('SUBMIT REQUEST',
+                        : Text(loc.t('pages.submit').toUpperCase(),
                             style: GoogleFonts.notoSansEthiopic(
                               fontWeight: FontWeight.w900,
                               letterSpacing: 1,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
+import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 import '../../services/missionary_service.dart';
 import '../../services/auth_service.dart';
@@ -29,6 +31,7 @@ class _MissionaryPageState extends State<MissionaryPage>
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = Provider.of<LocalizationService>(context);
     final perms = Provider.of<PermissionService>(context);
@@ -36,34 +39,20 @@ class _MissionaryPageState extends State<MissionaryPage>
         isDark ? AppColors.darkBackground : AppColors.lightBackground;
     final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          loc.t('missionary'),
-          style: GoogleFonts.notoSansEthiopic(
-            fontWeight: FontWeight.w900,
-            color: isDark ? Colors.white : AppColors.lightText,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        bottom: TabBar(
-          controller: _tabs,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: AppColors.primary,
-          labelStyle: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.w900),
-          tabs: const [
-            Tab(text: 'Applications'),
-            Tab(text: 'Reports'),
-          ],
-        ),
+    return DashboardScaffold(
+      titleKey: 'pages.missionary',
+      moduleKey: 'missionary',
+      constrainWidth: false,
+      bottom: TabBar(
+        controller: _tabs,
+        labelColor: AppColors.primary,
+        unselectedLabelColor: Colors.grey,
+        indicatorColor: AppColors.primary,
+        labelStyle: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.w900),
+        tabs: const [
+          Tab(text: 'Applications'),
+          Tab(text: 'Reports'),
+        ],
       ),
       body: TabBarView(
         controller: _tabs,
@@ -309,6 +298,7 @@ class _MissionaryPageState extends State<MissionaryPage>
   // ── Forms ─────────────────────────────────────────────────────────────────
 
   void _openApplicationForm(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context, listen: false);
     final user = Provider.of<AuthService>(context, listen: false).userModel;
     if (user == null) return;
     final locationCtrl = TextEditingController();
@@ -323,11 +313,12 @@ class _MissionaryPageState extends State<MissionaryPage>
           padding: const EdgeInsets.only(bottom: 12),
           child: DropdownButtonFormField<String>(
             initialValue: type,
-            decoration: const InputDecoration(
-                labelText: 'Type', border: OutlineInputBorder()),
-            items: const [
-              DropdownMenuItem(value: 'FullTime', child: Text('Full Time')),
-              DropdownMenuItem(value: 'PartTime', child: Text('Part Time')),
+            decoration: InputDecoration(
+                labelText: loc.t('pages.type'),
+                border: const OutlineInputBorder()),
+            items: [
+              DropdownMenuItem(value: 'FullTime', child: Text(loc.t('status.employmentTypeFullTime'))),
+              DropdownMenuItem(value: 'PartTime', child: Text(loc.t('status.employmentTypePartTime'))),
             ],
             onChanged: (v) => setLocal(() => type = v ?? 'FullTime'),
           ),
@@ -347,6 +338,7 @@ class _MissionaryPageState extends State<MissionaryPage>
   }
 
   void _openReportForm(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context, listen: false);
     final user = Provider.of<AuthService>(context, listen: false).userModel;
     if (user == null) return;
     final titleCtrl = TextEditingController();
@@ -384,6 +376,7 @@ class _MissionaryPageState extends State<MissionaryPage>
 
   void _showSheet(BuildContext context, String title,
       GlobalKey<FormState> formKey, List<Widget> fields, Future<void> Function() onSubmit) {
+    final loc = Provider.of<LocalizationService>(context, listen: false);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -423,8 +416,8 @@ class _MissionaryPageState extends State<MissionaryPage>
                           await onSubmit();
                           if (ctx.mounted) Navigator.pop(ctx);
                         },
-                        child: const Text('Submit',
-                            style: TextStyle(color: Colors.white)),
+                        child: Text(loc.t('pages.submit'),
+                            style: const TextStyle(color: Colors.white)),
                       ),
                     ),
                   ],
