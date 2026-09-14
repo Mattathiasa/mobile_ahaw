@@ -23,6 +23,8 @@ class UserModel {
   final String? profilePicture;
   /// The parish (Atbiya hierarchy doc id) this user belongs to.
   final String? atbiyaId;
+  /// The Mahedher (Bible-study group) the member joined, if any.
+  final String? mahderatId;
   /// The org-unit id assigned at signup/creation (parent of atbiyaId).
   final String? hierarchyEntityId;
   /// Name of the parish the member belongs to / requested.
@@ -69,6 +71,7 @@ class UserModel {
     this.address,
     this.profilePicture,
     this.atbiyaId,
+    this.mahderatId,
     this.hierarchyEntityId,
     this.atbiyaName,
     required this.status,
@@ -119,6 +122,7 @@ class UserModel {
       address: data['address'] as Map<String, dynamic>?,
       profilePicture: data['profilePicture'] as String?,
       atbiyaId: data['atbiyaId'] as String?,
+      mahderatId: data['mahderatId'] as String?,
       hierarchyEntityId: data['hierarchyEntityId'] as String?,
       atbiyaName: data['atbiyaName'] as String?,
       status: data['status'] as String? ?? 'active',

@@ -28,7 +28,7 @@ import '../screens/dashboard_items/documents_page.dart';
 import '../screens/dashboard_items/notifications_page.dart';
 import '../screens/dashboard_items/settings_page.dart';
 import '../screens/dashboard_items/user_management_page.dart';
-import '../screens/dashboard_items/hierarchy_page.dart';
+import '../screens/dashboard_items/organisation_page.dart';
 import '../screens/dashboard_items/church_map_page.dart';
 import '../screens/dashboard_items/permission_control_page.dart';
 import '../screens/dashboard_items/membership_requests_page.dart';
@@ -64,13 +64,13 @@ class _MainDrawerState extends State<MainDrawer> {
     'Church Rules': 'churchRules',
     'Hige Denb': 'higeDenb',
     'Missionary': 'missionary',
-    'Teachings': 'teachings',
+    'Teachings': 'sermons',
     'Strategic Plan': 'strategicPlan',
     'Volunteer': 'volunteer',
     'Documents': 'documents',
     'Notifications': 'notifications',
     'User Management': 'userManagement',
-    'Hierarchy': 'hierarchy',
+    'Organisation': 'organisation',
     'Settings': 'settings',
   };
 
@@ -114,7 +114,7 @@ class _MainDrawerState extends State<MainDrawer> {
       const _NavItem(FontAwesomeIcons.scaleBalanced,     'Church Rules',   ChurchRulesPage(),       'canViewChurchRules', 'churchRules'),
       const _NavItem(FontAwesomeIcons.bookOpen,          'Hige Denb',      HigeDenbPage(),          'canViewHigeDenb', 'higeDenb'),
       const _NavItem(FontAwesomeIcons.globe,             'Missionary',     MissionaryPage(),        'canViewMissionary', 'missionary'),
-      const _NavItem(FontAwesomeIcons.bookOpenReader,    'Teachings',      TeachingsPage(),         'canViewTeachings', 'teachings'),
+      const _NavItem(FontAwesomeIcons.bookOpenReader,    'Teachings',      TeachingsPage(),         'canViewTeachings', 'teachings'), // collection stays `teachings`; label is now Sermons
       const _NavItem(FontAwesomeIcons.fileContract,      'Strategic Plan', StrategicPlanPage(),     'canViewStrategicPlan', 'strategicPlan'),
       const _NavItem(FontAwesomeIcons.handshake,         'Partner',        PartnerPage(),           null, 'partner'),
       const _NavItem(FontAwesomeIcons.lightbulb,         'Suggestions',    SuggestionPage(),        null, 'suggestions'),
@@ -130,7 +130,7 @@ class _MainDrawerState extends State<MainDrawer> {
       const _NavItem(FontAwesomeIcons.placeOfWorship, 'My Atbiya',      MyAtbiyaPage(),          'parishConsole', 'myAtbiya'),
       const _NavItem(FontAwesomeIcons.userCheck,    'Membership Requests', MembershipRequestsPage(), 'approverOnly', 'membershipRequests'),
       const _NavItem(FontAwesomeIcons.usersGear,    'User Management', UserManagementPage(),    'canViewUserManagement', 'userManagement'),
-      const _NavItem(FontAwesomeIcons.networkWired, 'Hierarchy',       HierarchyPage(),         'canViewHierarchy', 'hierarchy'),
+      const _NavItem(FontAwesomeIcons.sitemap, 'Organisation',     OrganisationPage(),      'canViewHierarchy', 'organisation'),
       const _NavItem(FontAwesomeIcons.mapLocationDot, 'Church Map',    ChurchMapPage(),         'canViewHierarchy', 'churchMap'),
       const _NavItem(FontAwesomeIcons.gear,         'Settings',        SettingsPage(),          'canViewSettings', null),
       const _NavItem(FontAwesomeIcons.shieldHalved, 'Permissions',     PermissionControlPage(), 'superAdminOnly', 'permissionControl'),

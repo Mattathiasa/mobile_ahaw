@@ -11,7 +11,7 @@ import '../../services/membership_requests_service.dart';
 import '../../theme/app_colors.dart';
 import 'members_page.dart';
 import 'membership_requests_page.dart';
-import 'hierarchy_page.dart';
+import 'mahderat_manager_page.dart';
 
 /// Parish console for a congregation admin: shows the parish, its member and
 /// pending-request counts, and quick links into the already-scoped Members,
@@ -68,6 +68,7 @@ class _MyAtbiyaPageState extends State<MyAtbiyaPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = Provider.of<AuthService>(context).userModel;
+    final perms = Provider.of<PermissionService>(context, listen: false);
     final parishName = user?.atbiyaName ?? 'My Parish';
 
     return Scaffold(
@@ -141,9 +142,20 @@ class _MyAtbiyaPageState extends State<MyAtbiyaPage> {
           _action(context, 'Membership Requests',
               'Approve or reject new members', Icons.person_add_alt,
               const MembershipRequestsPage(), isDark),
-          _action(context, 'Fellowship Groups',
-              'Manage Mahderats under your parish', Icons.groups_outlined,
-              const HierarchyPage(), isDark),
+          if ((user?.atbiyaId ?? '').isNotEmpty)
+            _action(
+                context,
+                'Fellowship Groups',
+                'Manage Mahedherat under your parish',
+                Icons.groups_outlined,
+                MahderatManagerScreen(
+                  atbiyaId: user!.atbiyaId!,
+                  atbiyaName: user.atbiyaName ?? parishName,
+                  canEdit: perms.isSuperAdmin ||
+                      perms.can('canEditOwnAtbiya') ||
+                      perms.can('canManageAtbiyas'),
+                ),
+                isDark),
         ],
       ),
     );

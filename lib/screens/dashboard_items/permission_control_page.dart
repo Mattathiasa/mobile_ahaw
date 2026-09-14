@@ -28,7 +28,7 @@ const _levelColors = {
 
 const _permissionGroups = [
   'Pages', 'Announcements', 'Plans', 'Reports', 'Members',
-  'Meetings', 'Finance', 'Documents', 'Teachings', 'Missionary', 'Dashboard',
+  'Meetings', 'Finance', 'Documents', 'Sermons', 'Missionary', 'Dashboard',
 ];
 
 const _permissionMeta = {
@@ -46,7 +46,7 @@ const _permissionMeta = {
   'canViewDocuments':       ('View Documents',           'See the documents page',                       'Pages'),
   'canViewHierarchy':       ('View Hierarchy',           'See the church hierarchy page',                'Pages'),
   'canViewMissionary':      ('View Missionary',          'See the missionary page',                      'Pages'),
-  'canViewTeachings':       ('View Teachings',           'See the teachings page',                       'Pages'),
+  'canViewTeachings':       ('View Sermons',             'See the sermons page',                         'Pages'),
   'canViewVolunteer':       ('View Volunteer',           'See the volunteer page',                       'Pages'),
   'canViewUserManagement':  ('View User Management',     'See the user management page',                 'Pages'),
   'canViewSettings':        ('View Settings',            'Access settings',                              'Pages'),
@@ -77,8 +77,8 @@ const _permissionMeta = {
   // Documents
   'canUploadDocuments':     ('Upload Documents',         'Upload files and create folders',              'Documents'),
   'canDeleteDocuments':     ('Delete Documents',         'Delete files and folders',                     'Documents'),
-  // Teachings
-  'canCreateTeaching':      ('Create Teaching',          'Publish new teachings',                        'Teachings'),
+  // Sermons (the collection stays `teachings`)
+  'canCreateTeaching':      ('Create Sermon',            'Publish new sermons',                          'Sermons'),
   // Missionary
   'canSubmitMissionaryApplication': ('Submit Missionary Application', 'Apply for missionary service',   'Missionary'),
   'canSubmitMissionaryReport':      ('Submit Missionary Report',      'Submit field reports',           'Missionary'),

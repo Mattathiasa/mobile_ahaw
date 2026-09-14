@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import 'platform_compat.dart';
@@ -59,6 +60,44 @@ class AuditLogService {
       });
     } catch (e) {
       if (kDebugMode) print('[AuditLogService] log failed: $e');
+    }
+  }
+
+  /// Convenience wrapper for data mutations, mirroring the web's
+  /// `auditLogService.dataChange(action, targetType, targetId, description)`.
+  ///
+  /// Reads the signed-in user from AuthService when one is available; when no
+  /// user is signed in (or the actor cannot be resolved) the write is skipped —
+  /// auditing must never break the user's action, and the web rules only
+  /// accept entries carrying a real actor anyway.
+  static Future<void> dataChange({
+    required String action,
+    required String targetType,
+    String? targetId,
+    String? description,
+  }) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+      final profile = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (!profile.exists) return;
+      final model = UserModel.fromFirestore(
+        user.uid,
+        profile.data() ?? const {},
+        user.email ?? '',
+      );
+      await log(
+        user: model,
+        action: action,
+        targetType: targetType,
+        targetId: targetId,
+        description: description,
+      );
+    } catch (e) {
+      if (kDebugMode) print('[AuditLogService] dataChange skipped: $e');
     }
   }
 }
