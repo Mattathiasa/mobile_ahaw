@@ -159,7 +159,7 @@ class _MembersPageState extends State<MembersPage> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                _buildFilterChip('All', 'all', _filterHierarchy == 'all', (val) => setState(() => _filterHierarchy = val)),
+                _buildFilterChip(loc.t('admin.scUserFilterAll'), 'all', _filterHierarchy == 'all', (val) => setState(() => _filterHierarchy = val)),
                 ..._hierarchyLevels.map((lvl) => _buildFilterChip(lvl, lvl, _filterHierarchy == lvl, (val) => setState(() => _filterHierarchy = val))),
               ],
             ),
@@ -214,9 +214,9 @@ class _MembersPageState extends State<MembersPage> {
   }
 
   Widget _buildMemberCard(BuildContext context, Map<String, dynamic> member, int index, Color surfaceColor, bool isDark) {
-    final name = member['fullNameEnglish'] ?? member['fullName'] ?? 'Unknown Member';
+    final name = member['fullNameEnglish'] ?? member['fullName'] ?? loc.t('admin.member');
     final nameAm = member['fullNameAmharic'] ?? '';
-    final hierarchy = member['hierarchyLevel'] ?? 'Member';
+    final hierarchy = member['hierarchyLevel'] ?? loc.t('admin.member');
     final initials = name.split(' ').where((e) => e.isNotEmpty).map((e) => e[0].toUpperCase()).join('');
 
     return Container(
@@ -338,7 +338,9 @@ class _MembersPageState extends State<MembersPage> {
                 child: Column(
                   children: [
                     Text(
-                      member['fullNameEnglish'] ?? member['fullName'] ?? 'Unknown',
+                      member['fullNameEnglish'] ??
+                          member['fullName'] ??
+                          loc.t('admin.member'),
                       style: GoogleFonts.notoSansEthiopic(fontSize: 24, fontWeight: FontWeight.w900),
                     ),
                     Text(
@@ -351,11 +353,14 @@ class _MembersPageState extends State<MembersPage> {
               const SizedBox(height: 30),
               const Divider(),
               const SizedBox(height: 20),
-              _buildDetailItem(FontAwesomeIcons.envelope, 'Email', member['email'] ?? 'No email'),
-              _buildDetailItem(FontAwesomeIcons.phone, 'Phone', member['phone'] ?? 'No phone'),
-              _buildDetailItem(FontAwesomeIcons.networkWired, 'Hierarchy', member['hierarchyLevel'] ?? 'None'),
-              _buildDetailItem(FontAwesomeIcons.mapLocationDot, 'Region', member['address']?['region'] ?? 'None'),
-              _buildDetailItem(FontAwesomeIcons.city, 'Zone', member['address']?['zone'] ?? 'None'),
+              _buildDetailItem(FontAwesomeIcons.envelope, loc.t('admin.email'), member['email'] ?? loc.t('admin.emailFallback')),
+              _buildDetailItem(FontAwesomeIcons.phone, loc.t('admin.phone'), member['phone'] ?? loc.t('admin.notSet')),
+              _buildDetailItem(FontAwesomeIcons.networkWired, loc.t('nav.hierarchy'),
+                  member['hierarchyLevel'] ?? loc.t('admin.notSet')),
+              _buildDetailItem(FontAwesomeIcons.mapLocationDot, loc.t('admin.region'),
+                  member['address']?['region'] ?? loc.t('admin.notSet')),
+              _buildDetailItem(FontAwesomeIcons.city, loc.t('admin.zone'),
+                  member['address']?['zone'] ?? loc.t('admin.notSet')),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -467,7 +472,7 @@ class _MembersPageState extends State<MembersPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(isEditing ? 'Edit Member' : 'New Member',
+                    Text(isEditing ? loc.t('common.edit') : loc.t('pages.addMember'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 18, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 16),
@@ -475,26 +480,29 @@ class _MembersPageState extends State<MembersPage> {
                       child: ImageUploadField(
                         initialUrl: profileUrl,
                         folder: 'members',
-                        label: 'Profile photo',
+                        label: loc.t('admin.setProfilePicture'),
                         onUploaded: (url) => profileUrl = url,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _field(fullNameCtrl, 'Full Name (English)', required: true),
-                    _field(fullNameAmCtrl, 'Full Name (Amharic)'),
-                    _field(phoneCtrl, 'Phone',
+                    _field(fullNameCtrl, '${loc.t('forms.fullName')} (${LocalizationService.languageEndonyms['en']})',
+                        required: true),
+                    _field(fullNameAmCtrl, '${loc.t('forms.fullName')} (${LocalizationService.languageEndonyms['am']})'),
+                    _field(phoneCtrl, loc.t('admin.phone'),
                         keyboardType: TextInputType.phone),
                     if (!isEditing) ...[
-                      _field(emailCtrl, 'Email (optional)',
+                      _field(emailCtrl,
+                          '${loc.t('admin.email')} (${loc.t('admin.optional')})',
                           keyboardType: TextInputType.emailAddress),
-                      _field(usernameCtrl, 'Username', required: true),
-                      _field(passwordCtrl, 'Password (min 6)',
+                      _field(usernameCtrl, loc.t('admin.username'), required: true),
+                      _field(passwordCtrl,
+                          '${loc.t('admin.password')} (${loc.t('admin.minChars')})',
                           required: true, obscure: true),
                     ],
-                    _dropdown('Gender', gender,
+                    _dropdown(loc.t('admin.gender'), gender,
                         moduleConfig.options('members', 'genders'),
                         (v) => setSheet(() => gender = v)),
-                    _dropdown('Hierarchy Level', level, _hierarchyLevels,
+                    _dropdown(loc.t('admin.hierarchyLevel'), level, _hierarchyLevels,
                         (v) => setSheet(() => level = v)),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -545,13 +553,16 @@ class _MembersPageState extends State<MembersPage> {
                                   setSheet(() => saving = false);
                                   if (ctx.mounted) {
                                     ScaffoldMessenger.of(ctx).showSnackBar(
-                                        SnackBar(content: Text('Failed: $e')));
+                                        SnackBar(content: Text(loc.t('errors.generic'))));
                                   }
                                 }
                               },
-                        child: Text(saving
-                            ? 'Saving…'
-                            : (isEditing ? 'Save' : 'Create Member'),
+                        child: Text(
+                            saving
+                                ? loc.t('common.saving')
+                                : (isEditing
+                                    ? loc.t('common.save')
+                                    : loc.t('pages.addMember')),
                             style: const TextStyle(color: Colors.white)),
                       ),
                     ),
@@ -578,7 +589,7 @@ class _MembersPageState extends State<MembersPage> {
         decoration: InputDecoration(
             labelText: label, border: const OutlineInputBorder()),
         validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+            ? (v) => (v == null || v.trim().isEmpty) ? loc.t('admin.required') : null
             : null,
       ),
     );

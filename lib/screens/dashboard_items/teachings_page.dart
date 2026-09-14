@@ -87,7 +87,8 @@ class _TeachingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = (data['title'] as String?) ?? 'Untitled';
+    final loc = Provider.of<LocalizationService>(context, listen: false);
+    final title = (data['title'] as String?) ?? loc.t('pages.nmUntitled');
     final speaker = (data['speaker'] as String?) ?? '';
     final serviceType = (data['serviceType'] as String?) ?? '';
     final shortDescription = (data['shortDescription'] as String?) ?? '';
@@ -182,7 +183,7 @@ class _TeachingCard extends StatelessWidget {
                           fontSize: 10, color: Colors.grey)),
                 ],
                 const Spacer(),
-                Text('READ MORE',
+                Text(loc.t('common.learnMore').toUpperCase(),
                     style: GoogleFonts.notoSansEthiopic(
                       fontSize: 9,
                       fontWeight: FontWeight.w900,
@@ -198,7 +199,8 @@ class _TeachingCard extends StatelessWidget {
   }
 
   void _showDetail(BuildContext context) {
-    final title = (data['title'] as String?) ?? 'Untitled';
+    final loc = Provider.of<LocalizationService>(context, listen: false);
+    final title = (data['title'] as String?) ?? loc.t('pages.nmUntitled');
     final speaker = (data['speaker'] as String?) ?? '';
     final fullContent = (data['fullContent'] as String?) ??
         (data['shortDescription'] as String?) ??
@@ -284,7 +286,7 @@ class _TeachingCard extends StatelessWidget {
                           showTeachingForm(context, id: id, existing: data);
                         },
                         icon: const Icon(Icons.edit, size: 16),
-                        label: const Text('Edit'),
+                        label: Text(loc.t('common.edit')),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -296,17 +298,17 @@ class _TeachingCard extends StatelessWidget {
                           final ok = await showDialog<bool>(
                             context: context,
                             builder: (ctx) => AlertDialog(
-                              title: const Text('Delete teaching?'),
+                              title: Text(loc.t('pages.deleteSermonConfirm')),
                               content: Text('Delete "$title"?'),
                               actions: [
                                 TextButton(
                                     onPressed: () => Navigator.pop(ctx, false),
-                                    child: const Text('Cancel')),
+                                    child: Text(loc.t('common.cancel'))),
                                 TextButton(
                                     onPressed: () => Navigator.pop(ctx, true),
-                                    child: const Text('Delete',
-                                        style:
-                                            TextStyle(color: AppColors.sacredRed))),
+                                    child: Text(loc.t('common.delete'),
+                                        style: const TextStyle(
+                                            color: AppColors.sacredRed))),
                               ],
                             ),
                           );
@@ -319,7 +321,7 @@ class _TeachingCard extends StatelessWidget {
                           }
                         },
                         icon: const Icon(Icons.delete_outline, size: 16),
-                        label: const Text('Delete'),
+                        label: Text(loc.t('common.delete')),
                       ),
                     ),
                   ],
@@ -338,6 +340,7 @@ class _TeachingCard extends StatelessWidget {
 /// featured image (Cloudinary) and published/draft status.
 void showTeachingForm(BuildContext context,
     {String? id, Map<String, dynamic>? existing}) {
+  final loc = Provider.of<LocalizationService>(context, listen: false);
   final isEditing = id != null;
   final moduleConfig = Provider.of<ModuleConfigService>(context, listen: false);
   final serviceTypes = moduleConfig.options('teachings', 'serviceTypes');
@@ -366,7 +369,7 @@ void showTeachingForm(BuildContext context,
           decoration: InputDecoration(
               labelText: label, border: const OutlineInputBorder()),
           validator: required
-              ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+              ? (v) => (v == null || v.trim().isEmpty) ? loc.t('admin.required') : null
               : null,
         ),
       );
@@ -391,7 +394,7 @@ void showTeachingForm(BuildContext context,
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(isEditing ? 'Edit Teaching' : 'New Teaching',
+                  Text(isEditing ? loc.t('content.editSermon') : loc.t('content.createSermon'),
                       style: GoogleFonts.notoSansEthiopic(
                           fontSize: 18, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 16),
@@ -401,13 +404,13 @@ void showTeachingForm(BuildContext context,
                       folder: 'teachings',
                       circle: false,
                       size: 120,
-                      label: 'Featured image',
+                      label: loc.t('content.featuredImageUrl'),
                       onUploaded: (url) => featuredImage = url,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  field(titleCtrl, 'Title', required: true),
-                  field(speakerCtrl, 'Speaker'),
+                  field(titleCtrl, loc.t('admin.title'), required: true),
+                  field(speakerCtrl, loc.t('modules.fldTeachingsSpeaker')),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: DropdownButtonFormField<String>(
@@ -417,9 +420,9 @@ void showTeachingForm(BuildContext context,
                               ? serviceTypes.first
                               : serviceType),
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                          labelText: 'Service Type',
-                          border: OutlineInputBorder()),
+                      decoration: InputDecoration(
+                          labelText: loc.t('content.serviceType'),
+                          border: const OutlineInputBorder()),
                       items: (serviceTypes.isEmpty ? [serviceType] : serviceTypes)
                           .map((e) =>
                               DropdownMenuItem(value: e, child: Text(e)))
@@ -428,20 +431,24 @@ void showTeachingForm(BuildContext context,
                           setSheet(() => serviceType = v ?? serviceType),
                     ),
                   ),
-                  field(shortCtrl, 'Short Description', maxLines: 2),
-                  field(fullCtrl, 'Full Content', maxLines: 5),
-                  field(dateCtrl, 'Date Delivered (YYYY-MM-DD)'),
+                  field(shortCtrl, loc.t('modules.fldTeachingsShortDescription'), maxLines: 2),
+                  field(fullCtrl, loc.t('modules.fldTeachingsFullContent'), maxLines: 5),
+                  field(dateCtrl, loc.t('modules.fldTeachingsDateDelivered')),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: DropdownButtonFormField<String>(
                       initialValue: status,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                          labelText: 'Status', border: OutlineInputBorder()),
-                      items: const [
+                      decoration: InputDecoration(
+                          labelText: loc.t('admin.scColStatus'),
+                          border: const OutlineInputBorder()),
+                      items: [
                         DropdownMenuItem(
-                            value: 'Published', child: Text('Published')),
-                        DropdownMenuItem(value: 'Draft', child: Text('Draft')),
+                            value: 'Published',
+                            child: Text(loc.t('status.sermonStatusPublished'))),
+                        DropdownMenuItem(
+                            value: 'Draft',
+                            child: Text(loc.t('status.sermonStatusDraft'))),
                       ],
                       onChanged: (v) => setSheet(() => status = v ?? 'Published'),
                     ),
@@ -485,12 +492,16 @@ void showTeachingForm(BuildContext context,
                                 setSheet(() => saving = false);
                                 if (ctx.mounted) {
                                   ScaffoldMessenger.of(ctx).showSnackBar(
-                                      SnackBar(content: Text('Failed: $e')));
+                                      SnackBar(content: Text(loc.t('errors.generic'))));
                                 }
                               }
                             },
                       child: Text(
-                          saving ? 'Saving…' : (isEditing ? 'Save' : 'Publish'),
+                          saving
+                              ? loc.t('common.saving')
+                              : (isEditing
+                                  ? loc.t('common.save')
+                                  : loc.t('pages.nmPublish')),
                           style: const TextStyle(color: Colors.white)),
                     ),
                   ),

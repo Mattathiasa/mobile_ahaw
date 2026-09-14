@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/dashboard_service.dart';
+import '../services/localization_service.dart';
 import '../services/permission_service.dart';
 import '../services/role_registry_service.dart';
 import '../theme/app_colors.dart';
@@ -24,6 +25,12 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  /// The section builders below are separate methods, so they cannot see a
+  /// local from build(). build() still calls context.watch so a language
+  /// change rebuilds the whole page and these re-resolve.
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final ScrollController _scrollController = ScrollController();
   final DashboardService _dashboardService = DashboardService();
   bool _scrolled = false;
@@ -68,6 +75,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final user = Provider.of<AuthService>(context).user;
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -234,7 +242,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   final data = snapshot.data;
                   if (data == null) {
                     return Center(
-                      child: Text('Error loading data',
+                      child: Text(loc.t('errors.generic'),
                           style: GoogleFonts.notoSansEthiopic()),
                     );
                   }
@@ -266,7 +274,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       if (perms.dashboardView != 'basic') ...[
                         _buildSectionHeader(
                             context,
-                            'Divine Tasks',
+                            loc.t('pages.divineTasks'),
                             isDark ? Colors.white : AppColors.lightText,
                             FontAwesomeIcons.bolt),
                         const SizedBox(height: 14),
@@ -277,7 +285,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       // Recent Announcements
                       _buildSectionHeaderWithViewAll(
                         context,
-                        'Recent Announcements',
+                        loc.t('dashboard.recentAnnouncements'),
                         isDark ? Colors.white : AppColors.lightText,
                         FontAwesomeIcons.bullhorn,
                         () => Navigator.push(
@@ -294,7 +302,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       // Upcoming Meetings
                       _buildSectionHeader(
                           context,
-                          'Upcoming Meetings',
+                          loc.t('dashboard.upcomingMeetings'),
                           isDark ? Colors.white : AppColors.lightText,
                           FontAwesomeIcons.calendarDay),
                       const SizedBox(height: 14),
@@ -305,7 +313,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       // Recent Reports
                       _buildSectionHeader(
                           context,
-                          'Recent Reports',
+                          loc.t('dashboard.recentReports'),
                           isDark ? Colors.white : AppColors.lightText,
                           FontAwesomeIcons.fileSignature),
                       const SizedBox(height: 14),
@@ -337,8 +345,8 @@ class _DashboardPageState extends State<DashboardPage> {
         userModel?.fullNameEnglish ??
         userModel?.fullName ??
         user?.email?.split('@')[0] ??
-        'Church Member';
-    final role = userModel?.role ?? 'Member';
+        loc.t('admin.member');
+    final role = userModel?.role ?? loc.t('people.roleMember');
     final level = userModel?.hierarchyLevel ?? 'Atbiya';
     final phone = userModel?.phone;
     final church = userModel?.address?['city'] ??
@@ -367,7 +375,7 @@ class _DashboardPageState extends State<DashboardPage> {
         if (dt != null) {
           const months = ['Jan','Feb','Mar','Apr','May','Jun',
                           'Jul','Aug','Sep','Oct','Nov','Dec'];
-          joinedText = 'Joined: ${months[dt.month - 1]} ${dt.year}';
+          joinedText = '${loc.t('pages.joined')}: ${months[dt.month - 1]} ${dt.year}';
         }
       } catch (_) {}
     }
@@ -465,7 +473,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 runSpacing: 6,
                 children: [
                   _buildSmallBadge(level, AppColors.primary),
-                  _buildSmallBadge('Role: $role', AppColors.primaryLight),
+                  _buildSmallBadge('${loc.t('pages.role')}: $role', AppColors.primaryLight),
                 ],
               ),
 
@@ -480,7 +488,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: [
                   _buildInfoItem(
                       Icons.alternate_email,
-                      email.isNotEmpty ? email : 'No email',
+                      email.isNotEmpty ? email : loc.t('admin.emailFallback'),
                       isDark),
                   if (phone != null)
                     _buildInfoItem(Icons.phone_outlined, phone, isDark),
@@ -581,25 +589,25 @@ class _DashboardPageState extends State<DashboardPage> {
 
     final items = [
       {
-        'title': 'Total Members',
+        'title': loc.t('dashboard.totalMembers'),
         'value': stats.totalMembers.toString(),
         'icon': FontAwesomeIcons.users,
         'color': AppColors.primary,
       },
       {
-        'title': 'Announcements',
+        'title': loc.t('nav.announcements'),
         'value': stats.activeAnnouncements.toString(),
         'icon': FontAwesomeIcons.bullhorn,
         'color': AppColors.divineGold,
       },
       {
-        'title': 'Pending Reports',
+        'title': loc.t('dashboard.pendingReports'),
         'value': stats.pendingReports.toString(),
         'icon': FontAwesomeIcons.fileLines,
         'color': AppColors.sacredRed,
       },
       {
-        'title': 'Meetings',
+        'title': loc.t('nav.meetings'),
         'value': stats.upcomingMeetings.toString(),
         'icon': FontAwesomeIcons.peopleGroup,
         'color': const Color(0xFF9C27B0),
@@ -761,7 +769,7 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Row(
             children: [
               Text(
-                'View All',
+                loc.t('common.viewAll'),
                 style: GoogleFonts.notoSansEthiopic(
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
@@ -786,22 +794,22 @@ class _DashboardPageState extends State<DashboardPage> {
       {
         'page': const ReportsPage(),
         'icon': FontAwesomeIcons.fileSignature,
-        'title': 'Submit Report',
-        'desc': 'Track & monitor progress',
+        'title': loc.t('dashboard.submitReport'),
+        'desc': loc.t('dashboard.qaReportDesc'),
         'color': AppColors.primary,
       },
       {
         'page': const MembersPage(),
         'icon': FontAwesomeIcons.users,
-        'title': 'Members',
-        'desc': 'Manage church members',
+        'title': loc.t('nav.members'),
+        'desc': loc.t('dashboard.qaMembersDesc'),
         'color': AppColors.divineGold,
       },
       {
         'page': const AnnouncementsPage(),
         'icon': FontAwesomeIcons.bullhorn,
-        'title': 'Alerts',
-        'desc': 'Latest church updates',
+        'title': loc.t('nav.announcements'),
+        'desc': loc.t('dashboard.qaAlertsDesc'),
         'color': AppColors.sacredRed,
       },
     ];
@@ -933,12 +941,12 @@ class _DashboardPageState extends State<DashboardPage> {
   // ─────────────────────────────────────────────
   Widget _buildRecentAnnouncements(BuildContext context,
       List<Map<String, dynamic>> items, bool isDark) {
-    if (items.isEmpty) return _buildEmptyState('No recent announcements');
+    if (items.isEmpty) return _buildEmptyState(loc.t('dashboard.noAnnouncementsAvailable'));
     return Column(
       children: items
           .map((item) => _buildItemCard(
                 context,
-                title: item['title'] ?? 'Untitled',
+                title: item['title'] ?? loc.t('pages.nmUntitled'),
                 subtitle: item['content'] ?? '',
                 icon: Icons.campaign_outlined,
                 isDark: isDark,
@@ -949,13 +957,13 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildUpcomingMeetings(BuildContext context,
       List<Map<String, dynamic>> items, bool isDark) {
-    if (items.isEmpty) return _buildEmptyState('No upcoming meetings');
+    if (items.isEmpty) return _buildEmptyState(loc.t('dashboard.noUpcomingMeetings'));
     return Column(
       children: items
           .map((item) => _buildItemCard(
                 context,
-                title: item['title'] ?? 'Meeting',
-                subtitle: item['scheduledDate'] ?? 'Date TBD',
+                title: item['title'] ?? loc.t('nav.meetings'),
+                subtitle: item['scheduledDate'] ?? loc.t('dashboard.dateTbd'),
                 icon: Icons.calendar_today_outlined,
                 isDark: isDark,
               ))
@@ -965,12 +973,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildRecentReports(BuildContext context,
       List<Map<String, dynamic>> items, bool isDark) {
-    if (items.isEmpty) return _buildEmptyState('No recent reports');
+    if (items.isEmpty) return _buildEmptyState(loc.t('dashboard.noReportsSubmitted'));
     return Column(
       children: items
           .map((item) => _buildItemCard(
                 context,
-                title: item['planName'] ?? 'Report',
+                title: item['planName'] ?? loc.t('nav.reports'),
                 subtitle: item['option'] ?? '',
                 icon: Icons.description_outlined,
                 isDark: isDark,

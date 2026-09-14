@@ -325,6 +325,14 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.goalCurrentValue': 'Current Value',
     'admin.goalTargetValue': 'Target Value',
     'pages.noDownloadLink': 'No downloadable link for this file.',
+    // Self-authored: the mobile dashboard's quick-action tiles have no web
+    // counterpart — the web Dashboard has no such block.
+    'dashboard.qaReportDesc': 'Track & monitor progress',
+    'dashboard.qaMembersDesc': 'Manage church members',
+    'dashboard.qaAlertsDesc': 'Latest church updates',
+    'dashboard.dateTbd': 'Date TBD',
+    // Self-authored: mobile-only screens the web has no counterpart for.
+    'admin.passwordUpdated': 'Password updated.',
     'admin.latitude': 'Latitude',
     // Self-authored: the web places pins by tapping a Leaflet map, so it has
     // no typed-coordinate validation message to copy.
@@ -3217,6 +3225,11 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.goalCurrentValue': 'አሁን ያለው ዋጋ',
     'admin.goalTargetValue': 'ዒላማ ዋጋ',
     'pages.noDownloadLink': 'ለዚህ ፋይል የሚወርድ አገናኝ የለም።',
+    'dashboard.qaReportDesc': 'እድገትን ይከታተሉ',
+    'dashboard.qaMembersDesc': 'የቤተ ክርስቲያን አባላትን ያስተዳድሩ',
+    'dashboard.qaAlertsDesc': 'የቅርብ ጊዜ መረጃዎች',
+    'dashboard.dateTbd': 'ቀን አልተወሰነም',
+    'admin.passwordUpdated': 'የይለፍ ቃል ተቀይሯል።',
     'admin.latitude': 'ኬክሮስ',
     'admin.invalidCoords': 'ትክክለኛ ኬክሮስና ኬንትሮስ ያስገቡ።',
     'admin.longitude': 'ኬንትሮስ',

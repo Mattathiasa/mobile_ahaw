@@ -106,57 +106,95 @@ void main() {
     expect(kTranslations['am']!['admin.suspendAccountDesc'], contains('{name}'));
   });
 
-  test('no dashboard screen gains new hardcoded English', () {
-    // A ratchet, not a clean bill of health: these screens still hold raw
-    // English and the counts below are today's debt. The test fails if a
-    // number goes UP, so a half-migrated screen cannot quietly regress, and
-    // it fails if a number goes DOWN so the baseline gets updated rather
-    // than drifting out of date.
+  test('no screen gains new hardcoded English', () {
+    // A ratchet, not a clean bill of health: these files still hold raw
+    // English and the counts are today's debt. The test fails if a number
+    // goes UP, so a half-migrated screen cannot quietly regress, and it fails
+    // if a number goes DOWN so the baseline is updated rather than drifting.
+    //
+    // Scope is every screen and widget, not just dashboard_items — an earlier
+    // version of this scan looked only at dashboard_items and so reported the
+    // dashboard itself, which had zero t() calls, as clean.
     const baseline = <String, int>{
-    'settings_page.dart': 12,
-    'organisation_page.dart': 11,
-    'teachings_page.dart': 10,
-    'members_page.dart': 7,
-    'permission_control_page.dart': 6,
-    'mahderat_manager_page.dart': 6,
-    'finance_page.dart': 6,
-    'reports_page.dart': 4,
-    'announcements_page.dart': 4,
-    'meetings_page.dart': 3,
-    'volunteer_page.dart': 2,
-    'notifications_page.dart': 2,
-    'plans_page.dart': 1,
-    'partner_page.dart': 1,
-    'hige_denb_page.dart': 1,
-    'church_rules_page.dart': 1,
+    'main.dart': 2,
+    'screens/dashboard_items/announcements_page.dart': 17,
+    'screens/dashboard_items/church_map_page.dart': 1,
+    'screens/dashboard_items/church_rules_page.dart': 4,
+    'screens/dashboard_items/documents_page.dart': 3,
+    'screens/dashboard_items/finance_page.dart': 75,
+    'screens/dashboard_items/hige_denb_page.dart': 10,
+    'screens/dashboard_items/hr_page.dart': 14,
+    'screens/dashboard_items/inventory_page.dart': 15,
+    'screens/dashboard_items/mahderat_manager_page.dart': 28,
+    'screens/dashboard_items/meetings_page.dart': 7,
+    'screens/dashboard_items/membership_requests_page.dart': 1,
+    'screens/dashboard_items/missionary_page.dart': 7,
+    'screens/dashboard_items/my_atbiya_page.dart': 2,
+    'screens/dashboard_items/news_page.dart': 4,
+    'screens/dashboard_items/notifications_page.dart': 3,
+    'screens/dashboard_items/organisation_page.dart': 44,
+    'screens/dashboard_items/partner_page.dart': 14,
+    'screens/dashboard_items/permission_control_page.dart': 150,
+    'screens/dashboard_items/plans_page.dart': 20,
+    'screens/dashboard_items/reports_page.dart': 24,
+    'screens/dashboard_items/settings_page.dart': 2,
+    'screens/dashboard_items/strategic_plan_page.dart': 8,
+    'screens/dashboard_items/user_management_page.dart': 3,
+    'screens/dashboard_items/volunteer_page.dart': 10,
+    'screens/gate_screens.dart': 3,
+    'screens/login_page.dart': 1,
+    'screens/signup_page.dart': 21,
+    'screens/suggestion_page.dart': 17,
+    'widgets/branded_loader.dart': 1,
+    'widgets/dashboard/dashboard_widgets.dart': 3,
+    'widgets/ethiopian_date_picker.dart': 1,
+    'widgets/home/contact_section.dart': 4,
+    'widgets/home/home_footer.dart': 3,
+    'widgets/home/suggestion_section.dart': 2,
+    'widgets/image_upload_field.dart': 2,
+    'widgets/main_drawer.dart': 4,
     };
 
     final lit = RegExp(r"'((?:\\.|[^'\\\n])*)'");
-    final uiContext = RegExp(
-        r"(Text\(|label(?:Text)?:\s*|hintText:\s*|title:\s*|content:\s*"
-        r"|message:\s*|_textField\([A-Za-z_]+,\s*|_field\([A-Za-z_]+,\s*"
-        r"|_showSheet\([A-Za-z_]+,\s*|_empty\(|_snack\(|_action\([A-Za-z_]+,\s*"
-        r"|tooltip:\s*|helperText:\s*|errorText:\s*|semanticLabel:\s*)$");
-    final englishish = RegExp(r"^[A-Z][A-Za-z0-9 ,'\u2019.?!:\-\u2014\u2026()]*$");
+    // Contexts where a capitalised literal is data, not display text.
+    final deny = RegExp(
+        r'(\.collection\(|\.doc\(|\.where\(|\.orderBy\(|\.get\(|'
+        r'==\s*$|!=\s*$|case\s*$|contains\(|startsWith\(|endsWith\(|'
+        r'\.t\(|\[\s*$|Icons\.|FontAwesomeIcons\.)');
+    // Values written to or compared against Firestore, not display text.
+    final token = RegExp(
+        r'^(Timestamp|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec'
+        r'|Sinodos|KuamiSinodos|Memriya|Zone|Atbiya|EnkesekaseMaikel'
+        r'|HiyawanMahderat|Staff|Priest|FullTime|PartTime|New|Good|Fair'
+        r'|Poor|Appreciation|Change|Feature|Problem|English|Amharic'
+        r'|Published|Draft|Other|Male|Female)$');
+    final englishish =
+        RegExp(r"^[A-Z][A-Za-z0-9 ,'\u2019.?!:\-\u2014\u2026()@]*$");
+    final skipPrefix = RegExp(r'^(http|assets/|/|#|\{|package:)');
 
     final counts = <String, int>{};
-    final dir = Directory('lib/screens/dashboard_items');
-    for (final f in dir.listSync().whereType<File>()) {
-      if (!f.path.endsWith('.dart')) continue;
-      final src = f.readAsStringSync();
+    for (final e in Directory('lib').listSync(recursive: true)) {
+      if (e is! File || !e.path.endsWith('.dart')) continue;
+      final rel = e.path.substring('lib/'.length);
+      if (!rel.startsWith('screens/') &&
+          !rel.startsWith('widgets/') &&
+          rel != 'main.dart') {
+        continue;
+      }
+      final src = e.readAsStringSync();
       var n = 0;
       for (final m in lit.allMatches(src)) {
         final v = m[1]!;
-        if (v.length < 3) continue;
+        if (v.length < 3 || token.hasMatch(v)) continue;
+        if (skipPrefix.hasMatch(v)) continue;
         if (!englishish.hasMatch(v) || !v.contains(RegExp('[a-z]'))) continue;
-        if (v.startsWith(RegExp(r'http|assets/|/|#|\{|package:|e\.g'))) continue;
-        final pre = src.substring(
-            m.start - 60 < 0 ? 0 : m.start - 60, m.start);
-        if (pre.trimRight().endsWith('.t(')) continue;
-        if (!uiContext.hasMatch(pre)) continue;
+        // A literal immediately followed by ':' is a map key — structure.
+        if (m.end < src.length && src[m.end] == ':') continue;
+        final pre = src.substring(m.start < 40 ? 0 : m.start - 40, m.start);
+        if (deny.hasMatch(pre.trimRight())) continue;
         n++;
       }
-      if (n > 0) counts[f.uri.pathSegments.last] = n;
+      if (n > 0) counts[rel] = n;
     }
 
     final regressions = <String>[];

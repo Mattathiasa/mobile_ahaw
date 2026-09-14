@@ -22,6 +22,11 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  /// The bottom sheets below are separate methods and cannot see build()'s
+  /// local; build() still watches, so a language change rebuilds the page.
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final MemberService _memberService = MemberService();
   String _version = '';
 
@@ -40,7 +45,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final authService = Provider.of<AuthService>(context);
-    final loc = Provider.of<LocalizationService>(context);
+    context.watch<LocalizationService>();
     final user = authService.userModel;
 
     return Scaffold(
@@ -100,7 +105,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 user?.fullNameEnglish ??
                                 user?.fullName ??
                                 user?.username ??
-                                'User',
+                                loc.t('admin.scColUser'),
                             style: GoogleFonts.notoSansEthiopic(
                               fontSize: 15,
                               fontWeight: FontWeight.w900,
@@ -118,11 +123,11 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                _infoRow('Username', user?.username ?? '—', isDark),
-                _infoRow('Hierarchy Level', user?.hierarchyLevel ?? '—', isDark),
-                _infoRow('Role', user?.role ?? '—', isDark),
+                _infoRow(loc.t('admin.username'), user?.username ?? '—', isDark),
+                _infoRow(loc.t('admin.hierarchyLevel'), user?.hierarchyLevel ?? '—', isDark),
+                _infoRow(loc.t('admin.role'), user?.role ?? '—', isDark),
                 if ((user?.phone ?? '').isNotEmpty)
-                  _infoRow('Phone', user!.phone!, isDark),
+                  _infoRow(loc.t('admin.phone'), user!.phone!, isDark),
               ],
             ),
           ).animate().fadeIn(),
@@ -138,7 +143,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading:
                       const Icon(Icons.person_outline, color: AppColors.primary),
-                  title: Text('Edit Profile',
+                  title: Text(loc.t('admin.editProfile'),
                       style: GoogleFonts.notoSansEthiopic(
                           fontWeight: FontWeight.w800,
                           fontSize: 13.5,
@@ -150,7 +155,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading:
                       const Icon(Icons.lock_outline, color: AppColors.primary),
-                  title: Text('Change Password',
+                  title: Text(loc.t('admin.setChangePassword'),
                       style: GoogleFonts.notoSansEthiopic(
                           fontWeight: FontWeight.w800,
                           fontSize: 13.5,
@@ -170,11 +175,11 @@ class _SettingsPageState extends State<SettingsPage> {
             decoration: _cardDecoration(isDark),
             child: Column(
               children: [
-                for (final pref in const [
-                  ['push', 'Push notifications'],
-                  ['announcements', 'Announcements'],
-                  ['meetings', 'Meeting reminders'],
-                  ['reports', 'Report updates'],
+                for (final pref in [
+                  ['push', loc.t('admin.setPushNotifications')],
+                  ['announcements', loc.t('nav.announcements')],
+                  ['meetings', loc.t('admin.setMeetingReminders')],
+                  ['reports', loc.t('admin.setReportUpdates')],
                 ])
                   SwitchListTile(
                     value: (user?.notificationPreferences?[pref[0]] ?? true) == true,
@@ -239,13 +244,16 @@ class _SettingsPageState extends State<SettingsPage> {
               value: themeProvider.isDarkMode,
               onChanged: (v) => themeProvider.toggleTheme(v),
               activeThumbColor: AppColors.primary,
-              title: Text('Dark Mode',
+              title: Text(loc.t('admin.setTheme'),
                   style: GoogleFonts.notoSansEthiopic(
                     fontWeight: FontWeight.w800,
                     fontSize: 13.5,
                     color: isDark ? Colors.white : AppColors.lightText,
                   )),
-              subtitle: Text('Switch between light and dark themes',
+              subtitle: Text(
+                  themeProvider.isDarkMode
+                      ? loc.t('admin.setThemeDark')
+                      : loc.t('admin.setThemeLight'),
                   style: GoogleFonts.notoSansEthiopic(
                       fontSize: 11, color: Colors.grey)),
               secondary: Icon(
@@ -266,7 +274,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ListTile(
                   leading:
                       const Icon(Icons.info_outline, color: AppColors.primary),
-                  title: Text('App Version',
+                  title: Text(loc.t('admin.setAppVersion'),
                       style: GoogleFonts.notoSansEthiopic(
                         fontWeight: FontWeight.w800,
                         fontSize: 13.5,
@@ -366,7 +374,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Edit Profile',
+                    Text(loc.t('admin.editProfile'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 18, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 16),
@@ -374,14 +382,15 @@ class _SettingsPageState extends State<SettingsPage> {
                       child: ImageUploadField(
                         initialUrl: photo,
                         folder: 'avatars',
-                        label: 'Profile photo',
+                        label: loc.t('admin.setProfilePicture'),
                         onUploaded: (url) => photo = url,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _formField(nameEnCtrl, 'Full Name (English)', required: true),
-                    _formField(nameAmCtrl, 'Full Name (Amharic)'),
-                    _formField(phoneCtrl, 'Phone',
+                    _formField(nameEnCtrl, '${loc.t('forms.fullName')} (${LocalizationService.languageEndonyms['en']})',
+                        required: true),
+                    _formField(nameAmCtrl, '${loc.t('forms.fullName')} (${LocalizationService.languageEndonyms['am']})'),
+                    _formField(phoneCtrl, loc.t('admin.phone'),
                         keyboardType: TextInputType.phone),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -412,11 +421,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                   setSheet(() => saving = false);
                                   if (ctx.mounted) {
                                     ScaffoldMessenger.of(ctx).showSnackBar(
-                                        SnackBar(content: Text('Failed: $e')));
+                                        SnackBar(content: Text(loc.t('errors.generic'))));
                                   }
                                 }
                               },
-                        child: Text(saving ? 'Saving…' : 'Save',
+                        child: Text(saving ? loc.t('common.saving') : loc.t('common.save'),
                             style: const TextStyle(color: Colors.white)),
                       ),
                     ),
@@ -457,15 +466,16 @@ class _SettingsPageState extends State<SettingsPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Change Password',
+                    Text(loc.t('admin.setChangePassword'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 18, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 16),
-                    _formField(currentCtrl, 'Current password',
+                    _formField(currentCtrl, loc.t('admin.setCurrentPassword'),
                         required: true, obscure: true),
-                    _formField(newCtrl, 'New password (min 6)',
+                    _formField(newCtrl,
+                        '${loc.t('admin.setNewPassword')} (${loc.t('admin.minChars')})',
                         required: true, obscure: true),
-                    _formField(confirmCtrl, 'Confirm new password',
+                    _formField(confirmCtrl, loc.t('admin.setConfirmNewPassword'),
                         required: true, obscure: true),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -480,9 +490,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                 if (!formKey.currentState!.validate()) return;
                                 if (newCtrl.text != confirmCtrl.text) {
                                   ScaffoldMessenger.of(ctx).showSnackBar(
-                                      const SnackBar(
-                                          content:
-                                              Text('New passwords do not match.')));
+                                      SnackBar(
+                                          content: Text(loc.t(
+                                              'admin.setPasswordsDoNotMatch'))));
                                   return;
                                 }
                                 setSheet(() => saving = true);
@@ -496,19 +506,21 @@ class _SettingsPageState extends State<SettingsPage> {
                                   if (ctx.mounted) Navigator.pop(ctx);
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                            content:
-                                                Text('Password updated.')));
+                                        SnackBar(
+                                            content: Text(loc.t(
+                                                'admin.passwordUpdated'))));
                                   }
                                 } catch (e) {
                                   setSheet(() => saving = false);
                                   if (ctx.mounted) {
                                     ScaffoldMessenger.of(ctx).showSnackBar(
-                                        SnackBar(content: Text('$e')));
+                                        SnackBar(content: Text(loc.t('errors.generic'))));
                                   }
                                 }
                               },
-                        child: Text(saving ? 'Updating…' : 'Update Password',
+                        child: Text(saving
+                            ? loc.t('admin.busyUpdating')
+                            : loc.t('admin.updatePassword'),
                             style: const TextStyle(color: Colors.white)),
                       ),
                     ),
@@ -535,7 +547,7 @@ class _SettingsPageState extends State<SettingsPage> {
         decoration: InputDecoration(
             labelText: label, border: const OutlineInputBorder()),
         validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+            ? (v) => (v == null || v.trim().isEmpty) ? loc.t('admin.required') : null
             : null,
       ),
     );
