@@ -9,7 +9,6 @@ import '../../services/permission_service.dart';
 import '../../services/module_config_service.dart';
 import '../../services/localization_service.dart';
 import '../../widgets/dashboard/dashboard_scaffold.dart';
-import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 
 /// Employee/HR management: list, search, and (for HR roles) add/edit/delete.
@@ -46,6 +45,13 @@ class _HRPageState extends State<HRPage> {
       titleKey: 'nav.hr',
       moduleKey: 'hr',
       constrainWidth: false,
+      floatingActionButton: canManage
+          ? FloatingActionButton(
+              onPressed: () => _openForm(context),
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
       body: Column(
         children: [
           Padding(
@@ -73,7 +79,7 @@ class _HRPageState extends State<HRPage> {
                       child:
                           CircularProgressIndicator(color: AppColors.primary));
                 }
-                if (snapshot.hasError) return _empty('Could not load employees');
+                if (snapshot.hasError) return _empty(loc.t('hr.removeFailed'));
                 var staff = snapshot.data ?? [];
                 if (_search.isNotEmpty) {
                   staff = staff
@@ -83,7 +89,7 @@ class _HRPageState extends State<HRPage> {
                           .contains(_search))
                       .toList();
                 }
-                if (staff.isEmpty) return _empty('No employees yet');
+                if (staff.isEmpty) return _empty(loc.t('hr.emptyTitle'));
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: staff.length,
@@ -184,8 +190,8 @@ class _HRPageState extends State<HRPage> {
               child: Text(loc.t('common.cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Delete',
-                  style: TextStyle(color: AppColors.sacredRed))),
+              child: Text(loc.t('common.delete'),
+                  style: const TextStyle(color: AppColors.sacredRed))),
         ],
       ),
     );
@@ -238,17 +244,17 @@ class _HRPageState extends State<HRPage> {
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 18, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 16),
-                    _field(nameCtrl, 'Full Name', required: true),
-                    _field(positionCtrl, 'Position', required: true),
-                    _field(deptCtrl, 'Department'),
-                    _field(phoneCtrl, 'Phone',
+                    _field(nameCtrl, loc.t('forms.fullName'), required: true),
+                    _field(positionCtrl, loc.t('forms.position'), required: true),
+                    _field(deptCtrl, loc.t('forms.department')),
+                    _field(phoneCtrl, loc.t('admin.phone'),
                         keyboardType: TextInputType.phone),
-                    _field(emailCtrl, 'Email',
+                    _field(emailCtrl, loc.t('admin.email'),
                         keyboardType: TextInputType.emailAddress),
-                    _field(salaryCtrl, 'Salary (ETB)',
+                    _field(salaryCtrl, loc.t('modules.fldHrSalary'),
                         keyboardType: TextInputType.number),
-                    _field(hireCtrl, 'Hire Date (YYYY-MM-DD)'),
-                    _dropdown('Category', category,
+                    _field(hireCtrl, loc.t('modules.fldHrHireDate')),
+                    _dropdown(loc.t('finance.colCategory'), category,
                         const ['Staff', 'Priest'],
                         (v) => setSheet(() => category = v)),
                     _dropdown('Employment Type', type,

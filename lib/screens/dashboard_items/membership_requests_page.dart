@@ -9,6 +9,7 @@ import '../../services/auth_service.dart';
 import '../../services/permission_service.dart';
 import '../../services/localization_service.dart';
 import '../../services/role_registry_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
 import '../../theme/app_colors.dart';
 
 /// Approve/reject the pending self-signups created by the Signup flow.
@@ -21,6 +22,9 @@ class MembershipRequestsPage extends StatefulWidget {
 }
 
 class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final MembershipRequestsService _service = MembershipRequestsService();
   late Future<List<Map<String, dynamic>>> _future;
 
@@ -60,29 +64,18 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('Membership Requests',
-            style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : AppColors.lightText)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-              onPressed: _reload,
-              icon: const Icon(Icons.refresh, color: AppColors.primary)),
-        ],
-      ),
+    return DashboardScaffold(
+      titleKey: 'admin.requestsTitle',
+      moduleKey: 'membershipRequests',
+      constrainWidth: false,
+      actions: [
+        IconButton(
+            onPressed: _reload,
+            icon: const Icon(Icons.refresh, color: AppColors.primary)),
+      ],
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _future,
         builder: (context, snapshot) {
@@ -99,14 +92,14 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
                 message.contains('index') || message.contains('failed-precondition');
             return _empty(
               building
-                  ? 'The request list is still being prepared. Try again shortly.'
-                  : 'Could not load requests',
+                  ? loc.t('admin.requestsIndexBuilding')
+                  : loc.t('admin.requestsLoadFailed'),
               FontAwesomeIcons.userClock,
             );
           }
           final requests = snapshot.data ?? [];
           if (requests.isEmpty) {
-            return _empty('No pending requests', FontAwesomeIcons.userCheck);
+            return _empty(loc.t('admin.noPendingRequests'), FontAwesomeIcons.userCheck);
           }
           return RefreshIndicator(
             onRefresh: () async => _reload(),
@@ -162,7 +155,7 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
                 child: ElevatedButton.icon(
                   onPressed: () => _approve(r),
                   icon: const Icon(Icons.check, size: 16),
-                  label: const Text('Approve'),
+                  label: Text(loc.t('admin.approve')),
                   style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.success,
                       foregroundColor: Colors.white,
@@ -174,7 +167,7 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
                 child: OutlinedButton.icon(
                   onPressed: () => _reject(r),
                   icon: const Icon(Icons.close, size: 16),
-                  label: const Text('Reject'),
+                  label: Text(loc.t('admin.reject')),
                   style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.sacredRed),
                 ),
@@ -201,7 +194,7 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
   Future<void> _approve(Map<String, dynamic> r) async {
     final roles = _assignableRoles(context);
     if (roles.isEmpty) {
-      _snack('No assignable roles are configured.', AppColors.sacredRed);
+      _snack(loc.t('admin.noParishRole'), AppColors.sacredRed);
       return;
     }
     final registry = Provider.of<RoleRegistryService>(context, listen: false);
@@ -213,12 +206,13 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setD) => AlertDialog(
-          title: const Text('Approve request'),
+          title: Text(loc.t('admin.approve')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Assign a role to ${r['fullNameEnglish'] ?? 'this member'}:'),
+              Text('${r['fullNameEnglish'] ?? loc.t('admin.member')} \u2014 '
+                  '${loc.t('admin.assignRole')}'),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: role,
@@ -235,10 +229,10 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel')),
+                child: Text(loc.t('common.cancel'))),
             ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Approve')),
+                child: Text(loc.t('admin.approve'))),
           ],
         ),
       ),
@@ -251,9 +245,10 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
       await _service.approve(
           uid: r['id'] as String, approverId: approverId, roleKey: role);
       _reload();
-      _snack('Member approved', AppColors.success);
+      _snack("${r['fullNameEnglish'] ?? loc.t('admin.member')} "
+          "${loc.t('admin.approvedNotice')}", AppColors.success);
     } catch (e) {
-      _snack('$e', AppColors.sacredRed);
+      _snack(loc.t('admin.approveFailed'), AppColors.sacredRed);
     }
   }
 
@@ -263,21 +258,22 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reject request'),
+        title: Text(loc.t('admin.confirmRejection')),
         content: TextField(
           controller: reasonCtrl,
           maxLines: 3,
-          decoration: const InputDecoration(
-              hintText: 'Reason (optional)', border: OutlineInputBorder()),
+          decoration: InputDecoration(
+              hintText: loc.t('admin.rejectionReason'),
+              border: const OutlineInputBorder()),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(loc.t('common.cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Reject',
-                  style: TextStyle(color: AppColors.sacredRed))),
+              child: Text(loc.t('admin.confirmRejection'),
+                  style: const TextStyle(color: AppColors.sacredRed))),
         ],
       ),
     );
@@ -292,9 +288,10 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
       await _service.reject(
           uid: r['id'] as String, approverId: approverId, reason: reason);
       _reload();
-      _snack('Request rejected', AppColors.divineGold);
+      _snack("${r['fullNameEnglish'] ?? loc.t('admin.member')} "
+          "${loc.t('admin.rejectedNotice')}", AppColors.divineGold);
     } catch (e) {
-      _snack('$e', AppColors.sacredRed);
+      _snack(loc.t('admin.rejectFailed'), AppColors.sacredRed);
     }
   }
 

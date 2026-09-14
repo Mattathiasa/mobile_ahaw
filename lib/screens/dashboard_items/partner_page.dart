@@ -7,7 +7,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../services/localization_service.dart';
 import '../../widgets/dashboard/dashboard_scaffold.dart';
-import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Partner & Job Contact page: a form that submits to the

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
+import 'localization_service.dart';
 
 /// Mirrors the web's AuthContext + authService.
 /// Handles:
@@ -328,9 +329,7 @@ class AuthErrorKey implements Exception {
 
   /// The resolved sentence. [translate] is normally `LocalizationService.t`.
   String resolve(String Function(String) translate) {
-    var out = translate(key);
-    params.forEach((k, v) => out = out.replaceAll('{$k}', v));
-    return out;
+    return fillParams(translate(key), params);
   }
 
   @override

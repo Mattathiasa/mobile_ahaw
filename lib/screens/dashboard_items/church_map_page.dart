@@ -8,6 +8,8 @@ import '../../services/hierarchy_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/permission_service.dart';
 import '../../services/role_registry_service.dart';
+import '../../services/localization_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/home/home_common.dart';
 
@@ -22,6 +24,9 @@ class ChurchMapPage extends StatefulWidget {
 }
 
 class _ChurchMapPageState extends State<ChurchMapPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final ChurchMapService _mapService = ChurchMapService();
   final HierarchyService _hierarchy = HierarchyService();
   // Cache of loaded coords per atbiya id (null = loaded & unpinned).
@@ -37,24 +42,13 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('Church Map',
-            style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : AppColors.lightText)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+    return DashboardScaffold(
+      titleKey: 'nav.churchMap',
+      moduleKey: 'churchMap',
+      constrainWidth: false,
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _hierarchy.getEntitiesByLevel('Atbiya'),
         builder: (context, snapshot) {
@@ -64,7 +58,7 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
           }
           final atbiyas = snapshot.data ?? [];
           if (atbiyas.isEmpty) {
-            return _empty('No congregations to map yet');
+            return _empty(loc.t('admin.noCongregationsYet'));
           }
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -72,8 +66,11 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 12, left: 4),
                 child: Text(
-                    'Tap a pinned congregation to open it in Maps.'
-                    '${_canEdit ? ' Use the pin icon to set its location.' : ''}',
+                    // Terse by design: this screen is a coordinate list, not a
+                    // map, so the catalog has no sentence describing it.
+                    _canEdit
+                        ? '${loc.t('common.openInMaps')} · ${loc.t('admin.needsPin')}'
+                        : loc.t('common.openInMaps'),
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 11, color: Colors.grey)),
               ),
@@ -128,7 +125,7 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
             subtitle: Text(
                 pinned
                     ? '${coords.lat.toStringAsFixed(5)}, ${coords.lng.toStringAsFixed(5)}'
-                    : 'Not pinned',
+                    : loc.t('admin.noPin'),
                 style: GoogleFonts.notoSansEthiopic(
                     fontSize: 10, color: Colors.grey)),
             trailing: _canEdit
@@ -167,31 +164,33 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Pin $name'),
+        title: Text('${loc.t('admin.parishLocation')}: $name'),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           TextField(
             controller: latCtrl,
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true, signed: true),
-            decoration: const InputDecoration(
-                labelText: 'Latitude', border: OutlineInputBorder()),
+            decoration: InputDecoration(
+                labelText: loc.t('admin.latitude'),
+                border: const OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: lngCtrl,
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true, signed: true),
-            decoration: const InputDecoration(
-                labelText: 'Longitude', border: OutlineInputBorder()),
+            decoration: InputDecoration(
+                labelText: loc.t('admin.longitude'),
+                border: const OutlineInputBorder()),
           ),
         ]),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(loc.t('common.cancel'))),
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Save')),
+              child: Text(loc.t('common.save'))),
         ],
       ),
     );
@@ -201,7 +200,7 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
     if (lat == null || lng == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Enter valid coordinates.')));
+            SnackBar(content: Text(loc.t('admin.invalidCoords'))));
       }
       return;
     }
@@ -212,7 +211,7 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed: $e')));
+            .showSnackBar(SnackBar(content: Text(loc.t('errors.generic'))));
       }
     }
   }

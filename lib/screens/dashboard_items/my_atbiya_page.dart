@@ -8,6 +8,8 @@ import '../../services/permission_service.dart';
 import '../../services/role_registry_service.dart';
 import '../../services/member_service.dart';
 import '../../services/membership_requests_service.dart';
+import '../../services/localization_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
 import '../../theme/app_colors.dart';
 import 'members_page.dart';
 import 'membership_requests_page.dart';
@@ -24,6 +26,9 @@ class MyAtbiyaPage extends StatefulWidget {
 }
 
 class _MyAtbiyaPageState extends State<MyAtbiyaPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final _memberService = MemberService();
   final _requestsService = MembershipRequestsService();
   int? _memberCount;
@@ -66,32 +71,21 @@ class _MyAtbiyaPageState extends State<MyAtbiyaPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = Provider.of<AuthService>(context).userModel;
     final perms = Provider.of<PermissionService>(context, listen: false);
-    final parishName = user?.atbiyaName ?? 'My Parish';
+    final parishName = user?.atbiyaName ?? loc.t('admin.myCongregationTitle');
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('My Atbiya',
-            style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : AppColors.lightText)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-              onPressed: _loadCounts,
-              icon: const Icon(Icons.refresh, color: AppColors.primary)),
-        ],
-      ),
+    return DashboardScaffold(
+      titleKey: 'nav.myAtbiya',
+      moduleKey: 'myAtbiya',
+      constrainWidth: false,
+      actions: [
+        IconButton(
+            onPressed: _loadCounts,
+            icon: const Icon(Icons.refresh, color: AppColors.primary)),
+      ],
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -111,7 +105,7 @@ class _MyAtbiyaPageState extends State<MyAtbiyaPage> {
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('PARISH',
+                      Text(loc.t('admin.congregationBadge').toUpperCase(),
                           style: GoogleFonts.notoSansEthiopic(
                               fontSize: 9,
                               fontWeight: FontWeight.w900,
@@ -136,17 +130,17 @@ class _MyAtbiyaPageState extends State<MyAtbiyaPage> {
                     Icons.hourglass_top, isDark)),
           ]),
           const SizedBox(height: 20),
-          _action(context, 'Parish Members',
-              'View and manage your congregation', Icons.people_outline,
+          _action(context, loc.t('nav.members'),
+              loc.t('admin.myCongregationDesc'), Icons.people_outline,
               const MembersPage(), isDark),
-          _action(context, 'Membership Requests',
-              'Approve or reject new members', Icons.person_add_alt,
+          _action(context, loc.t('admin.requestsTitle'),
+              loc.t('admin.requestsPageDesc'), Icons.person_add_alt,
               const MembershipRequestsPage(), isDark),
           if ((user?.atbiyaId ?? '').isNotEmpty)
             _action(
                 context,
-                'Fellowship Groups',
-                'Manage Mahedherat under your parish',
+                loc.t('admin.layerMahderat'),
+                loc.t('admin.mahderatDesc'),
                 Icons.groups_outlined,
                 MahderatManagerScreen(
                   atbiyaId: user!.atbiyaId!,

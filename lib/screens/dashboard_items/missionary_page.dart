@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/dashboard/dashboard_scaffold.dart';
-import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 import '../../services/missionary_service.dart';
 import '../../services/auth_service.dart';
@@ -33,10 +32,7 @@ class _MissionaryPageState extends State<MissionaryPage>
   Widget build(BuildContext context) {
     context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final loc = Provider.of<LocalizationService>(context);
     final perms = Provider.of<PermissionService>(context);
-    final backgroundColor =
-        isDark ? AppColors.darkBackground : AppColors.lightBackground;
     final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
 
     return DashboardScaffold(
@@ -306,8 +302,8 @@ class _MissionaryPageState extends State<MissionaryPage>
     String type = 'FullTime';
     final formKey = GlobalKey<FormState>();
 
-    _showSheet(context, 'Missionary Application', formKey, [
-      _textField(locationCtrl, 'Desired Location', required: true),
+    _showSheet(context, loc.t('pages.missionaryApplicationForm'), formKey, [
+      _textField(locationCtrl, loc.t('pages.desiredLocation'), required: true),
       StatefulBuilder(
         builder: (ctx, setLocal) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -324,7 +320,7 @@ class _MissionaryPageState extends State<MissionaryPage>
           ),
         ),
       ),
-      _textField(descCtrl, 'Description', maxLines: 3, required: true),
+      _textField(descCtrl, loc.t('admin.description'), maxLines: 3, required: true),
     ], () async {
       await _service.createApplication(
         desiredLocation: locationCtrl.text.trim(),
@@ -348,17 +344,17 @@ class _MissionaryPageState extends State<MissionaryPage>
     final baptizedCtrl = TextEditingController(text: '0');
     final formKey = GlobalKey<FormState>();
 
-    _showSheet(context, 'Missionary Report', formKey, [
-      _textField(titleCtrl, 'Title', required: true),
-      _textField(locationCtrl, 'Location', required: true),
-      _textField(contentCtrl, 'Content', maxLines: 4, required: true),
+    _showSheet(context, loc.t('pages.reportTitle'), formKey, [
+      _textField(titleCtrl, loc.t('admin.title'), required: true),
+      _textField(locationCtrl, loc.t('admin.location'), required: true),
+      _textField(contentCtrl, loc.t('admin.crFieldContent'), maxLines: 4, required: true),
       Row(children: [
         Expanded(
-            child: _textField(reachedCtrl, 'People Reached',
+            child: _textField(reachedCtrl, loc.t('pages.peopleReached'),
                 keyboardType: TextInputType.number)),
         const SizedBox(width: 12),
         Expanded(
-            child: _textField(baptizedCtrl, 'Baptized',
+            child: _textField(baptizedCtrl, loc.t('pages.baptized'),
                 keyboardType: TextInputType.number)),
       ]),
     ], () async {

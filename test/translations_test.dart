@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_ahaw/i18n/translations.dart';
+import 'package:mobile_ahaw/services/localization_service.dart';
 
 /// The catalog is bulk-imported from the web's src/i18n/sections/*.ts so both
 /// clients say the same thing. These guard the import rather than the wording.
@@ -86,5 +87,93 @@ void main() {
       expect(en.keys.any((k) => k.startsWith(prefix)), isTrue,
           reason: 'no keys under "$prefix"');
     }
+  });
+
+  test('fillParams fills the {name} placeholders the catalog ships with', () {
+    // The catalog carries entries like `{n} placed` and `{name} will lose
+    // access`. Substitution used to be hand-rolled at each call site, so a
+    // caller that forgot shipped a literal `{name}` to the screen.
+    expect(fillParams('{name} loses access', {'name': 'Abebe'}),
+        'Abebe loses access');
+    // Every occurrence, not just the first.
+    expect(fillParams('{a} and {a}', {'a': 'x'}), 'x and x');
+    // A param with no placeholder is ignored; a placeholder with no param
+    // survives verbatim rather than becoming an empty gap.
+    expect(fillParams('plain', {'nope': 'x'}), 'plain');
+    expect(fillParams('{n} placed', const {}), '{n} placed');
+    // The catalog entries this guards really do carry placeholders.
+    expect(kTranslations['en']!['admin.suspendAccountDesc'], contains('{name}'));
+    expect(kTranslations['am']!['admin.suspendAccountDesc'], contains('{name}'));
+  });
+
+  test('no dashboard screen gains new hardcoded English', () {
+    // A ratchet, not a clean bill of health: these screens still hold raw
+    // English and the counts below are today's debt. The test fails if a
+    // number goes UP, so a half-migrated screen cannot quietly regress, and
+    // it fails if a number goes DOWN so the baseline gets updated rather
+    // than drifting out of date.
+    const baseline = <String, int>{
+    'settings_page.dart': 12,
+    'organisation_page.dart': 11,
+    'teachings_page.dart': 10,
+    'members_page.dart': 7,
+    'permission_control_page.dart': 6,
+    'mahderat_manager_page.dart': 6,
+    'finance_page.dart': 6,
+    'reports_page.dart': 4,
+    'announcements_page.dart': 4,
+    'meetings_page.dart': 3,
+    'volunteer_page.dart': 2,
+    'notifications_page.dart': 2,
+    'plans_page.dart': 1,
+    'partner_page.dart': 1,
+    'hige_denb_page.dart': 1,
+    'church_rules_page.dart': 1,
+    };
+
+    final lit = RegExp(r"'((?:\\.|[^'\\\n])*)'");
+    final uiContext = RegExp(
+        r"(Text\(|label(?:Text)?:\s*|hintText:\s*|title:\s*|content:\s*"
+        r"|message:\s*|_textField\([A-Za-z_]+,\s*|_field\([A-Za-z_]+,\s*"
+        r"|_showSheet\([A-Za-z_]+,\s*|_empty\(|_snack\(|_action\([A-Za-z_]+,\s*"
+        r"|tooltip:\s*|helperText:\s*|errorText:\s*|semanticLabel:\s*)$");
+    final englishish = RegExp(r"^[A-Z][A-Za-z0-9 ,'\u2019.?!:\-\u2014\u2026()]*$");
+
+    final counts = <String, int>{};
+    final dir = Directory('lib/screens/dashboard_items');
+    for (final f in dir.listSync().whereType<File>()) {
+      if (!f.path.endsWith('.dart')) continue;
+      final src = f.readAsStringSync();
+      var n = 0;
+      for (final m in lit.allMatches(src)) {
+        final v = m[1]!;
+        if (v.length < 3) continue;
+        if (!englishish.hasMatch(v) || !v.contains(RegExp('[a-z]'))) continue;
+        if (v.startsWith(RegExp(r'http|assets/|/|#|\{|package:|e\.g'))) continue;
+        final pre = src.substring(
+            m.start - 60 < 0 ? 0 : m.start - 60, m.start);
+        if (pre.trimRight().endsWith('.t(')) continue;
+        if (!uiContext.hasMatch(pre)) continue;
+        n++;
+      }
+      if (n > 0) counts[f.uri.pathSegments.last] = n;
+    }
+
+    final regressions = <String>[];
+    for (final e in counts.entries) {
+      final allowed = baseline[e.key] ?? 0;
+      if (e.value > allowed) {
+        regressions.add('${e.key}: ${e.value} raw strings, baseline $allowed');
+      }
+    }
+    expect(regressions, isEmpty,
+        reason: 'new hardcoded English:\n${regressions.join('\n')}');
+
+    final improved = baseline.entries
+        .where((e) => (counts[e.key] ?? 0) < e.value)
+        .map((e) => '${e.key}: now ${counts[e.key] ?? 0}, baseline ${e.value}')
+        .toList();
+    expect(improved, isEmpty,
+        reason: 'these improved — lower the baseline:\n${improved.join('\n')}');
   });
 }

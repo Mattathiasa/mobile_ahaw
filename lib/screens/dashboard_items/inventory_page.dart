@@ -9,7 +9,6 @@ import '../../services/permission_service.dart';
 import '../../services/module_config_service.dart';
 import '../../services/localization_service.dart';
 import '../../widgets/dashboard/dashboard_scaffold.dart';
-import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 
 /// Church asset inventory: list, search, and (for admins) add/edit/delete.
@@ -47,6 +46,13 @@ class _InventoryPageState extends State<InventoryPage> {
       titleKey: 'nav.inventory',
       moduleKey: 'inventory',
       constrainWidth: false,
+      floatingActionButton: canManage
+          ? FloatingActionButton(
+              onPressed: () => _openForm(context),
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
       body: Column(
         children: [
           Padding(
@@ -74,7 +80,7 @@ class _InventoryPageState extends State<InventoryPage> {
                       child: CircularProgressIndicator(color: AppColors.primary));
                 }
                 if (snapshot.hasError) {
-                  return _empty('Could not load assets');
+                  return _empty(loc.t('inventory.removeFailed'));
                 }
                 var assets = snapshot.data ?? [];
                 if (_search.isNotEmpty) {
@@ -85,7 +91,7 @@ class _InventoryPageState extends State<InventoryPage> {
                           .contains(_search))
                       .toList();
                 }
-                if (assets.isEmpty) return _empty('No assets yet');
+                if (assets.isEmpty) return _empty(loc.t('inventory.emptyTitle'));
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: assets.length,
@@ -191,8 +197,8 @@ class _InventoryPageState extends State<InventoryPage> {
               child: Text(loc.t('common.cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Delete',
-                  style: TextStyle(color: AppColors.sacredRed))),
+              child: Text(loc.t('common.delete'),
+                  style: const TextStyle(color: AppColors.sacredRed))),
         ],
       ),
     );
@@ -243,13 +249,13 @@ class _InventoryPageState extends State<InventoryPage> {
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 18, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 16),
-                    _field(nameCtrl, 'Name', required: true),
-                    _field(categoryCtrl, 'Category'),
-                    _field(qtyCtrl, 'Quantity',
+                    _field(nameCtrl, loc.t('inventory.fieldName'), required: true),
+                    _field(categoryCtrl, loc.t('modules.fldInventoryCategory')),
+                    _field(qtyCtrl, loc.t('inventory.fieldQuantity'),
                         keyboardType: TextInputType.number),
-                    _field(locationCtrl, 'Location'),
-                    _field(assignedCtrl, 'Assigned To'),
-                    _dropdown('Condition', condition,
+                    _field(locationCtrl, loc.t('inventory.fieldLocation')),
+                    _field(assignedCtrl, loc.t('inventory.fieldAssignedTo')),
+                    _dropdown(loc.t('inventory.fieldCondition'), condition,
                         conditions.isEmpty ? const ['New', 'Good', 'Fair', 'Poor'] : conditions,
                         (v) => setSheet(() => condition = v)),
                     _dropdown('Status', status,

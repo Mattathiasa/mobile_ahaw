@@ -318,7 +318,17 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.location': 'Location',
     'admin.useMyLocation': 'Use my location',
     'admin.clear': 'Clear',
+    // Self-authored: the web's Strategic Plan page is read-only, so its
+    // catalog has no labels for an edit form. Same for the documents
+    // download fallback, which the web handles with a browser download.
+    'admin.goalUnit': 'Unit (e.g. Members)',
+    'admin.goalCurrentValue': 'Current Value',
+    'admin.goalTargetValue': 'Target Value',
+    'pages.noDownloadLink': 'No downloadable link for this file.',
     'admin.latitude': 'Latitude',
+    // Self-authored: the web places pins by tapping a Leaflet map, so it has
+    // no typed-coordinate validation message to copy.
+    'admin.invalidCoords': 'Enter a valid latitude and longitude.',
     'admin.longitude': 'Longitude',
     'admin.pasteMapLink': '…or paste a map link',
     'admin.tapToPlace': 'Tap the map to place a pin.',
@@ -429,6 +439,10 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.logsTab': 'Audit Logs',
     'admin.rolesTab': 'Roles',
     'admin.suspendAccount': 'Suspend this account?',
+    // Self-authored: the web renders this sentence as hardcoded JSX in
+    // UserManagement.tsx, so there is no upstream catalog entry to copy.
+    'admin.suspendAccountDesc':
+        '{name} will immediately lose access and will not be able to sign in. Their record is kept, so you can restore access later.',
     'admin.creating': 'Creating...',
     'admin.updating': 'Updating...',
     'admin.createUser': 'Create User',
@@ -3199,7 +3213,12 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.location': 'ቦታ',
     'admin.useMyLocation': 'የአሁኑን ቦታዬን ተጠቀም',
     'admin.clear': 'አጽዳ',
+    'admin.goalUnit': 'መለኪያ (ለምሳሌ አባላት)',
+    'admin.goalCurrentValue': 'አሁን ያለው ዋጋ',
+    'admin.goalTargetValue': 'ዒላማ ዋጋ',
+    'pages.noDownloadLink': 'ለዚህ ፋይል የሚወርድ አገናኝ የለም።',
     'admin.latitude': 'ኬክሮስ',
+    'admin.invalidCoords': 'ትክክለኛ ኬክሮስና ኬንትሮስ ያስገቡ።',
     'admin.longitude': 'ኬንትሮስ',
     'admin.pasteMapLink': '…ወይም የካርታ አገናኝ ይለጥፉ',
     'admin.tapToPlace': 'ምልክት ለማስቀመጥ ካርታውን ይንኩ።',
@@ -3310,6 +3329,8 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.logsTab': 'የክንውን መዝገብ',
     'admin.rolesTab': 'ኃላፊነቶች',
     'admin.suspendAccount': 'ይህን መለያ ያግዱ?',
+    'admin.suspendAccountDesc':
+        '{name} ወዲያውኑ መዳረሻውን ያጣል፤ መግባትም አይችልም። መዝገቡ ስለሚቆይ በኋላ መዳረሻውን መመለስ ይችላሉ።',
     'admin.creating': 'በመፍጠር ላይ...',
     'admin.updating': 'በማዘመን ላይ...',
     'admin.createUser': 'ተጠቃሚ ፍጠር',

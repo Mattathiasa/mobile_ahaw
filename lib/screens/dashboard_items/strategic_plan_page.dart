@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/dashboard/dashboard_scaffold.dart';
-import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 import '../../services/strategic_plan_service.dart';
 import '../../services/localization_service.dart';
@@ -27,10 +26,7 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
   Widget build(BuildContext context) {
     context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final loc = Provider.of<LocalizationService>(context);
     final canManage = Provider.of<PermissionService>(context).isSuperAdmin;
-    final backgroundColor =
-        isDark ? AppColors.darkBackground : AppColors.lightBackground;
     final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
 
     return DashboardScaffold(
@@ -280,7 +276,8 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
               child:
-                  const Text('Delete', style: TextStyle(color: Colors.red))),
+                  Text(loc.t('common.delete'),
+                      style: const TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -328,14 +325,14 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 18, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 16),
-                    _field(titleCtrl, 'Title', required: true),
-                    _field(descCtrl, 'Description', maxLines: 3),
-                    _field(unitCtrl, 'Unit (e.g. Members)'),
-                    _field(targetYearCtrl, 'Target Year',
+                    _field(titleCtrl, loc.t('admin.title'), required: true),
+                    _field(descCtrl, loc.t('admin.description'), maxLines: 3),
+                    _field(unitCtrl, loc.t('admin.goalUnit')),
+                    _field(targetYearCtrl, loc.t('pages.targetYear'),
                         keyboardType: TextInputType.number),
-                    _field(currentCtrl, 'Current Value',
+                    _field(currentCtrl, loc.t('admin.goalCurrentValue'),
                         keyboardType: TextInputType.number),
-                    _field(targetCtrl, 'Target Value',
+                    _field(targetCtrl, loc.t('admin.goalTargetValue'),
                         keyboardType: TextInputType.number),
                     const SizedBox(height: 16),
                     SizedBox(

@@ -12,7 +12,6 @@ import '../../services/localization_service.dart';
 import '../../services/permission_service.dart';
 import '../../services/cloudinary_service.dart';
 import '../../widgets/dashboard/dashboard_scaffold.dart';
-import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Memriya Documents page: folder/file browsing of the
@@ -113,8 +112,8 @@ class _DocumentsPageState extends State<DocumentsPage> {
               child: Text(loc.t('common.cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Delete',
-                  style: TextStyle(color: AppColors.sacredRed))),
+              child: Text(loc.t('common.delete'),
+                  style: const TextStyle(color: AppColors.sacredRed))),
         ],
       ),
     );
@@ -142,7 +141,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             ListTile(
               leading:
                   const Icon(Icons.upload_file, color: AppColors.primary),
-              title: const Text('Upload File'),
+              title: Text(loc.t('pages.uploadFiles')),
               onTap: () {
                 Navigator.pop(ctx);
                 _uploadFile();
@@ -166,6 +165,19 @@ class _DocumentsPageState extends State<DocumentsPage> {
       titleKey: 'nav.documents',
       moduleKey: 'documents',
       constrainWidth: false,
+      floatingActionButton: canUpload
+          ? FloatingActionButton(
+              onPressed: _uploading ? null : () => _showAddSheet(canUpload),
+              backgroundColor: AppColors.primary,
+              child: _uploading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
       body: Column(
         children: [
           // Search
@@ -175,7 +187,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
               onChanged: (v) => setState(() => _search = v.toLowerCase()),
               style: GoogleFonts.notoSansEthiopic(fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'Search documents...',
+                hintText: loc.t('pages.searchDocuments'),
                 hintStyle: GoogleFonts.notoSansEthiopic(
                     fontSize: 13, color: Colors.grey),
                 prefixIcon:
@@ -208,7 +220,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                   children: [
                     GestureDetector(
                       onTap: () => setState(() => _path.clear()),
-                      child: Text('Home',
+                      child: Text(loc.t('pages.documentsHome'),
                           style: GoogleFonts.notoSansEthiopic(
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
@@ -403,7 +415,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('No downloadable link for this file',
+          content: Text(loc.t('pages.noDownloadLink'),
               style: GoogleFonts.notoSansEthiopic()),
         ),
       );

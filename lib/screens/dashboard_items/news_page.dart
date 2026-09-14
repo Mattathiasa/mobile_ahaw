@@ -11,6 +11,7 @@ import '../../services/role_registry_service.dart';
 import '../../services/localization_service.dart';
 import '../../services/cloudinary_service.dart';
 import '../../widgets/image_upload_field.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
 import '../../theme/app_colors.dart';
 
 /// News / blog: a published feed for everyone, plus a manage view (drafts +
@@ -23,6 +24,9 @@ class NewsPage extends StatefulWidget {
 }
 
 class _NewsPageState extends State<NewsPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final NewsService _service = NewsService();
   bool _manageView = false;
   Future<List<Map<String, dynamic>>>? _manageFuture;
@@ -53,36 +57,25 @@ class _NewsPageState extends State<NewsPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('News',
-            style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : AppColors.lightText)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          if (_canManage)
-            TextButton(
-              onPressed: () {
-                setState(() => _manageView = !_manageView);
-                if (_manageView && _manageFuture == null) _loadManage();
-              },
-              child: Text(_manageView ? 'Feed' : 'Manage',
-                  style: GoogleFonts.notoSansEthiopic(
-                      fontWeight: FontWeight.w900, color: AppColors.primary)),
-            ),
-        ],
-      ),
+    return DashboardScaffold(
+      titleKey: 'nav.news',
+      moduleKey: 'news',
+      constrainWidth: false,
+      actions: [
+        if (_canManage)
+          TextButton(
+            onPressed: () {
+              setState(() => _manageView = !_manageView);
+              if (_manageView && _manageFuture == null) _loadManage();
+            },
+            child: Text(_manageView ? 'Feed' : 'Manage',
+                style: GoogleFonts.notoSansEthiopic(
+                    fontWeight: FontWeight.w900, color: AppColors.primary)),
+          ),
+      ],
       floatingActionButton: (_canManage && _manageView)
           ? FloatingActionButton(
               onPressed: () => _openEditor(context),
@@ -104,7 +97,7 @@ class _NewsPageState extends State<NewsPage> {
               child: CircularProgressIndicator(color: AppColors.primary));
         }
         final posts = snapshot.data ?? [];
-        if (posts.isEmpty) return _empty('No news yet');
+        if (posts.isEmpty) return _empty(loc.t('pages.noNewsPublished'));
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: posts.length,
@@ -124,7 +117,7 @@ class _NewsPageState extends State<NewsPage> {
               child: CircularProgressIndicator(color: AppColors.primary));
         }
         final posts = snapshot.data ?? [];
-        if (posts.isEmpty) return _empty('No posts yet — create one');
+        if (posts.isEmpty) return _empty(loc.t('pages.noPostsYet'));
         return RefreshIndicator(
           onRefresh: () async => _loadManage(),
           child: ListView.builder(
@@ -242,12 +235,12 @@ class _NewsPageState extends State<NewsPage> {
           }
         },
         itemBuilder: (_) => [
-          const PopupMenuItem(value: 'edit', child: Text('Edit')),
+          PopupMenuItem(value: 'edit', child: Text(loc.t('common.edit'))),
           if (status != 'published')
-            const PopupMenuItem(value: 'publish', child: Text('Publish'))
+            PopupMenuItem(value: 'publish', child: Text(loc.t('pages.nmPublish')))
           else
-            const PopupMenuItem(value: 'unpublish', child: Text('Unpublish')),
-          const PopupMenuItem(value: 'delete', child: Text('Delete')),
+            PopupMenuItem(value: 'unpublish', child: Text(loc.t('pages.nmUnpublish'))),
+          PopupMenuItem(value: 'delete', child: Text(loc.t('common.delete'))),
         ],
       ),
     );
@@ -348,7 +341,7 @@ class _NewsPageState extends State<NewsPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(isEditing ? 'Edit Post' : 'New Post',
+                    Text(isEditing ? loc.t('admin.editPost') : loc.t('admin.newPost'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 18, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 16),
@@ -358,19 +351,19 @@ class _NewsPageState extends State<NewsPage> {
                         folder: 'news',
                         circle: false,
                         size: 120,
-                        label: 'Cover image',
+                        label: loc.t('modules.fldNewsCoverImageUrl'),
                         onUploaded: (url) => cover = url,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _field(titleEn, 'Title (English)', required: true),
-                    _field(titleAm, 'Title (Amharic)'),
-                    _field(excerptEn, 'Excerpt', maxLines: 2),
-                    _field(bodyEn, 'Body (English)', maxLines: 5),
-                    _field(bodyAm, 'Body (Amharic)', maxLines: 5),
-                    _dropdown('Scope', scope, const ['global', 'atbiya'],
+                    _field(titleEn, '${loc.t('admin.title')} (${LocalizationService.languageEndonyms['en']})', required: true),
+                    _field(titleAm, '${loc.t('admin.title')} (${LocalizationService.languageEndonyms['am']})'),
+                    _field(excerptEn, loc.t('modules.fldNewsExcerpt'), maxLines: 2),
+                    _field(bodyEn, '${loc.t('admin.crFieldContent')} (${LocalizationService.languageEndonyms['en']})', maxLines: 5),
+                    _field(bodyAm, '${loc.t('admin.crFieldContent')} (${LocalizationService.languageEndonyms['am']})', maxLines: 5),
+                    _dropdown(loc.t('admin.audienceScope'), scope, const ['global', 'atbiya'],
                         (v) => setSheet(() => scope = v)),
-                    _dropdown('Status', status, const ['draft', 'published'],
+                    _dropdown(loc.t('admin.scColStatus'), status, const ['draft', 'published'],
                         (v) => setSheet(() => status = v)),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -423,11 +416,11 @@ class _NewsPageState extends State<NewsPage> {
                                   setSheet(() => saving = false);
                                   if (ctx.mounted) {
                                     ScaffoldMessenger.of(ctx).showSnackBar(
-                                        SnackBar(content: Text('Failed: $e')));
+                                        SnackBar(content: Text(loc.t('errors.generic'))));
                                   }
                                 }
                               },
-                        child: Text(saving ? 'Saving…' : 'Save',
+                        child: Text(saving ? loc.t('common.saving') : loc.t('common.save'),
                             style: const TextStyle(color: Colors.white)),
                       ),
                     ),

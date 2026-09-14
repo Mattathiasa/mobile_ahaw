@@ -13,6 +13,18 @@ import '../i18n/translations.dart';
 ///      web admin → Site Content Editor → UI Translations — the same
 ///      overrides the web pages use, so both apps always show the same text)
 ///   2. the bundled catalog generated from the web's translations.ts
+
+/// Substitutes `{name}` placeholders in a catalog string.
+///
+/// Lives outside the service so it can be tested without a Firebase app, and
+/// so [AuthErrorKey] and [LocalizationService.t] cannot drift apart.
+String fillParams(String value, Map<String, String> params) {
+  if (params.isEmpty) return value;
+  var out = value;
+  params.forEach((k, v) => out = out.replaceAll('{$k}', v));
+  return out;
+}
+
 ///   3. English fallback, then the key itself
 class LocalizationService extends ChangeNotifier {
   /// The order the language toggle walks. Amharic sits first after English by
@@ -106,14 +118,17 @@ class LocalizationService extends ChangeNotifier {
   /// So both forms are accepted here, and both are tried against both the
   /// overrides and the bundled catalog. Call sites that predate the dotted
   /// keys pass a bare leaf and keep resolving against the bundled catalog.
-  String t(String key) {
+  /// [params] fills the `{name}` placeholders the catalog ships with — the
+  /// substitution used to be hand-rolled at each call site, which is how
+  /// `pinnedCount` could render a literal `{n}` when a caller forgot.
+  String t(String key, [Map<String, String> params = const {}]) {
     final leaf = _leafOf(key);
 
     final langOverrides = _overrides[_language];
     if (langOverrides is Map) {
       for (final k in {key, leaf}) {
         final v = langOverrides[k];
-        if (v is String && v.trim().isNotEmpty) return v;
+        if (v is String && v.trim().isNotEmpty) return fillParams(v, params);
       }
     }
 
@@ -122,11 +137,12 @@ class LocalizationService extends ChangeNotifier {
       if (catalog == null) continue;
       for (final k in {key, leaf}) {
         final v = catalog[k];
-        if (v != null && v.isNotEmpty) return v;
+        if (v != null && v.isNotEmpty) return fillParams(v, params);
       }
     }
     return key;
   }
+
 
   /// The leaf name of a dotted path — the legacy key form.
   static String _leafOf(String path) {

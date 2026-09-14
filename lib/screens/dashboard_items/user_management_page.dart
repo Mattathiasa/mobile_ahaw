@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../services/localization_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
 import '../../theme/app_colors.dart';
 import '../../services/permission_service.dart';
 import '../../services/member_service.dart';
@@ -16,6 +18,9 @@ class UserManagementPage extends StatefulWidget {
 }
 
 class _UserManagementPageState extends State<UserManagementPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final MemberService _memberService = MemberService();
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   String _searchQuery = '';
@@ -47,11 +52,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
         builder: (ctx, setSheet) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
           return FormSheet(
-            title: 'Create New User',
-            subtitle: 'Add a new member to the system hierarchy',
+            title: loc.t('admin.createNewUser'),
+            subtitle: loc.t('admin.addUserDesc'),
             isDark: isDark,
             saving: saving,
-            submitLabel: 'Create User',
+            submitLabel: loc.t('admin.createUser'),
             onSubmit: () async {
               if (usernameCtrl.text.isEmpty || fullNameCtrl.text.isEmpty || passwordCtrl.text.isEmpty) return;
               setSheet(() => saving = true);
@@ -68,7 +73,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   'status': 'active',
                 });
                 if (ctx.mounted) Navigator.pop(ctx);
-                _showSnack('User created successfully!', success: true);
+                _showSnack(loc.t('admin.userCreated'), success: true);
               } catch (e) {
                 _showSnack('Failed: $e');
               } finally {
@@ -80,7 +85,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
               buildTextField(usernameCtrl, 'e.g. john.doe', isDark),
               const SizedBox(height: 16),
               buildLabel('Password *', isDark),
-              buildTextField(passwordCtrl, 'Min 6 characters', isDark, obscure: true),
+              buildTextField(passwordCtrl, loc.t('admin.minChars'), isDark, obscure: true),
               const SizedBox(height: 16),
               buildLabel('Full Name (English) *', isDark),
               buildTextField(fullNameCtrl, 'e.g. John Doe', isDark),
@@ -88,7 +93,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
               buildLabel('Full Name (Amharic)', isDark),
               buildTextField(fullNameAmharicCtrl, 'e.g. ዮሐንስ ተስፋዬ', isDark),
               const SizedBox(height: 16),
-              buildLabel('Hierarchy Level', isDark),
+              buildLabel(loc.t('admin.hierarchyLevel'), isDark),
               _buildHierarchyLevelDropdown(selectedHierarchyLevel, (v) => setSheet(() => selectedHierarchyLevel = v!), isDark),
               const SizedBox(height: 16),
               buildLabel('Role', isDark),
@@ -111,29 +116,26 @@ class _UserManagementPageState extends State<UserManagementPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final perms = Provider.of<PermissionService>(context);
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('User Management', style: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.w900, color: isDark ? Colors.white : AppColors.lightText)),
-        leading: IconButton(icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : AppColors.lightText), onPressed: () => Navigator.pop(context)),
-        actions: [
-          if (perms.isSuperAdmin || perms.can('canCreateUser'))
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: ElevatedButton.icon(
-                onPressed: () => _showCreateUserSheet(context),
-                icon: const Icon(Icons.person_add_alt_1, size: 18),
-                label: const Text('New User', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              ),
+    return DashboardScaffold(
+      titleKey: 'nav.userManagement',
+      moduleKey: 'userManagement',
+      constrainWidth: false,
+      actions: [
+        if (perms.isSuperAdmin || perms.can('canCreateUser'))
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: ElevatedButton.icon(
+              onPressed: () => _showCreateUserSheet(context),
+              icon: const Icon(Icons.person_add_alt_1, size: 18),
+              label: Text(loc.t('admin.createNewUser'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             ),
-        ],
-      ),
+          ),
+      ],
       body: Column(
         children: [
           Padding(
@@ -144,7 +146,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
-                decoration: const InputDecoration(prefixIcon: Icon(Icons.search, color: AppColors.primary, size: 20), hintText: 'Search by name or username...', border: InputBorder.none, contentPadding: EdgeInsets.symmetric(vertical: 12)),
+                decoration: InputDecoration(prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 20), hintText: loc.t('admin.searchUsersByName'), border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(vertical: 12)),
               ),
             ),
           ),
@@ -153,7 +155,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
               stream: _db.collection('users').snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+                if (snapshot.hasError) return Center(child: Text(loc.t('errors.generic')));
 
                 final docs = snapshot.data?.docs ?? [];
                 final filtered = docs.where((doc) {
@@ -183,7 +185,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
   }
 
   Widget _buildUserCard(String id, Map<String, dynamic> data, bool isDark, PermissionService perms) {
-    final fullName = data['fullName'] ?? 'Anonymous User';
+    final fullName = data['fullName'] ?? loc.t('admin.member');
     final role = data['role'] ?? 'user';
     final level = data['hierarchyLevel'] ?? 'Member';
     final username = data['username'] ?? '';
@@ -241,8 +243,8 @@ class _UserManagementPageState extends State<UserManagementPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(leading: const Icon(Icons.edit_outlined), title: const Text('Edit User'), onTap: () => Navigator.pop(ctx)),
-            ListTile(leading: const Icon(Icons.block, color: AppColors.sacredRed), title: const Text('Suspend User', style: TextStyle(color: AppColors.sacredRed)), onTap: () {
+            ListTile(leading: const Icon(Icons.edit_outlined), title: Text(loc.t('admin.editUser')), onTap: () => Navigator.pop(ctx)),
+            ListTile(leading: const Icon(Icons.block, color: AppColors.sacredRed), title: Text(loc.t('admin.suspend'), style: const TextStyle(color: AppColors.sacredRed)), onTap: () {
               Navigator.pop(ctx);
               _confirmDelete(id, data['fullName']);
             }),
@@ -256,16 +258,16 @@ class _UserManagementPageState extends State<UserManagementPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Suspend User'),
-        content: Text(
-            'This suspends ${name ?? 'this user'} and revokes their access. Continue?'),
+        title: Text(loc.t('admin.suspendAccount')),
+        content: Text(loc.t('admin.suspendAccountDesc',
+            {'name': name ?? loc.t('admin.member')})),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(loc.t('common.cancel'))),
           TextButton(onPressed: () async {
             await _memberService.suspendMember(id);
             if (ctx.mounted) Navigator.pop(ctx);
-            _showSnack('User suspended', success: true);
-          }, child: const Text('Suspend', style: TextStyle(color: AppColors.sacredRed))),
+            _showSnack(loc.t('admin.suspended'), success: true);
+          }, child: Text(loc.t('admin.suspend'), style: const TextStyle(color: AppColors.sacredRed))),
         ],
       ),
     );
@@ -274,7 +276,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
   Widget _buildEmptyState() => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
     Icon(Icons.people_outline, size: 64, color: AppColors.primary.withValues(alpha: 0.2)),
     const SizedBox(height: 16),
-    Text('NO USERS FOUND', style: GoogleFonts.notoSansEthiopic(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.grey.withValues(alpha: 0.5))),
+    Text(loc.t('admin.noUsersFound').toUpperCase(), style: GoogleFonts.notoSansEthiopic(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.grey.withValues(alpha: 0.5))),
   ]));
 
   Widget _buildHierarchyLevelDropdown(String value, ValueChanged<String?> onChanged, bool isDark) => Container(
