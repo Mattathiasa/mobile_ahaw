@@ -9,6 +9,8 @@ import '../../services/localization_service.dart';
 import '../../services/permission_service.dart';
 import '../../services/module_config_service.dart';
 import '../../widgets/image_upload_field.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
+import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../theme/app_colors.dart';
 
 /// Mirrors the web Teaching page: lists the `teachings` collection
@@ -19,25 +21,13 @@ class TeachingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(Provider.of<LocalizationService>(context).t('teachings'),
-            style: GoogleFonts.notoSansEthiopic(
-              fontWeight: FontWeight.w900,
-              color: isDark ? Colors.white : AppColors.lightText,
-            )),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back,
-              color: isDark ? Colors.white : AppColors.lightText),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+    return DashboardScaffold(
+      titleKey: 'nav.teachings',
+      moduleKey: 'teachings',
+      constrainWidth: false,
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
             .collection('teachings')
@@ -49,14 +39,14 @@ class TeachingsPage extends StatelessWidget {
                 child: CircularProgressIndicator(color: AppColors.primary));
           }
           if (snapshot.hasError) {
-            return _emptyState(
-                isDark, FontAwesomeIcons.circleExclamation, 'Could not load teachings');
+            return const DashboardEmpty(
+                icon: Icons.error_outline, messageKey: 'admin.unitLoadFailed');
           }
 
           final docs = snapshot.data?.docs ?? [];
           if (docs.isEmpty) {
-            return _emptyState(isDark, FontAwesomeIcons.bookOpenReader,
-                'No sermons published yet');
+            return const DashboardEmpty(
+                icon: Icons.menu_book_outlined, messageKey: 'pages.noSermons');
           }
 
           return ListView.builder(
@@ -81,23 +71,6 @@ class TeachingsPage extends StatelessWidget {
     );
   }
 
-  Widget _emptyState(bool isDark, FaIconData icon, String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          FaIcon(icon, size: 56, color: AppColors.primary.withValues(alpha: 0.4)),
-          const SizedBox(height: 16),
-          Text(message,
-              style: GoogleFonts.notoSansEthiopic(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              )),
-        ],
-      ),
-    );
-  }
 }
 
 class _TeachingCard extends StatelessWidget {

@@ -9,6 +9,7 @@ import '../../services/localization_service.dart';
 import '../../services/permission_service.dart';
 import '../../services/role_registry_service.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
 import '../../theme/app_colors.dart';
 
 /// Church Rules (Hige Denb) — three categories synced from the web admin
@@ -19,7 +20,6 @@ class ChurchRulesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final loc = Provider.of<LocalizationService>(context);
     final rules = Provider.of<ChurchRulesService>(context);
     final perms = Provider.of<PermissionService>(context);
     final registry = Provider.of<RoleRegistryService>(context);
@@ -35,37 +35,23 @@ class ChurchRulesPage extends StatelessWidget {
 
     return DefaultTabController(
       length: categories.length,
-      child: Scaffold(
-        backgroundColor:
-            isDark ? AppColors.darkBackground : AppColors.lightBackground,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: Text(loc.t('churchRules'),
-              style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.w900,
-                color: isDark ? Colors.white : AppColors.lightText,
-              )),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back,
-                color: isDark ? Colors.white : AppColors.lightText),
-            onPressed: () => Navigator.pop(context),
-          ),
-          bottom: TabBar(
-            isScrollable: true,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: AppColors.primary,
-            labelStyle: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.w900, fontSize: 12),
-            tabs: categories
-                .map((c) => Tab(text: '${c.label} (${c.amharic})'))
-                .toList(),
-          ),
+      child: DashboardScaffold(
+        titleKey: 'nav.churchRules',
+        moduleKey: 'churchRules',
+        constrainWidth: false,
+        bottom: TabBar(
+          isScrollable: true,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: AppColors.primary,
+          labelStyle: GoogleFonts.notoSansEthiopic(
+              fontWeight: FontWeight.w900, fontSize: 12),
+          tabs: categories
+              .map((c) => Tab(text: '${c.label} (${c.amharic})'))
+              .toList(),
         ),
         body: !rules.loaded
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.primary))
+            ? const DashboardLoading()
             : TabBarView(
                 children: categories
                     .map((cat) =>
@@ -78,6 +64,7 @@ class ChurchRulesPage extends StatelessWidget {
 
   Widget _buildList(BuildContext context, _Category cat, bool isDark,
       bool canEdit, ChurchRulesService svc) {
+    final loc = Provider.of<LocalizationService>(context, listen: false);
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -156,10 +143,13 @@ class ChurchRulesPage extends StatelessWidget {
                               _deleteRule(context, svc, cat, i);
                             }
                           },
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(value: 'edit', child: Text('Edit')),
+                          itemBuilder: (_) => [
                             PopupMenuItem(
-                                value: 'delete', child: Text('Delete')),
+                                value: 'edit',
+                                child: Text(loc.t('common.edit'))),
+                            PopupMenuItem(
+                                value: 'delete',
+                                child: Text(loc.t('common.delete'))),
                           ],
                         ),
                     ],
@@ -182,19 +172,20 @@ class ChurchRulesPage extends StatelessWidget {
 
   Future<void> _deleteRule(BuildContext context, ChurchRulesService svc,
       _Category cat, int index) async {
+    final loc = Provider.of<LocalizationService>(context, listen: false);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete rule?'),
-        content: Text('Delete "${cat.items[index].title}"?'),
+        title: Text(loc.t('pages.areYouSure')),
+        content: Text(loc.t('pages.cannotUndo')),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(loc.t('common.cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Delete',
-                  style: TextStyle(color: AppColors.sacredRed))),
+              child: Text(loc.t('common.delete'),
+                  style: const TextStyle(color: AppColors.sacredRed))),
         ],
       ),
     );
@@ -206,6 +197,7 @@ class ChurchRulesPage extends StatelessWidget {
 
   void _openRuleForm(BuildContext context, ChurchRulesService svc,
       _Category cat, {int? index, RuleItem? existing}) {
+    final loc = Provider.of<LocalizationService>(context, listen: false);
     final titleCtrl = TextEditingController(text: existing?.title);
     final contentCtrl = TextEditingController(text: existing?.content);
     final formKey = GlobalKey<FormState>();
@@ -236,19 +228,21 @@ class ChurchRulesPage extends StatelessWidget {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: titleCtrl,
-                    decoration: const InputDecoration(
-                        labelText: 'Title', border: OutlineInputBorder()),
+                    decoration: InputDecoration(
+                        labelText: loc.t('admin.title'),
+                        border: const OutlineInputBorder()),
                     validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Required' : null,
+                        (v == null || v.trim().isEmpty) ? loc.t('admin.required') : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: contentCtrl,
                     maxLines: 4,
-                    decoration: const InputDecoration(
-                        labelText: 'Content', border: OutlineInputBorder()),
+                    decoration: InputDecoration(
+                        labelText: loc.t('admin.crFieldContent'),
+                        border: const OutlineInputBorder()),
                     validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Required' : null,
+                        (v == null || v.trim().isEmpty) ? loc.t('admin.required') : null,
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
