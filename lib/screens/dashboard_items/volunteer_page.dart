@@ -101,7 +101,7 @@ class _VolunteerPageState extends State<VolunteerPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return DashboardScaffold(
-      titleKey: 'nav.volunteer',
+      titleKey: 'pages.volunteer',
       moduleKey: 'volunteer',
       constrainWidth: false,
       body: _loading
