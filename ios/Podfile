@@ -44,4 +44,57 @@ post_install do |installer|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
     end
   end
+
+  # BoringSSL-GRPC 0.0.32 (pinned by the Firebase iOS SDK 10.x that
+  # firebase_core 2.x pulls in) ships the malformed compiler flag
+  # `-GCC_WARN_INHIBIT_ALL_WARNINGS`. Current clang tokenizes that as the
+  # standalone `-G` option and aborts:
+  #   Error (Xcode): unsupported option '-G' for target '...-simulator'
+  # Strip it after every pod install so the fix survives re-fetches.
+  installer.pods_project.targets.each do |target|
+    next unless target.name == 'BoringSSL-GRPC'
+    target.source_build_phase.files.each do |build_file|
+      flags = build_file.settings && build_file.settings['COMPILER_FLAGS']
+      next unless flags&.include?('-GCC_WARN_INHIBIT_ALL_WARNINGS')
+      build_file.settings['COMPILER_FLAGS'] =
+        flags.gsub('-GCC_WARN_INHIBIT_ALL_WARNINGS', '').squeeze(' ').strip
+    end
+  end
+
+  # gRPC-Core / gRPC-C++ 1.62.5 (Firebase iOS SDK 10.x) use the deprecated
+  # `Traits::template CallSeqFactory(...)` form (template keyword without a
+  # template argument list), rejected by current clang:
+  #   Parse Issue (Xcode): A template argument list is expected after a name
+  #   prefixed by the template keyword ... basic_seq.h
+  # Upstream gRPC removed the redundant `template` keyword; re-apply after
+  # every pod install in case the pods get re-fetched.
+  %w[
+    Pods/gRPC-Core/src/core/lib/promise/detail/basic_seq.h
+    Pods/gRPC-C++/src/core/lib/promise/detail/basic_seq.h
+  ].each do |path|
+    abs = File.join(__dir__, path)
+    next unless File.exist?(abs)
+    src = File.read(abs)
+    patched = src.gsub('Traits::template CallSeqFactory(', 'Traits::CallSeqFactory(')
+    next if patched == src
+    # CocoaPods may extract pod sources read-only; make writable before patching.
+    File.chmod(0o644, abs) unless File.writable?(abs)
+    File.write(abs, patched)
+  end
+end
+
+post_integrate do |installer|
+  # firebase_auth 4.x public headers include <Firebase/Firebase.h> non-modularly.
+  # When the Runner target compiles GeneratedPluginRegistrant.m (which imports
+  # that header), clang module-verifies 'firebase_auth.FLTFirebaseAuthPlugin'
+  # and fails on newer Xcode. The override must live on the Runner target.
+  project_path = File.join(__dir__, 'Runner.xcodeproj')
+  project = Xcodeproj::Project.open(project_path)
+  project.native_targets.each do |target|
+    next unless target.name == 'Runner'
+    target.build_configurations.each do |config|
+      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+    end
+  end
+  project.save
 end
