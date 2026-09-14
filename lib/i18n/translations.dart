@@ -4,6 +4,12 @@
 
 const Map<String, Map<String, String>> kTranslations = {
   'en': {
+    // RSVP wording. Authored here, not imported: the web's Meetings page
+    // has no RSVP, so there is no upstream string to mirror.
+    'meetings.going': 'Going',
+    'meetings.notGoing': 'Not going',
+    'meetings.attending': 'going',
+    'meetings.scheduled': 'Meeting scheduled',
     // ── Imported wholesale from the web's src/i18n/sections/*.ts ──
     // Same keys, same wording, same four languages, so a string edited in
     // the web admin's UI Translations tab lands identically on both clients.
@@ -2862,6 +2868,12 @@ const Map<String, Map<String, String>> kTranslations = {
     'hiyawanmahderat': 'HiyawanMahderat',
   },
   'am': {
+    // RSVP wording. Authored here, not imported: the web's Meetings page
+    // has no RSVP, so there is no upstream string to mirror.
+    'meetings.going': 'እገኛለሁ',
+    'meetings.notGoing': 'አልገኝም',
+    'meetings.attending': 'እንደሚገኙ',
+    'meetings.scheduled': 'ስብሰባው ተያዘ',
     // Bare aliases for keys the Organisation work introduced English-only.
     // Same strings as their dotted equivalents, so those screens render in
     // this language instead of falling through to English.

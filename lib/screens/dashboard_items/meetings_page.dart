@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../services/localization_service.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/dashboard/dashboard_scaffold.dart';
+import '../../widgets/dashboard/dashboard_widgets.dart';
 import '../../services/permission_service.dart';
 import '../../services/meeting_service.dart';
 import '../../services/auth_service.dart';
@@ -17,6 +20,9 @@ class MeetingsPage extends StatefulWidget {
 }
 
 class _MeetingsPageState extends State<MeetingsPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final MeetingService _meetingService = MeetingService();
 
   void _showCreateSheet(BuildContext context) {
@@ -63,7 +69,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildLabel('Meeting Title *', isDark),
-                        _buildTextField(titleCtrl, 'Enter meeting title', isDark),
+                        _buildTextField(titleCtrl, loc.t('pages.meetingTitle'), isDark),
                         const SizedBox(height: 20),
                         _buildLabel('Date & Time *', isDark),
                         _buildDatePicker(context, selectedDate, (d) => setSheet(() => selectedDate = d), isDark),
@@ -72,7 +78,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
                         _buildTextField(locationCtrl, 'e.g. Main Hall / Online link', isDark),
                         const SizedBox(height: 20),
                         _buildLabel('Description *', isDark),
-                        _buildTextField(descCtrl, 'Enter meeting description and agenda', isDark, maxLines: 4),
+                        _buildTextField(descCtrl, loc.t('admin.description'), isDark, maxLines: 4),
                       ],
                     ),
                   ),
@@ -85,7 +91,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
                         child: OutlinedButton(
                           onPressed: () => Navigator.pop(ctx),
                           style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), padding: const EdgeInsets.symmetric(vertical: 14)),
-                          child: const Text('Cancel'),
+                          child: Text(loc.t('common.cancel')),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -104,7 +110,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
                                 location: locationCtrl.text.trim(),
                               ));
                               if (ctx.mounted) Navigator.pop(ctx);
-                              _showSnack('Meeting scheduled!', success: true);
+                              _showSnack(loc.t('meetings.scheduled'), success: true);
                             } catch (e) {
                               _showSnack('Failed: $e');
                             } finally {
@@ -112,7 +118,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
                             }
                           },
                           style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), padding: const EdgeInsets.symmetric(vertical: 14)),
-                          child: saving ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Schedule Meeting'),
+                          child: saving ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text(loc.t('pages.scheduleMeeting')),
                         ),
                       ),
                     ],
@@ -137,30 +143,33 @@ class _MeetingsPageState extends State<MeetingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final perms = Provider.of<PermissionService>(context);
     final canSchedule = perms.isSuperAdmin || perms.can('canScheduleMeeting');
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text('Meetings', style: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.w900, color: isDark ? Colors.white : AppColors.lightText)),
-        leading: IconButton(icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : AppColors.lightText), onPressed: () => Navigator.pop(context)),
-        actions: [
-          if (canSchedule)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: ElevatedButton.icon(
-                onPressed: () => _showCreateSheet(context),
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Schedule', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              ),
+    return DashboardScaffold(
+      titleKey: 'nav.meetings',
+      moduleKey: 'meetings',
+      constrainWidth: false,
+      actions: [
+        if (canSchedule)
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: ElevatedButton.icon(
+              onPressed: () => _showCreateSheet(context),
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(loc.t('pages.scheduleMeeting'),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
             ),
-        ],
-      ),
+          ),
+      ],
       body: StreamBuilder<List<MeetingModel>>(
         stream: _meetingService.getMeetingsStream(),
         builder: (context, snapshot) {
@@ -184,13 +193,13 @@ class _MeetingsPageState extends State<MeetingsPage> {
             padding: const EdgeInsets.all(20),
             children: [
               if (upcoming.isNotEmpty) ...[
-                _buildSectionHeader('Upcoming Meetings', isDark),
+                _buildSectionHeader(loc.t('pages.upcomingMeetings'), isDark),
                 const SizedBox(height: 16),
                 ...upcoming.map((m) => _buildMeetingCard(m, isDark, true)),
                 const SizedBox(height: 32),
               ],
               if (past.isNotEmpty) ...[
-                _buildSectionHeader('Past Meetings', isDark),
+                _buildSectionHeader(loc.t('pages.pastMeetings'), isDark),
                 const SizedBox(height: 16),
                 ...past.map((m) => _buildMeetingCard(m, isDark, false)),
               ],
@@ -278,15 +287,15 @@ class _MeetingsPageState extends State<MeetingsPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Meeting'),
-        content: Text('Are you sure you want to delete "${meeting.title}"?'),
+        title: Text(loc.t('common.delete')),
+        content: Text('${loc.t('pages.areYouSure')} ${loc.t('pages.cannotUndo')}'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(loc.t('common.cancel'))),
           TextButton(onPressed: () async {
             await _meetingService.deleteMeeting(meeting.id);
             if (ctx.mounted) Navigator.pop(ctx);
-            _showSnack('Meeting deleted');
-          }, child: const Text('Delete', style: TextStyle(color: AppColors.sacredRed))),
+            _showSnack(loc.t('pages.meetingDeleted'));
+          }, child: Text(loc.t('common.delete'), style: const TextStyle(color: AppColors.sacredRed))),
         ],
       ),
     );
@@ -321,7 +330,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('${meeting.goingCount} going',
+        Text('${meeting.goingCount} ${loc.t('meetings.attending')}',
             style: GoogleFonts.notoSansEthiopic(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
@@ -332,7 +341,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
             chip('Going', 'going', Icons.check_circle_outline,
                 AppColors.success),
             const SizedBox(width: 10),
-            chip('Not going', 'not_going', Icons.cancel_outlined,
+            chip(loc.t('meetings.notGoing'), 'not_going', Icons.cancel_outlined,
                 AppColors.sacredRed),
           ],
         ),
@@ -350,18 +359,11 @@ class _MeetingsPageState extends State<MeetingsPage> {
     );
   }
 
-  Widget _buildEmptyState(bool isDark) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.calendar_month_outlined, size: 64, color: AppColors.primary.withValues(alpha: 0.2)),
-          const SizedBox(height: 16),
-          Text('NO MEETINGS SCHEDULED', style: GoogleFonts.notoSansEthiopic(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.grey.withValues(alpha: 0.5))),
-        ],
-      ),
-    );
-  }
+  Widget _buildEmptyState(bool isDark) => const DashboardEmpty(
+        icon: Icons.calendar_month_outlined,
+        messageKey: 'pages.noMeetingsScheduled',
+        detailKey: 'pages.noMeetingsDescMember',
+      );
 
   Widget _buildLabel(String text, bool isDark) => Padding(padding: const EdgeInsets.only(bottom: 6), child: Text(text.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.primary, letterSpacing: 1.2)));
 
