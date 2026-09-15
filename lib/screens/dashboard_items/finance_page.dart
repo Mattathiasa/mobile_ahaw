@@ -186,7 +186,9 @@ class _FinancePageState extends State<FinancePage>
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        _buildTransactionsList(isDark),
+                        _buildTransactionsList(isDark,
+                            perms.can('canAddTransaction') ||
+                                perms.isSuperAdmin),
                         _buildBudgetsList(isDark),
                         _buildReportsList(isDark),
                         _buildTithesList(isDark, perms.can('canAddTransaction') || perms.isSuperAdmin),
@@ -253,7 +255,7 @@ class _FinancePageState extends State<FinancePage>
     );
   }
 
-  Widget _buildTransactionsList(bool isDark) {
+  Widget _buildTransactionsList(bool isDark, bool canManage) {
     if (_transactions.isEmpty) return _emptyState(loc.t('finance.noTransactions'), FontAwesomeIcons.moneyCheckDollar);
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
@@ -310,6 +312,16 @@ class _FinancePageState extends State<FinancePage>
             Text('${isIncome ? "+" : "-"}${amount.toStringAsFixed(0)}',
                 style: GoogleFonts.notoSansEthiopic(
                     fontWeight: FontWeight.w900, fontSize: 15, color: color)),
+            if (canManage)
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                onPressed: () => _confirmDeleteFinance(
+                    'finance_transactions',
+                    data['id'] as String,
+                    data['description'] ?? loc.t('finance.transaction')),
+                icon: const Icon(Icons.delete_outline,
+                    size: 18, color: AppColors.sacredRed),
+              ),
           ]),
         ).animate().fadeIn(delay: Duration(milliseconds: i * 40)).slideX(begin: 0.02);
       },
@@ -598,7 +610,11 @@ class _FinancePageState extends State<FinancePage>
             title: t['memberName'] ?? loc.t('admin.member'),
             subtitle: '${t['type'] ?? ''} · ${t['receiptNumber'] ?? ''}',
             trailing: '+${amount.toStringAsFixed(0)} ETB',
-            trailingColor: const Color(0xFF10B981));
+            trailingColor: const Color(0xFF10B981),
+            onDelete: canAdd
+                ? () => _confirmDeleteFinance('finance_tithes',
+                    t['id'] as String, t['memberName'] ?? '')
+                : null);
       },
     );
   }
@@ -700,6 +716,14 @@ class _FinancePageState extends State<FinancePage>
                       color: (p['status'] == 'Completed')
                           ? const Color(0xFF10B981)
                           : AppColors.divineGold)),
+              if (canAdd)
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => _confirmDeleteFinance('finance_pledges',
+                      p['id'] as String, p['memberName'] ?? ''),
+                  icon: const Icon(Icons.delete_outline,
+                      size: 18, color: AppColors.sacredRed),
+                ),
             ]),
             if ((p['campaignTitle'] ?? '').toString().isNotEmpty)
               Text(p['campaignTitle'],
@@ -790,7 +814,11 @@ class _FinancePageState extends State<FinancePage>
                 '${v['voucherNumber'] ?? ''} · ${v['department'] ?? ''} · ${tokenLabel(status)}',
             subtitleColor: statusColor,
             trailing: '${amount.toStringAsFixed(0)} ETB',
-            trailingColor: AppColors.sacredRed);
+            trailingColor: AppColors.sacredRed,
+            onDelete: canAdd
+                ? () => _confirmDeleteFinance('finance_requisitions',
+                    v['id'] as String, v['purpose'] ?? '')
+                : null);
       },
     );
   }
@@ -880,12 +908,50 @@ class _FinancePageState extends State<FinancePage>
     );
   }
 
+  /// Removes one finance document.
+  ///
+  /// firestore.rules gates all six finance collections with
+  /// `allow write: if canWriteFinance()` — one flag for create, update and
+  /// delete, with no per-document ownership — so whoever was shown the add
+  /// button may also remove an entry.
+  Future<void> _confirmDeleteFinance(
+      String collection, String id, String what) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(loc.t('common.delete')),
+        content: Text('$what\n\n${loc.t('pages.cannotUndo')}'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(loc.t('common.cancel'))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(loc.t('common.delete'),
+                style: const TextStyle(color: AppColors.sacredRed)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await _db.collection(collection).doc(id).delete();
+      _loadData();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(loc.t('errors.generic'))));
+      }
+    }
+  }
+
   Widget _financeCard(bool isDark,
       {required String title,
       required String subtitle,
       Color? subtitleColor,
       required String trailing,
-      required Color trailingColor}) {
+      required Color trailingColor,
+      VoidCallback? onDelete}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
@@ -915,6 +981,13 @@ class _FinancePageState extends State<FinancePage>
                 fontWeight: FontWeight.w900,
                 fontSize: 14,
                 color: trailingColor)),
+        if (onDelete != null)
+          IconButton(
+            onPressed: onDelete,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.delete_outline,
+                size: 18, color: AppColors.sacredRed),
+          ),
       ]),
     );
   }

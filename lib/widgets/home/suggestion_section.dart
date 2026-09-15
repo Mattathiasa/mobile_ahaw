@@ -35,8 +35,6 @@ class SuggestionSection extends StatefulWidget {
 /// Mirrors the caps in the `suggestions` block of firestore.rules. Checked here
 /// too so somebody who writes three words is told so in their own language,
 /// rather than watching the request come back denied with nothing to explain it.
-const int _minMessage = 10;
-const int _maxMessage = 2000;
 const int _maxName = 80;
 const int _maxContact = 120;
 
@@ -109,7 +107,7 @@ class _SuggestionSectionState extends State<SuggestionSection> {
       return;
     }
 
-    if (message.length < _minMessage) {
+    if (message.length < kSuggestionMinLength) {
       setState(() => _error = _tooShortMessage());
       return;
     }
@@ -147,8 +145,7 @@ class _SuggestionSectionState extends State<SuggestionSection> {
     }
   }
 
-  String _tooShortMessage() =>
-      'Please write at least $_minMessage characters.';
+  String _tooShortMessage() => loc.t('errors.suggestionTooShort');
   String _cooldownMessage() =>
       loc.t('errors.suggestionCooldown');
   String _genericFailure() =>
@@ -302,7 +299,7 @@ class _SuggestionSectionState extends State<SuggestionSection> {
         _Field(
           controller: _message,
           hint: c.messagePlaceholder,
-          maxLength: _maxMessage,
+          maxLength: kSuggestionMaxLength,
           maxLines: 5,
           isDark: isDark,
         ),

@@ -119,7 +119,11 @@ class _SuggestionPageState extends State<SuggestionPage> {
                 labelText: c.messageFieldLabel,
                 hintText: c.messagePlaceholder,
                 border: const OutlineInputBorder()),
-            validator: (v) => (v == null || v.trim().isEmpty)
+            maxLength: kSuggestionMaxLength,
+            // firestore.rules rejects anything shorter than
+            // kSuggestionMinLength, so catching it here is the difference
+            // between a clear message and an opaque permission denial.
+            validator: (v) => (v ?? '').trim().length < kSuggestionMinLength
                 ? loc.t('errors.suggestionTooShort')
                 : null,
           ),

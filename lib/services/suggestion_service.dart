@@ -1,6 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+/// The bounds firestore.rules enforces on a suggestion's message:
+///
+///   request.resource.data.message.size() >= 10
+///   request.resource.data.message.size() <= 2000
+///
+/// They live beside the write rather than inside one form, because a form that
+/// does not check them lets the reader type a message the server then rejects
+/// with nothing useful to say.
+const int kSuggestionMinLength = 10;
+const int kSuggestionMaxLength = 2000;
+
 /// Public suggestion box, mirroring the web's src/services/suggestions.ts.
 ///
 /// firestore.rules requires a uid on every submission, so a visitor with no
