@@ -294,7 +294,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
                 if (items.isEmpty) {
                   return _message(FontAwesomeIcons.folderOpen,
-                      _search.isNotEmpty ? 'No matches' : 'This folder is empty');
+                      _search.isNotEmpty ? loc.t('pages.noMatches') : loc.t('pages.emptyFolder'));
                 }
 
                 return ListView.builder(
@@ -332,7 +332,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
   Widget _buildItem(
       Map<String, dynamic> item, bool isDark, int index, bool canDelete) {
     final isFolder = item['type'] == 'folder';
-    final name = item['name'] as String? ?? 'Unnamed';
+    final name = item['name'] as String? ?? loc.t('admin.unnamed');
     final size = item['size'] as String? ?? '';
 
     return GestureDetector(

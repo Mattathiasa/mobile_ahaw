@@ -90,13 +90,13 @@ class _UserManagementPageState extends State<UserManagementPage> {
               buildLabel('Full Name (English) *', isDark),
               buildTextField(fullNameCtrl, 'e.g. John Doe', isDark),
               const SizedBox(height: 16),
-              buildLabel('Full Name (Amharic)', isDark),
+              buildLabel(loc.t('pages.csvFullNameAm'), isDark),
               buildTextField(fullNameAmharicCtrl, 'e.g. ዮሐንስ ተስፋዬ', isDark),
               const SizedBox(height: 16),
               buildLabel(loc.t('admin.hierarchyLevel'), isDark),
               _buildHierarchyLevelDropdown(selectedHierarchyLevel, (v) => setSheet(() => selectedHierarchyLevel = v!), isDark),
               const SizedBox(height: 16),
-              buildLabel('Role', isDark),
+              buildLabel(loc.t('admin.role'), isDark),
               _buildRoleDropdown(selectedRole, (v) => setSheet(() => selectedRole = v!), isDark),
             ],
           );
@@ -187,7 +187,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
   Widget _buildUserCard(String id, Map<String, dynamic> data, bool isDark, PermissionService perms) {
     final fullName = data['fullName'] ?? loc.t('admin.member');
     final role = data['role'] ?? 'user';
-    final level = data['hierarchyLevel'] ?? 'Member';
+    final level = data['hierarchyLevel'] ?? loc.t('admin.member');
     final username = data['username'] ?? '';
 
     return Container(

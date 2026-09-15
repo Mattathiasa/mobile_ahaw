@@ -19,6 +19,9 @@ class MissionaryPage extends StatefulWidget {
 
 class _MissionaryPageState extends State<MissionaryPage>
     with SingleTickerProviderStateMixin {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final MissionaryService _service = MissionaryService();
   late final TabController _tabs = TabController(length: 2, vsync: this);
 
@@ -45,9 +48,9 @@ class _MissionaryPageState extends State<MissionaryPage>
         unselectedLabelColor: Colors.grey,
         indicatorColor: AppColors.primary,
         labelStyle: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.w900),
-        tabs: const [
-          Tab(text: 'Applications'),
-          Tab(text: 'Reports'),
+        tabs: [
+          Tab(text: loc.t('pages.applications')),
+          Tab(text: loc.t('nav.reports')),
         ],
       ),
       body: TabBarView(
@@ -75,7 +78,7 @@ class _MissionaryPageState extends State<MissionaryPage>
         },
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(_tabs.index == 0 ? 'Apply' : 'Report',
+        label: Text(_tabs.index == 0 ? loc.t('admin.apply') : loc.t('nav.reports'),
             style: const TextStyle(color: Colors.white)),
       ),
     );
@@ -116,7 +119,7 @@ class _MissionaryPageState extends State<MissionaryPage>
               isDark: isDark,
               icon: FontAwesomeIcons.globe,
               iconColor: Colors.orange,
-              title: d['desiredLocation'] ?? 'Unknown Location',
+              title: d['desiredLocation'] ?? loc.t('pages.unknownLocation'),
               subtitle: d['missionaryType'] ?? '',
               body: d['description'] ?? '',
               footerLeft: 'Status: ${d['status'] ?? 'Pending'}',
@@ -158,7 +161,7 @@ class _MissionaryPageState extends State<MissionaryPage>
               isDark: isDark,
               icon: FontAwesomeIcons.handHoldingHeart,
               iconColor: AppColors.primary,
-              title: d['title'] ?? 'Report',
+              title: d['title'] ?? loc.t('nav.reports'),
               subtitle: d['location'] ?? '',
               body: d['content'] ?? '',
               footerLeft:
@@ -441,7 +444,7 @@ class _MissionaryPageState extends State<MissionaryPage>
           border: const OutlineInputBorder(),
         ),
         validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+            ? (v) => (v == null || v.trim().isEmpty) ? loc.t('admin.required') : null
             : null,
       ),
     );

@@ -17,6 +17,7 @@ class MaintenanceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -39,7 +40,7 @@ class MaintenanceScreen extends StatelessWidget {
               ),
               const SizedBox(height: 28),
               Text(
-                'Under Maintenance',
+                loc.t('status.assetStatusMaintenance'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.notoSansEthiopic(
                   fontSize: 22,
@@ -401,7 +402,7 @@ class ForceUpdateScreen extends StatelessWidget {
               ),
               const SizedBox(height: 28),
               Text(
-                'Update Required',
+                loc.t('pages.updateRequired'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.notoSansEthiopic(
                   fontSize: 22,
@@ -412,7 +413,7 @@ class ForceUpdateScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 latestVersionName.isEmpty
-                    ? 'A newer version of the app is required to continue.'
+                    ? loc.t('pages.updateRequiredDesc')
                     : 'Version $latestVersionName is required to continue. Please update the app.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.notoSansEthiopic(

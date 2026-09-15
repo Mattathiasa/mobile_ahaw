@@ -64,6 +64,9 @@ class _SuggestionSectionState extends State<SuggestionSection> {
   bool _sent = false;
   String? _error;
 
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   @override
   void dispose() {
     _name.dispose();
@@ -147,9 +150,9 @@ class _SuggestionSectionState extends State<SuggestionSection> {
   String _tooShortMessage() =>
       'Please write at least $_minMessage characters.';
   String _cooldownMessage() =>
-      'You have just sent one. Please wait a moment before sending another.';
+      loc.t('errors.suggestionCooldown');
   String _genericFailure() =>
-      'Could not send your suggestion. Please try again.';
+      loc.t('errors.suggestionFailed');
 
   void _reset() {
     _name.clear();

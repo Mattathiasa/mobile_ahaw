@@ -20,7 +20,29 @@ class HRPage extends StatefulWidget {
   State<HRPage> createState() => _HRPageState();
 }
 
+
+/// Employment status, type and category are stored in Firestore as English
+/// tokens, so the option lists keep their values; this maps a token to the
+/// catalog entry that names it. An unmapped token renders as-is.
+const _hrTokenKeys = {
+  'Active': 'status.employmentStatusActive',
+  'Inactive': 'status.employmentStatusInactive',
+  'OnLeave': 'status.employmentStatusOnLeave',
+  'Terminated': 'status.employmentStatusTerminated',
+  'FullTime': 'status.employmentTypeFullTime',
+  'PartTime': 'status.employmentTypePartTime',
+  'Contract': 'status.employmentTypeContract',
+  'Volunteer': 'status.employmentTypeVolunteer',
+  'Staff': 'status.employeeCategoryStaff',
+  'Priest': 'status.employeeCategoryPriest',
+};
 class _HRPageState extends State<HRPage> {
+  /// The display form of a stored token.
+  String tokenLabel(String token) {
+    final key = _hrTokenKeys[token];
+    return key == null ? token : loc.t(key);
+  }
+
   LocalizationService get loc =>
       Provider.of<LocalizationService>(context, listen: false);
 
@@ -131,7 +153,7 @@ class _HRPageState extends State<HRPage> {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(e['fullName'] ?? 'Employee',
+            Text(e['fullName'] ?? loc.t('hr.colName'),
                 style: GoogleFonts.notoSansEthiopic(
                     fontWeight: FontWeight.w900,
                     fontSize: 13,
@@ -151,7 +173,7 @@ class _HRPageState extends State<HRPage> {
             decoration: BoxDecoration(
                 color: statusColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8)),
-            child: Text(status,
+            child: Text(tokenLabel(status),
                 style: GoogleFonts.notoSansEthiopic(
                     fontSize: 8,
                     fontWeight: FontWeight.w900,
@@ -240,7 +262,7 @@ class _HRPageState extends State<HRPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(isEditing ? 'Edit Employee' : 'New Employee',
+                    Text(isEditing ? loc.t('hr.editEmployee') : loc.t('hr.registerEmployee'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 18, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 16),
@@ -257,12 +279,12 @@ class _HRPageState extends State<HRPage> {
                     _dropdown(loc.t('finance.colCategory'), category,
                         const ['Staff', 'Priest'],
                         (v) => setSheet(() => category = v)),
-                    _dropdown('Employment Type', type,
+                    _dropdown(loc.t('forms.employmentType'), type,
                         types.isEmpty
                             ? const ['FullTime', 'PartTime', 'Contract', 'Volunteer']
                             : types,
                         (v) => setSheet(() => type = v)),
-                    _dropdown('Status', status,
+                    _dropdown(loc.t('hr.colStatus'), status,
                         statuses.isEmpty
                             ? const ['Active', 'OnLeave', 'Terminated']
                             : statuses,
@@ -308,7 +330,7 @@ class _HRPageState extends State<HRPage> {
                                   }
                                 }
                               },
-                        child: Text(saving ? 'Saving…' : 'Save',
+                        child: Text(saving ? loc.t('common.saving') : loc.t('common.save'),
                             style: const TextStyle(color: Colors.white)),
                       ),
                     ),
@@ -332,7 +354,7 @@ class _HRPageState extends State<HRPage> {
         decoration: InputDecoration(
             labelText: label, border: const OutlineInputBorder()),
         validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+            ? (v) => (v == null || v.trim().isEmpty) ? loc.t('admin.required') : null
             : null,
       ),
     );
@@ -349,7 +371,7 @@ class _HRPageState extends State<HRPage> {
         decoration: InputDecoration(
             labelText: label, border: const OutlineInputBorder()),
         items: items
-            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+            .map((e) => DropdownMenuItem(value: e, child: Text(tokenLabel(e))))
             .toList(),
         onChanged: (v) => onChanged(v ?? safe),
       ),

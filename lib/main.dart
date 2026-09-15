@@ -224,6 +224,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
             user: loggingOut,
             action: 'logout',
             targetType: 'auth',
+            // Audit descriptions are stored, not shown — they stay English so
+            // the trail reads the same whatever language the actor was using.
             description: 'Signed out',
           );
         }

@@ -41,11 +41,11 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
           }
           if (snapshot.hasError) {
             return _buildEmptyState(
-                'Unable to load strategic goals.', isDark);
+                loc.t('admin.goalsLoadFailed'), isDark);
           }
           final goals = snapshot.data ?? [];
           if (goals.isEmpty) {
-            return _buildEmptyState('No strategic goals yet.', isDark);
+            return _buildEmptyState(loc.t('admin.noGoalsYet'), isDark);
           }
           return ListView.builder(
             padding: const EdgeInsets.all(20),
@@ -121,7 +121,7 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        goal['title'] ?? 'Untitled Goal',
+                        goal['title'] ?? loc.t('admin.untitledGoal'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
@@ -321,7 +321,7 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(isEditing ? 'Edit Goal' : 'New Strategic Goal',
+                    Text(isEditing ? loc.t('admin.editGoal') : loc.t('admin.newStrategicGoal'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 18, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 16),
@@ -363,7 +363,7 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
                           }
                           if (ctx.mounted) Navigator.pop(ctx);
                         },
-                        child: Text(isEditing ? 'Save' : 'Create',
+                        child: Text(isEditing ? loc.t('admin.save') : loc.t('admin.create'),
                             style:
                                 const TextStyle(color: Colors.white)),
                       ),
@@ -393,7 +393,7 @@ class _StrategicPlanPageState extends State<StrategicPlanPage> {
           border: const OutlineInputBorder(),
         ),
         validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+            ? (v) => (v == null || v.trim().isEmpty) ? loc.t('admin.required') : null
             : null,
       ),
     );

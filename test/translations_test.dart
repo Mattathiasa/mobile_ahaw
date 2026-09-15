@@ -8,6 +8,52 @@ import 'package:mobile_ahaw/services/localization_service.dart';
 
 /// The catalog is bulk-imported from the web's src/i18n/sections/*.ts so both
 /// clients say the same thing. These guard the import rather than the wording.
+/// Blanks out `//` and `/* */` comments while preserving offsets, so a string
+/// quoted inside a doc comment is not mistaken for a hardcoded label.
+String _blankComments(String src) {
+  final out = src.split('');
+  var i = 0;
+  String? inStr;
+  while (i < src.length) {
+    final c = src[i];
+    if (inStr != null) {
+      if (c == r'\') {
+        i += 2;
+        continue;
+      }
+      if (c == inStr) inStr = null;
+      i++;
+      continue;
+    }
+    if (c == "'" || c == '"') {
+      inStr = c;
+      i++;
+      continue;
+    }
+    if (c == '/' && i + 1 < src.length && src[i + 1] == '/') {
+      while (i < src.length && src[i] != '\n') {
+        out[i] = ' ';
+        i++;
+      }
+      continue;
+    }
+    if (c == '/' && i + 1 < src.length && src[i + 1] == '*') {
+      while (i + 1 < src.length && !(src[i] == '*' && src[i + 1] == '/')) {
+        if (src[i] != '\n') out[i] = ' ';
+        i++;
+      }
+      if (i + 1 < src.length) {
+        out[i] = ' ';
+        out[i + 1] = ' ';
+        i += 2;
+      }
+      continue;
+    }
+    i++;
+  }
+  return out.join();
+}
+
 void main() {
   test('carries all four languages', () {
     expect(kTranslations.keys.toSet(), {'en', 'am', 'om', 'ti'});
@@ -143,33 +189,16 @@ void main() {
     // dashboard itself, which had zero t() calls, as clean.
     const baseline = <String, int>{
     'main.dart': 2,
-    'screens/dashboard_items/church_map_page.dart': 1,
-    'screens/dashboard_items/documents_page.dart': 3,
-    'screens/dashboard_items/finance_page.dart': 36,
-    'screens/dashboard_items/hr_page.dart': 14,
-    'screens/dashboard_items/inventory_page.dart': 15,
-    'screens/dashboard_items/membership_requests_page.dart': 1,
-    'screens/dashboard_items/missionary_page.dart': 6,
-    'screens/dashboard_items/my_atbiya_page.dart': 1,
-    'screens/dashboard_items/notifications_page.dart': 3,
+    'screens/dashboard_items/finance_page.dart': 33,
+    'screens/dashboard_items/hr_page.dart': 6,
+    'screens/dashboard_items/inventory_page.dart': 7,
     'screens/dashboard_items/organisation_page.dart': 7,
     'screens/dashboard_items/partner_page.dart': 3,
     'screens/dashboard_items/plans_page.dart': 1,
     'screens/dashboard_items/settings_page.dart': 2,
-    'screens/dashboard_items/strategic_plan_page.dart': 8,
-    'screens/dashboard_items/user_management_page.dart': 3,
-    'screens/gate_screens.dart': 3,
-    'screens/login_page.dart': 1,
-    'screens/signup_page.dart': 21,
-    'widgets/branded_loader.dart': 1,
-    'widgets/dashboard/dashboard_widgets.dart': 3,
-    'widgets/ethiopian_date_picker.dart': 1,
+    'screens/signup_page.dart': 20,
     'widgets/home/contact_section.dart': 4,
     'widgets/home/home_footer.dart': 3,
-    'widgets/home/home_nav.dart': 1,
-    'widgets/home/suggestion_section.dart': 2,
-    'widgets/image_upload_field.dart': 2,
-    'widgets/main_drawer.dart': 2,
     };
 
     final lit = RegExp(r"'((?:\\.|[^'\\\n])*)'");
@@ -177,7 +206,7 @@ void main() {
     final deny = RegExp(
         r'(\.collection\(|\.doc\(|\.where\(|\.orderBy\(|\.get\(|'
         r'==\s*$|!=\s*$|case\s*$|contains\(|startsWith\(|endsWith\(|'
-        r'\.t\(|\[\s*$|Icons\.|FontAwesomeIcons\.)');
+        r'\.t\(|\[\s*$|Icons\.|FontAwesomeIcons\.|replaceFirst\()');
     // Values written to or compared against Firestore, not display text.
     final token = RegExp(
         r'^(Timestamp|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec'
@@ -205,7 +234,7 @@ void main() {
           rel != 'main.dart') {
         continue;
       }
-      final src = e.readAsStringSync();
+      final src = _blankComments(e.readAsStringSync());
       var n = 0;
       for (final m in lit.allMatches(src)) {
         final v = m[1]!;
@@ -222,6 +251,11 @@ void main() {
         if (m.end < src.length && src[m.end] == ':') continue;
         final pre = src.substring(m.start < 40 ? 0 : m.start - 40, m.start);
         if (deny.hasMatch(pre.trimRight())) continue;
+        // assert messages are developer-facing and can sit lines below the
+        // `assert(` that owns them
+        final wide = src.substring(m.start < 200 ? 0 : m.start - 200, m.start);
+        final a = wide.lastIndexOf('assert(');
+        if (a != -1 && a > wide.lastIndexOf(';')) continue;
         n++;
       }
       if (n > 0) counts[rel] = n;

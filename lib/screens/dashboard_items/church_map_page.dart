@@ -84,7 +84,7 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
 
   Widget _tile(Map<String, dynamic> atbiya, bool isDark) {
     final id = atbiya['id'] as String;
-    final name = atbiya['name'] ?? atbiya['nameAmharic'] ?? 'Congregation';
+    final name = atbiya['name'] ?? atbiya['nameAmharic'] ?? loc.t('admin.congregationBadge');
 
     return FutureBuilder<({double lat, double lng})?>(
       future: _coords.containsKey(id)

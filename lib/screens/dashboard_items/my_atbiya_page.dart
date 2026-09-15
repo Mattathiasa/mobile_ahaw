@@ -126,7 +126,7 @@ class _MyAtbiyaPageState extends State<MyAtbiyaPage> {
                 child: _statCard('Members', _memberCount, Icons.people, isDark)),
             const SizedBox(width: 12),
             Expanded(
-                child: _statCard('Pending', _pendingCount,
+                child: _statCard(loc.t('admin.statusPending'), _pendingCount,
                     Icons.hourglass_top, isDark)),
           ]),
           const SizedBox(height: 20),

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../services/localization_service.dart';
 import '../services/cloudinary_service.dart';
 import '../theme/app_colors.dart';
 
@@ -13,7 +15,9 @@ class ImageUploadField extends StatefulWidget {
   final String folder;
   final double size;
   final bool circle;
-  final String label;
+  /// Null falls back to the catalog's 'Upload image' at render time — a
+  /// const constructor cannot hold a translated default.
+  final String? label;
 
   const ImageUploadField({
     super.key,
@@ -22,7 +26,7 @@ class ImageUploadField extends StatefulWidget {
     this.folder = 'mahibere-ahaw',
     this.size = 96,
     this.circle = true,
-    this.label = 'Upload image',
+    this.label,
   });
 
   @override
@@ -30,6 +34,9 @@ class ImageUploadField extends StatefulWidget {
 }
 
 class _ImageUploadFieldState extends State<ImageUploadField> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final ImagePicker _picker = ImagePicker();
   String? _url;
   bool _uploading = false;
@@ -114,7 +121,9 @@ class _ImageUploadFieldState extends State<ImageUploadField> {
         TextButton.icon(
           onPressed: _uploading ? null : _pick,
           icon: const Icon(Icons.upload, size: 16),
-          label: Text(_uploading ? 'Uploading…' : widget.label),
+          label: Text(_uploading
+              ? loc.t('admin.busyUploading')
+              : (widget.label ?? loc.t('admin.uploadImage'))),
         ),
       ],
     );

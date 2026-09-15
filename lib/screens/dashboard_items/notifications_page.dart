@@ -18,6 +18,7 @@ class NotificationsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = context.watch<AuthService>().userModel;
@@ -28,7 +29,7 @@ class NotificationsPage extends StatelessWidget {
       actions: [
         if (user != null)
           IconButton(
-            tooltip: 'Mark all as read',
+            tooltip: loc.t('pages.markAllRead'),
             icon: const Icon(Icons.done_all, color: AppColors.primary),
             onPressed: () => _markAllRead(context, user.id),
           ),
@@ -96,7 +97,8 @@ class NotificationsPage extends StatelessWidget {
     await batch.commit();
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('All notifications marked as read',
+        content: Text(Provider.of<LocalizationService>(context, listen: false)
+            .t('pages.allNotificationsRead'),
             style: GoogleFonts.notoSansEthiopic()),
       ));
     }
@@ -126,8 +128,9 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final data = doc.data();
-    final title = (data['title'] as String?) ?? 'Notification';
+    final title = (data['title'] as String?) ?? loc.t('admin.notificationFallback');
     final message = (data['message'] as String?) ?? '';
     final senderName = (data['senderName'] as String?) ?? '';
     final unread = data['status'] == 'unread';

@@ -116,7 +116,7 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
   }
 
   Widget _card(Map<String, dynamic> r, bool isDark, int index) {
-    final name = r['fullNameEnglish'] ?? r['fullName'] ?? 'Applicant';
+    final name = r['fullNameEnglish'] ?? r['fullName'] ?? loc.t('admin.applicant');
     final nameAm = r['fullNameAmharic'] ?? '';
     final parish = r['atbiyaName'] ?? '';
     final phone = r['phone'] ?? '';

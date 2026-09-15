@@ -407,6 +407,21 @@ const Map<String, Map<String, String>> kTranslations = {
     // Self-authored: the web renders this intro as hardcoded JSX in
     // PartnerContact.tsx, so there is no upstream catalog entry to copy.
     'pages.partnerIntro': 'Interested in partnering with us or looking for job opportunities? Fill out the form below.',
+    // Self-authored: fallback titles, the force-update gate and the strategic
+    // plan edit form are mobile-only and have no upstream catalog entry.
+    'pages.updateRequired': 'Update Required',
+    'pages.updateRequiredDesc': 'A newer version of the app is required to continue.',
+    'pages.noMatches': 'No matches',
+    'pages.applications': 'Applications',
+    'pages.unknownLocation': 'Unknown location',
+    'admin.unnamed': 'Unnamed',
+    'admin.applicant': 'Applicant',
+    'admin.notificationFallback': 'Notification',
+    'admin.untitledGoal': 'Untitled Goal',
+    'admin.editGoal': 'Edit Goal',
+    'admin.newStrategicGoal': 'New Strategic Goal',
+    'admin.goalsLoadFailed': 'Unable to load strategic goals.',
+    'admin.noGoalsYet': 'No strategic goals yet.',
     'admin.latitude': 'Latitude',
     // Self-authored: the web places pins by tapping a Leaflet map, so it has
     // no typed-coordinate validation message to copy.
@@ -3365,6 +3380,19 @@ const Map<String, Map<String, String>> kTranslations = {
     'pages.scheduleMeetingDesc': 'አዲስ የአመራር ስብሰባ ይፍጠሩና አባላትን ያሳውቁ',
     'pages.selectDateTime': 'ቀንና ሰዓት ይምረጡ',
     'pages.partnerIntro': 'ከእኛ ጋር በአጋርነት መሥራት ይፈልጋሉ ወይስ የሥራ ዕድል እየፈለጉ ነው? ከታች ያለውን ቅጽ ይሙሉ።',
+    'pages.updateRequired': 'ማሻሻል ያስፈልጋል',
+    'pages.updateRequiredDesc': 'ለመቀጠል አዲስ የመተግበሪያ ስሪት ያስፈልጋል።',
+    'pages.noMatches': 'ተመሳሳይ አልተገኘም',
+    'pages.applications': 'ማመልከቻዎች',
+    'pages.unknownLocation': 'ቦታው አልታወቀም',
+    'admin.unnamed': 'ስም የሌለው',
+    'admin.applicant': 'አመልካች',
+    'admin.notificationFallback': 'ማሳወቂያ',
+    'admin.untitledGoal': 'ርዕስ የሌለው ግብ',
+    'admin.editGoal': 'ግብ አርትዕ',
+    'admin.newStrategicGoal': 'አዲስ ስልታዊ ግብ',
+    'admin.goalsLoadFailed': 'ስልታዊ ግቦችን መጫን አልተቻለም።',
+    'admin.noGoalsYet': 'እስካሁን ስልታዊ ግብ የለም።',
     'admin.latitude': 'ኬክሮስ',
     'admin.invalidCoords': 'ትክክለኛ ኬክሮስና ኬንትሮስ ያስገቡ።',
     'admin.longitude': 'ኬንትሮስ',

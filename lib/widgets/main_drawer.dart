@@ -49,6 +49,9 @@ class MainDrawer extends StatefulWidget {
 }
 
 class _MainDrawerState extends State<MainDrawer> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   // Track which page is currently active by its title
   String _activePage = 'Dashboard';
 
@@ -221,8 +224,8 @@ class _MainDrawerState extends State<MainDrawer> {
         userModel?.fullNameEnglish ??
         userModel?.fullName ??
         user?.email?.split('@')[0] ??
-        'User';
-    final role = userModel?.role ?? 'Member';
+        loc.t('admin.scColUser');
+    final role = userModel?.role ?? loc.t('admin.member');
     final level = userModel?.hierarchyLevel ?? 'Atbiya';
     final email = userModel?.email ?? user?.email ?? '';
 

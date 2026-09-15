@@ -121,6 +121,7 @@ class _PickerSheetState extends State<_PickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final lang = widget.language;
     final gregorian = toGregorianDate(_year, _month, _day);
 
@@ -225,7 +226,7 @@ class _PickerSheetState extends State<_PickerSheet> {
               },
               icon: const Icon(Icons.event, size: 16),
               label: Text(
-                'Gregorian',
+                loc.t('admin.setCalendarGregorian'),
                 style: GoogleFonts.notoSansEthiopic(
                     fontSize: 13, fontWeight: FontWeight.w700),
               ),

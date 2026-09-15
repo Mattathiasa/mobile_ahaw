@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../i18n/translations.dart';
 
 import '../theme/app_colors.dart';
 
@@ -231,7 +232,7 @@ class _App extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              (message ?? 'Loading…').toUpperCase(),
+              (message ?? kTranslations['en']!['admin.loading']!).toUpperCase(),
               style: GoogleFonts.notoSansEthiopic(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,

@@ -20,7 +20,31 @@ class InventoryPage extends StatefulWidget {
   State<InventoryPage> createState() => _InventoryPageState();
 }
 
+
+/// Asset status, type and condition are stored in Firestore as English
+/// tokens, so the option lists keep their values; this maps a token to the
+/// catalog entry that names it. An unmapped token — an admin-configured one —
+/// renders as-is.
+const _assetTokenKeys = {
+  'InStorage': 'status.assetStatusInStorage',
+  'InUse': 'status.assetStatusInUse',
+  'Maintenance': 'status.assetStatusMaintenance',
+  'Retired': 'status.assetStatusRetired',
+  'Disposed': 'status.assetStatusDisposed',
+  'Purchased': 'status.assetTypeOther',
+  'Rented': 'status.assetTypeOther',
+  'New': 'status.assetConditionNew',
+  'Good': 'status.assetConditionGood',
+  'Fair': 'status.assetConditionFair',
+  'Poor': 'status.assetConditionPoor',
+};
 class _InventoryPageState extends State<InventoryPage> {
+  /// The display form of a stored token.
+  String tokenLabel(String token) {
+    final key = _assetTokenKeys[token];
+    return key == null ? token : loc.t(key);
+  }
+
   LocalizationService get loc =>
       Provider.of<LocalizationService>(context, listen: false);
 
@@ -131,7 +155,7 @@ class _InventoryPageState extends State<InventoryPage> {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(a['name'] ?? 'Asset',
+            Text(a['name'] ?? loc.t('inventory.colName'),
                 style: GoogleFonts.notoSansEthiopic(
                     fontWeight: FontWeight.w900,
                     fontSize: 13,
@@ -158,7 +182,7 @@ class _InventoryPageState extends State<InventoryPage> {
             decoration: BoxDecoration(
                 color: statusColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8)),
-            child: Text(status,
+            child: Text(tokenLabel(status),
                 style: GoogleFonts.notoSansEthiopic(
                     fontSize: 8,
                     fontWeight: FontWeight.w900,
@@ -245,7 +269,7 @@ class _InventoryPageState extends State<InventoryPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(isEditing ? 'Edit Asset' : 'New Asset',
+                    Text(isEditing ? loc.t('inventory.editAsset') : loc.t('inventory.registerAsset'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 18, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 16),
@@ -258,10 +282,10 @@ class _InventoryPageState extends State<InventoryPage> {
                     _dropdown(loc.t('inventory.fieldCondition'), condition,
                         conditions.isEmpty ? const ['New', 'Good', 'Fair', 'Poor'] : conditions,
                         (v) => setSheet(() => condition = v)),
-                    _dropdown('Status', status,
+                    _dropdown(loc.t('inventory.fieldStatus'), status,
                         statuses.isEmpty ? const ['InUse', 'InStorage', 'Maintenance', 'Retired'] : statuses,
                         (v) => setSheet(() => status = v)),
-                    _dropdown('Acquisition', acquisition,
+                    _dropdown(loc.t('inventory.fieldAcquisition'), acquisition,
                         const ['Purchased', 'Rented'],
                         (v) => setSheet(() => acquisition = v)),
                     const SizedBox(height: 16),
@@ -303,7 +327,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                   }
                                 }
                               },
-                        child: Text(saving ? 'Saving…' : 'Save',
+                        child: Text(saving ? loc.t('common.saving') : loc.t('common.save'),
                             style: const TextStyle(color: Colors.white)),
                       ),
                     ),
@@ -327,7 +351,7 @@ class _InventoryPageState extends State<InventoryPage> {
         decoration: InputDecoration(
             labelText: label, border: const OutlineInputBorder()),
         validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+            ? (v) => (v == null || v.trim().isEmpty) ? loc.t('admin.required') : null
             : null,
       ),
     );
@@ -344,7 +368,7 @@ class _InventoryPageState extends State<InventoryPage> {
         decoration: InputDecoration(
             labelText: label, border: const OutlineInputBorder()),
         items: items
-            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+            .map((e) => DropdownMenuItem(value: e, child: Text(tokenLabel(e))))
             .toList(),
         onChanged: (v) => onChanged(v ?? safe),
       ),
