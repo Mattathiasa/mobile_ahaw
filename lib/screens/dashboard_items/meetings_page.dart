@@ -25,11 +25,14 @@ class _MeetingsPageState extends State<MeetingsPage> {
 
   final MeetingService _meetingService = MeetingService();
 
-  void _showCreateSheet(BuildContext context) {
-    final titleCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final locationCtrl = TextEditingController();
-    DateTime? selectedDate;
+  void _showCreateSheet(BuildContext context, {MeetingModel? existing}) {
+    final isEditing = existing != null;
+    final titleCtrl = TextEditingController(text: existing?.title);
+    final descCtrl = TextEditingController(text: existing?.description);
+    final locationCtrl = TextEditingController(text: existing?.location);
+    DateTime? selectedDate = existing == null
+        ? null
+        : DateTime.tryParse(existing.scheduledDate);
     bool saving = false;
 
     showModalBottomSheet(
@@ -55,7 +58,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(loc.t('pages.scheduleMeeting'), style: GoogleFonts.notoSansEthiopic(fontSize: 22, fontWeight: FontWeight.w900, color: isDark ? Colors.white : AppColors.lightText)),
+                      Text(isEditing ? loc.t('admin.editMeeting') : loc.t('pages.scheduleMeeting'), style: GoogleFonts.notoSansEthiopic(fontSize: 22, fontWeight: FontWeight.w900, color: isDark ? Colors.white : AppColors.lightText)),
                       const SizedBox(height: 4),
                       Text(loc.t('pages.scheduleMeetingDesc'), style: GoogleFonts.notoSansEthiopic(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey)),
                     ],
@@ -102,15 +105,39 @@ class _MeetingsPageState extends State<MeetingsPage> {
                             if (titleCtrl.text.isEmpty || descCtrl.text.isEmpty || selectedDate == null) return;
                             setSheet(() => saving = true);
                             try {
-                              await _meetingService.createMeeting(MeetingModel(
-                                id: '',
-                                title: titleCtrl.text,
-                                description: descCtrl.text,
-                                scheduledDate: selectedDate!.toIso8601String(),
-                                location: locationCtrl.text.trim(),
-                              ));
+                              if (isEditing) {
+                                await _meetingService.updateMeeting(existing.id, {
+                                  'title': titleCtrl.text,
+                                  'description': descCtrl.text,
+                                  'scheduledDate':
+                                      selectedDate!.toIso8601String(),
+                                  'location': locationCtrl.text.trim(),
+                                });
+                              } else {
+                                final me = Provider.of<AuthService>(context,
+                                        listen: false)
+                                    .userModel;
+                                await _meetingService
+                                    .createMeeting(MeetingModel(
+                                  id: '',
+                                  title: titleCtrl.text,
+                                  description: descCtrl.text,
+                                  scheduledDate:
+                                      selectedDate!.toIso8601String(),
+                                  location: locationCtrl.text.trim(),
+                                  // Required by firestore.rules on create.
+                                  createdBy: me?.id ?? '',
+                                  createdByName: me?.fullName ??
+                                      me?.username ??
+                                      '',
+                                ));
+                              }
                               if (ctx.mounted) Navigator.pop(ctx);
-                              _showSnack(loc.t('meetings.scheduled'), success: true);
+                              _showSnack(
+                                  isEditing
+                                      ? loc.t('pages.meetingUpdated')
+                                      : loc.t('meetings.scheduled'),
+                                  success: true);
                             } catch (e) {
                               _showSnack('Failed: $e');
                             } finally {
@@ -118,7 +145,9 @@ class _MeetingsPageState extends State<MeetingsPage> {
                             }
                           },
                           style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), padding: const EdgeInsets.symmetric(vertical: 14)),
-                          child: saving ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text(loc.t('pages.scheduleMeeting')),
+                          child: saving ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text(isEditing
+                                  ? loc.t('common.save')
+                                  : loc.t('pages.scheduleMeeting')),
                         ),
                       ),
                     ],
@@ -266,16 +295,34 @@ class _MeetingsPageState extends State<MeetingsPage> {
           if (isUpcoming) ...[
             const SizedBox(height: 16),
             _buildRsvpRow(meeting, isDark),
-            if (Provider.of<PermissionService>(context, listen: false).can('canDeleteMeeting')) ...[
+            // Gated the way firestore.rules gates update and delete — the
+            // creator or an admin — rather than on a permission flag, because
+            // the rule does not consult one and a flag would let the UI offer
+            // an action the server then refuses.
+            if (meeting.canBeEditedBy(
+                Provider.of<AuthService>(context, listen: false).userModel?.id ??
+                    '',
+                isAdmin: Provider.of<PermissionService>(context, listen: false)
+                    .isSuperAdmin)) ...[
               const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: () => _confirmDelete(meeting),
-                  icon: const Icon(Icons.delete_outline, color: AppColors.sacredRed, size: 18),
-                  label: Text(loc.t('common.delete'),
-                      style: const TextStyle(color: AppColors.sacredRed)),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _showCreateSheet(context, existing: meeting),
+                    icon: const Icon(Icons.edit_outlined,
+                        color: AppColors.primary, size: 18),
+                    label: Text(loc.t('common.edit'),
+                        style: const TextStyle(color: AppColors.primary)),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _confirmDelete(meeting),
+                    icon: const Icon(Icons.delete_outline,
+                        color: AppColors.sacredRed, size: 18),
+                    label: Text(loc.t('common.delete'),
+                        style: const TextStyle(color: AppColors.sacredRed)),
+                  ),
+                ],
               ),
             ],
           ],

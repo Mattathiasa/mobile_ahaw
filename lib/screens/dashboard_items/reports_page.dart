@@ -99,7 +99,7 @@ class _ReportsPageState extends State<ReportsPage> {
                 if (ctx.mounted) Navigator.pop(ctx);
                 _showSnack(loc.t('pages.fieldReportSubmitted'), success: true);
               } catch (e) {
-                _showSnack('Failed: $e');
+                _showSnack(loc.t('errors.generic'));
               } finally {
                 if (ctx.mounted) setSheet(() => saving = false);
               }
@@ -193,7 +193,7 @@ class _ReportsPageState extends State<ReportsPage> {
                 if (ctx.mounted) Navigator.pop(ctx);
                 _showSnack(loc.t('pages.commentAdded'), success: true);
               } catch (e) {
-                _showSnack('Failed: $e');
+                _showSnack(loc.t('errors.generic'));
               } finally {
                 if (ctx.mounted) setSheet(() => saving = false);
               }
@@ -227,6 +227,8 @@ class _ReportsPageState extends State<ReportsPage> {
     final perms = Provider.of<PermissionService>(context);
     final canCreate  = perms.isSuperAdmin || perms.can('canCreateReport');
     final canComment = perms.isSuperAdmin || perms.can('canCommentOnReport');
+    final myId =
+        Provider.of<AuthService>(context, listen: false).userModel?.id ?? '';
 
     return DashboardScaffold(
       titleKey: 'nav.reports',
@@ -276,7 +278,14 @@ class _ReportsPageState extends State<ReportsPage> {
               final data = docs[index].data() as Map<String, dynamic>;
               final id = docs[index].id;
               return _buildCard(context, data, id, index, isDark,
-                  canComment: canComment);
+                  canComment: canComment,
+                  // firestore.rules gates reports on canWriteReports(), which
+                  // the app cannot evaluate client-side. Author-or-admin is a
+                  // subset of it: anyone who managed to create a report had
+                  // write access to the collection, so the server will not
+                  // refuse what the button offers.
+                  canDelete: perms.isSuperAdmin ||
+                      (myId.isNotEmpty && data['authorId'] == myId));
             },
           );
         },
@@ -284,9 +293,38 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
+  void _confirmDeleteReport(String id) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(loc.t('common.delete')),
+        content: Text('${loc.t('pages.areYouSure')} ${loc.t('pages.cannotUndo')}'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(loc.t('common.cancel'))),
+          TextButton(
+            onPressed: () async {
+              try {
+                await _db.collection('reports').doc(id).delete();
+                if (ctx.mounted) Navigator.pop(ctx);
+                _showSnack(loc.t('pages.reportDeleted'));
+              } catch (_) {
+                if (ctx.mounted) Navigator.pop(ctx);
+                _showSnack(loc.t('errors.generic'));
+              }
+            },
+            child: Text(loc.t('common.delete'),
+                style: const TextStyle(color: AppColors.sacredRed)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCard(BuildContext context, Map<String, dynamic> data, String id,
       int index, bool isDark,
-      {required bool canComment}) {
+      {required bool canComment, required bool canDelete}) {
     final option = data['option'] as String? ?? 'Memriya';
     final timeframe = data['timeframe'] as String? ?? 'Weekly';
     final optionColor = _optionColors[option] ?? AppColors.primary;
@@ -495,6 +533,19 @@ class _ReportsPageState extends State<ReportsPage> {
                       ),
                     );
                   }),
+                ],
+                if (canDelete) ...[
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => _confirmDeleteReport(id),
+                      icon: const Icon(Icons.delete_outline,
+                          size: 18, color: AppColors.sacredRed),
+                      label: Text(loc.t('common.delete'),
+                          style: const TextStyle(color: AppColors.sacredRed)),
+                    ),
+                  ),
                 ],
                 if (canComment) ...[
                   const SizedBox(height: 8),

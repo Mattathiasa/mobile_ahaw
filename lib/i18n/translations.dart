@@ -422,6 +422,9 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.newStrategicGoal': 'New Strategic Goal',
     'admin.goalsLoadFailed': 'Unable to load strategic goals.',
     'admin.noGoalsYet': 'No strategic goals yet.',
+    'admin.editMeeting': 'Edit Meeting',
+    'pages.meetingUpdated': 'Meeting updated.',
+    'pages.reportDeleted': 'Report deleted.',
     'admin.latitude': 'Latitude',
     // Self-authored: the web places pins by tapping a Leaflet map, so it has
     // no typed-coordinate validation message to copy.
@@ -3393,6 +3396,9 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.newStrategicGoal': 'አዲስ ስልታዊ ግብ',
     'admin.goalsLoadFailed': 'ስልታዊ ግቦችን መጫን አልተቻለም።',
     'admin.noGoalsYet': 'እስካሁን ስልታዊ ግብ የለም።',
+    'admin.editMeeting': 'ስብሰባ አርትዕ',
+    'pages.meetingUpdated': 'ስብሰባው ተሻሽሏል።',
+    'pages.reportDeleted': 'ሪፖርቱ ተሰርዟል።',
     'admin.latitude': 'ኬክሮስ',
     'admin.invalidCoords': 'ትክክለኛ ኬክሮስና ኬንትሮስ ያስገቡ።',
     'admin.longitude': 'ኬንትሮስ',

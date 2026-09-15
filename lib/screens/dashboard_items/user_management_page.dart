@@ -75,7 +75,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                 if (ctx.mounted) Navigator.pop(ctx);
                 _showSnack(loc.t('admin.userCreated'), success: true);
               } catch (e) {
-                _showSnack('Failed: $e');
+                _showSnack(loc.t('admin.createUserFailed'));
               } finally {
                 if (ctx.mounted) setSheet(() => saving = false);
               }
@@ -98,6 +98,76 @@ class _UserManagementPageState extends State<UserManagementPage> {
               const SizedBox(height: 16),
               buildLabel(loc.t('admin.role'), isDark),
               _buildRoleDropdown(selectedRole, (v) => setSheet(() => selectedRole = v!), isDark),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// Edits an existing account.
+  ///
+  /// Deliberately limited to the profile fields. firestore.rules lets a member
+  /// manager update a user only while `role`, `hierarchyLevel`, `status`,
+  /// `atbiyaId` and the approval fields are unchanged — offering those here
+  /// would put a control on screen that the server refuses for everyone but an
+  /// admin. Role and level changes belong to their own flow.
+  void _showEditUserSheet(BuildContext context, String id,
+      Map<String, dynamic> data) {
+    final fullNameCtrl =
+        TextEditingController(text: data['fullName']?.toString() ?? '');
+    final fullNameAmharicCtrl =
+        TextEditingController(text: data['fullNameAmharic']?.toString() ?? '');
+    final phoneCtrl =
+        TextEditingController(text: data['phone']?.toString() ?? '');
+    final emailCtrl =
+        TextEditingController(text: data['email']?.toString() ?? '');
+    bool saving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          return FormSheet(
+            title: loc.t('admin.editUser'),
+            subtitle: data['username']?.toString() ?? '',
+            isDark: isDark,
+            saving: saving,
+            submitLabel: loc.t('common.save'),
+            onSubmit: () async {
+              if (fullNameCtrl.text.trim().isEmpty) return;
+              setSheet(() => saving = true);
+              try {
+                await _memberService.updateMember(id, {
+                  'fullName': fullNameCtrl.text.trim(),
+                  'fullNameAmharic': fullNameAmharicCtrl.text.trim(),
+                  'phone': phoneCtrl.text.trim(),
+                  'email': emailCtrl.text.trim(),
+                });
+                if (ctx.mounted) Navigator.pop(ctx);
+                _showSnack(loc.t('admin.setProfileUpdated'), success: true);
+              } catch (_) {
+                _showSnack(loc.t('admin.updateUserFailed'));
+              } finally {
+                if (ctx.mounted) setSheet(() => saving = false);
+              }
+            },
+            children: [
+              buildLabel('${loc.t('forms.fullName')} '
+                  '(${LocalizationService.languageEndonyms['en']}) *', isDark),
+              buildTextField(fullNameCtrl, '', isDark),
+              const SizedBox(height: 16),
+              buildLabel(loc.t('pages.csvFullNameAm'), isDark),
+              buildTextField(fullNameAmharicCtrl, '', isDark),
+              const SizedBox(height: 16),
+              buildLabel(loc.t('admin.phone'), isDark),
+              buildTextField(phoneCtrl, '', isDark),
+              const SizedBox(height: 16),
+              buildLabel(loc.t('admin.email'), isDark),
+              buildTextField(emailCtrl, '', isDark),
             ],
           );
         },
@@ -243,7 +313,10 @@ class _UserManagementPageState extends State<UserManagementPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(leading: const Icon(Icons.edit_outlined), title: Text(loc.t('admin.editUser')), onTap: () => Navigator.pop(ctx)),
+            ListTile(leading: const Icon(Icons.edit_outlined), title: Text(loc.t('admin.editUser')), onTap: () {
+              Navigator.pop(ctx);
+              _showEditUserSheet(context, id, data);
+            }),
             ListTile(leading: const Icon(Icons.block, color: AppColors.sacredRed), title: Text(loc.t('admin.suspend'), style: const TextStyle(color: AppColors.sacredRed)), onTap: () {
               Navigator.pop(ctx);
               _confirmDelete(id, data['fullName']);
