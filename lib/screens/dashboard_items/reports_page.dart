@@ -12,7 +12,7 @@ import '../../services/permission_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import 'announcements_page.dart' show buildLabel, buildTextField, FormSheet;
-import 'plans_page.dart' show SegmentedPicker;
+import 'plans_page.dart' show SegmentedPicker, planTokenLabel;
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -58,11 +58,11 @@ class _ReportsPageState extends State<ReportsPage> {
         builder: (ctx, setSheet) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
           return FormSheet(
-            title: 'New Report',
-            subtitle: 'Establish a record of divine progress',
+            title: loc.t('pages.newReport'),
+            subtitle: loc.t('admin.newReportDesc'),
             isDark: isDark,
             saving: saving,
-            submitLabel: 'Submit Report',
+            submitLabel: loc.t('forms.submitReport'),
             onSubmit: () async {
               if (selectedPlanId == null ||
                   workDoneCtrl.text.trim().isEmpty ||
@@ -81,7 +81,7 @@ class _ReportsPageState extends State<ReportsPage> {
               try {
                 await _db.collection('reports').add({
                   'planId': selectedPlanId,
-                  'planName': selectedPlanName ?? 'Unknown Plan',
+                  'planName': selectedPlanName ?? loc.t('admin.untitledPlan'),
                   'option': option,
                   'timeframe': timeframe,
                   'workDone': workDoneCtrl.text.trim(),
@@ -97,7 +97,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   'status': 'submitted',
                 });
                 if (ctx.mounted) Navigator.pop(ctx);
-                _showSnack('Report submitted!', success: true);
+                _showSnack(loc.t('pages.fieldReportSubmitted'), success: true);
               } catch (e) {
                 _showSnack('Failed: $e');
               } finally {
@@ -141,14 +141,14 @@ class _ReportsPageState extends State<ReportsPage> {
               // Work done
               buildLabel('Work Done *', isDark),
               buildTextField(workDoneCtrl,
-                  'Detail the activities completed...', isDark,
+                  loc.t('admin.activitiesPlaceholder'), isDark,
                   maxLines: 4),
               const SizedBox(height: 16),
 
               // Result
               buildLabel('Results *', isDark),
               buildTextField(
-                  resultCtrl, 'Quantify the results and impact...', isDark,
+                  resultCtrl, loc.t('pages.quantifyPlaceholder'), isDark,
                   maxLines: 4),
             ],
           );
@@ -171,11 +171,11 @@ class _ReportsPageState extends State<ReportsPage> {
         builder: (ctx, setSheet) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
           return FormSheet(
-            title: 'Add Feedback',
-            subtitle: 'Provide professional guidance or acknowledgment',
+            title: loc.t('admin.addFeedback'),
+            subtitle: loc.t('pages.contributeInsightsDesc'),
             isDark: isDark,
             saving: saving,
-            submitLabel: 'Add Insight',
+            submitLabel: loc.t('admin.addInsight'),
             onSubmit: () async {
               if (commentCtrl.text.trim().isEmpty) return;
               setSheet(() => saving = true);
@@ -185,13 +185,13 @@ class _ReportsPageState extends State<ReportsPage> {
                     {
                       'id': DateTime.now().millisecondsSinceEpoch.toString(),
                       'content': commentCtrl.text.trim(),
-                      'authorName': userModel?.displayName ?? 'Anonymous',
+                      'authorName': userModel?.displayName ?? loc.t('admin.suggestionsAnonymous'),
                       'createdAt': DateTime.now().toIso8601String(),
                     }
                   ]),
                 });
                 if (ctx.mounted) Navigator.pop(ctx);
-                _showSnack('Comment added!', success: true);
+                _showSnack(loc.t('pages.commentAdded'), success: true);
               } catch (e) {
                 _showSnack('Failed: $e');
               } finally {
@@ -201,7 +201,7 @@ class _ReportsPageState extends State<ReportsPage> {
             children: [
               buildLabel('Your Feedback *', isDark),
               buildTextField(commentCtrl,
-                  'Enter your feedback or guidance...', isDark,
+                  loc.t('pages.feedbackPlaceholder'), isDark,
                   maxLines: 5),
             ],
           );
@@ -340,7 +340,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        data['planName'] ?? 'Untitled Report',
+                        data['planName'] ?? loc.t('admin.untitledReport'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontWeight: FontWeight.w900,
                             fontSize: 15,
@@ -355,7 +355,7 @@ class _ReportsPageState extends State<ReportsPage> {
                         color: optionColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(option,
+                      child: Text(planTokenLabel(loc, option),
                           style: GoogleFonts.notoSansEthiopic(
                               fontSize: 8,
                               fontWeight: FontWeight.w900,
@@ -387,7 +387,7 @@ class _ReportsPageState extends State<ReportsPage> {
                         color: tfColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text(timeframe,
+                      child: Text(planTokenLabel(loc, timeframe),
                           style: GoogleFonts.notoSansEthiopic(
                               fontSize: 8,
                               fontWeight: FontWeight.w900,
@@ -409,12 +409,12 @@ class _ReportsPageState extends State<ReportsPage> {
                 const Divider(height: 20),
 
                 // Work done
-                _buildSection('Work Done', data['workDone'] ?? '', isDark,
+                _buildSection(loc.t('forms.workDone'), data['workDone'] ?? '', isDark,
                     AppColors.primary),
                 const SizedBox(height: 12),
 
                 // Result
-                _buildSection('Results', data['result'] ?? '', isDark,
+                _buildSection(loc.t('modules.fldReportsResults'), data['result'] ?? '', isDark,
                     const Color(0xFF10B981)),
 
                 // Comments section
@@ -473,7 +473,7 @@ class _ReportsPageState extends State<ReportsPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(comment['authorName'] ?? 'Anonymous',
+                                Text(comment['authorName'] ?? loc.t('admin.suggestionsAnonymous'),
                                     style: GoogleFonts.notoSansEthiopic(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w900,
@@ -630,7 +630,7 @@ class _PlanDropdown extends StatelessWidget {
                 final data = doc.data() as Map<String, dynamic>;
                 return DropdownMenuItem<String>(
                   value: doc.id,
-                  child: Text(data['name'] ?? 'Unnamed Plan',
+                  child: Text(data['name'] ?? loc.t('admin.untitledPlan'),
                       style: GoogleFonts.notoSansEthiopic(
                           fontSize: 13,
                           fontWeight: FontWeight.bold)),

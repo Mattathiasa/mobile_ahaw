@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_ahaw/i18n/translations.dart';
+import 'package:mobile_ahaw/screens/dashboard_items/plans_page.dart';
+import 'package:mobile_ahaw/screens/signup_page.dart';
 import 'package:mobile_ahaw/services/localization_service.dart';
 
 /// The catalog is bulk-imported from the web's src/i18n/sections/*.ts so both
@@ -106,6 +108,30 @@ void main() {
     expect(kTranslations['am']!['admin.suspendAccountDesc'], contains('{name}'));
   });
 
+  test('every key derived at runtime resolves', () {
+    // The key-existence test above scans for literal 'a.b' strings, so keys
+    // BUILT from a stored token are invisible to it. A typo in regionKey or
+    // ministryKey would ship a literal 'geo.regionX' to the signup form, and
+    // nothing else would notice.
+    final en = kTranslations['en']!;
+
+    for (final r in kEthiopianRegions) {
+      expect(en, contains(regionKey(r)), reason: 'no catalog entry for "$r"');
+    }
+    for (final m in kMinistryOptions) {
+      expect(en, contains(ministryKey(m)), reason: 'no catalog entry for "$m"');
+    }
+    // Finance and plan tokens map by table rather than by rule; every value
+    // in those tables must still name a real entry.
+    for (final k in kPlanTokenKeys.values) {
+      expect(en, contains(k), reason: 'plan token maps to missing "$k"');
+    }
+    // Marital status builds its key inline as signup.<lowercased>.
+    for (final v in ['Single', 'Married', 'Divorced', 'Widowed']) {
+      expect(en, contains('signup.${v.toLowerCase()}'));
+    }
+  });
+
   test('no screen gains new hardcoded English', () {
     // A ratchet, not a clean bill of health: these files still hold raw
     // English and the counts are today's debt. The test fails if a number
@@ -117,7 +143,6 @@ void main() {
     // dashboard itself, which had zero t() calls, as clean.
     const baseline = <String, int>{
     'main.dart': 2,
-    'screens/dashboard_items/announcements_page.dart': 17,
     'screens/dashboard_items/church_map_page.dart': 1,
     'screens/dashboard_items/church_rules_page.dart': 4,
     'screens/dashboard_items/documents_page.dart': 3,
@@ -133,8 +158,7 @@ void main() {
     'screens/dashboard_items/notifications_page.dart': 3,
     'screens/dashboard_items/organisation_page.dart': 7,
     'screens/dashboard_items/partner_page.dart': 14,
-    'screens/dashboard_items/plans_page.dart': 20,
-    'screens/dashboard_items/reports_page.dart': 24,
+    'screens/dashboard_items/plans_page.dart': 1,
     'screens/dashboard_items/settings_page.dart': 2,
     'screens/dashboard_items/strategic_plan_page.dart': 8,
     'screens/dashboard_items/user_management_page.dart': 3,
@@ -142,7 +166,6 @@ void main() {
     'screens/gate_screens.dart': 3,
     'screens/login_page.dart': 1,
     'screens/signup_page.dart': 21,
-    'screens/suggestion_page.dart': 17,
     'widgets/branded_loader.dart': 1,
     'widgets/dashboard/dashboard_widgets.dart': 3,
     'widgets/ethiopian_date_picker.dart': 1,
@@ -168,7 +191,9 @@ void main() {
         r'|Published|Draft|Other|Male|Female'
         // permission group identifiers, translated at render
         r'|Pages|Announcements|Plans|Reports|Members|Meetings|Finance'
-        r'|Documents|Sermons|Missionary|Dashboard)$');
+        r'|Documents|Sermons|Missionary|Dashboard'
+        // plan/report timeframe + option tokens
+        r'|Weekly|Monthly|Annually|Kifil|Zerf)$');
     final englishish =
         RegExp(r"^[A-Z][A-Za-z0-9 ,'\u2019.?!:\-\u2014&\u2026()@]*$");
     final skipPrefix = RegExp(r'^(http|assets/|/|#|\{|package:)');

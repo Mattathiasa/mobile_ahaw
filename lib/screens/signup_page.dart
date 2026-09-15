@@ -44,6 +44,17 @@ const List<String> kMinistryOptions = [
   'Media Ministry',
 ];
 
+/// Catalog key for a stored region token. SNNPR is the one whose key is not
+/// a straight camel-case of its name.
+String regionKey(String region) => region ==
+        'Southern Nations, Nationalities, and Peoples Region'
+    ? 'geo.regionSnnpr'
+    : 'geo.region${region.split(RegExp(r'[ -]')).map((w) => w[0].toUpperCase() + w.substring(1)).join()}';
+
+/// Catalog key for a stored ministry token.
+String ministryKey(String ministry) =>
+    'people.ministry${ministry.split(' ').map((w) => w[0].toUpperCase() + w.substring(1)).join()}';
+
 /// Ethiopian regions, from ETHIOPIAN_REGIONS in the web's src/types/index.ts.
 const List<String> kEthiopianRegions = [
   'Addis Ababa',
@@ -944,6 +955,7 @@ class _StepAbout extends StatelessWidget {
           label: loc.t('signup.region'),
           value: region,
           options: kEthiopianRegions,
+          labelOf: (v) => loc.t(regionKey(v)),
           onChanged: onRegion,
         ),
         _Field(controller: zone, label: loc.t('signup.addressZone')),
@@ -964,7 +976,7 @@ class _StepAbout extends StatelessWidget {
               selected: on,
               onSelected: (_) => onToggleMinistry(m),
               showCheckmark: false,
-              label: Text(m,
+              label: Text(loc.t(ministryKey(m)),
                   style: GoogleFonts.notoSansEthiopic(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,

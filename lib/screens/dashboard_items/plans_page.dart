@@ -61,11 +61,11 @@ class _PlansPageState extends State<PlansPage> {
         builder: (ctx, setSheet) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
           return FormSheet(
-            title: isEditing ? 'Edit Plan' : 'New Plan',
-            subtitle: 'Establish a strategic roadmap for ministry',
+            title: isEditing ? loc.t('admin.editPlan') : loc.t('pages.newPlan'),
+            subtitle: loc.t('admin.newPlanDesc'),
             isDark: isDark,
             saving: saving,
-            submitLabel: isEditing ? 'Save Plan' : 'Create Plan',
+            submitLabel: isEditing ? loc.t('admin.savePlan') : loc.t('forms.createNewPlan'),
             onSubmit: () async {
               if (nameCtrl.text.trim().isEmpty ||
                   detailsCtrl.text.trim().isEmpty) {
@@ -95,7 +95,7 @@ class _PlansPageState extends State<PlansPage> {
                   });
                 }
                 if (ctx.mounted) Navigator.pop(ctx);
-                _showSnack(isEditing ? 'Plan updated!' : 'Plan created!',
+                _showSnack(isEditing ? loc.t('admin.planUpdated') : loc.t('admin.planCreated'),
                     success: true);
               } catch (e) {
                 _showSnack('Failed: $e');
@@ -105,7 +105,7 @@ class _PlansPageState extends State<PlansPage> {
             },
             children: [
               buildLabel('Plan Name *', isDark),
-              buildTextField(nameCtrl, 'Enter plan name', isDark),
+              buildTextField(nameCtrl, loc.t('forms.planNamePlaceholder'), isDark),
               const SizedBox(height: 16),
               buildLabel('Timeframe *', isDark),
               SegmentedPicker(
@@ -117,7 +117,7 @@ class _PlansPageState extends State<PlansPage> {
               const SizedBox(height: 16),
               buildLabel('Details *', isDark),
               buildTextField(detailsCtrl,
-                  'Detail the objectives and spiritual milestones...', isDark,
+                  loc.t('admin.objectivesPlaceholder'), isDark,
                   maxLines: 5),
             ],
           );
@@ -151,7 +151,7 @@ class _PlansPageState extends State<PlansPage> {
             onPressed: () async {
               Navigator.pop(ctx);
               await _db.collection('plans').doc(id).delete();
-              _showSnack('Plan deleted', success: true);
+              _showSnack(loc.t('admin.planDeleted'), success: true);
             },
             child: Text(loc.t('common.delete'),
                 style: GoogleFonts.notoSansEthiopic(
@@ -259,7 +259,7 @@ class _PlansPageState extends State<PlansPage> {
                                 ? Colors.transparent
                                 : AppColors.primary.withValues(alpha: 0.12)),
                       ),
-                      child: Text(tf,
+                      child: Text(planTokenLabel(loc, tf),
                           style: GoogleFonts.notoSansEthiopic(
                               fontSize: 11,
                               fontWeight: FontWeight.w900,
@@ -361,7 +361,7 @@ class _PlansPageState extends State<PlansPage> {
                   children: [
                     Expanded(
                       child: Text(
-                        data['name'] ?? 'Untitled Plan',
+                        data['name'] ?? loc.t('admin.untitledPlan'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontWeight: FontWeight.w900,
                             fontSize: 16,
@@ -376,7 +376,7 @@ class _PlansPageState extends State<PlansPage> {
                         color: color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(timeframe,
+                      child: Text(planTokenLabel(loc, timeframe),
                           style: GoogleFonts.notoSansEthiopic(
                               fontSize: 9,
                               fontWeight: FontWeight.w900,
@@ -434,7 +434,7 @@ class _PlansPageState extends State<PlansPage> {
                       Icon(Icons.person_outline,
                           size: 11, color: Colors.grey.withValues(alpha: 0.7)),
                       const SizedBox(width: 4),
-                      Text(createdBy['fullName'] ?? 'Steward',
+                      Text(createdBy['fullName'] ?? loc.t('admin.member'),
                           style: GoogleFonts.notoSansEthiopic(
                               fontSize: 10,
                               color: Colors.grey,
@@ -473,6 +473,25 @@ class _PlansPageState extends State<PlansPage> {
 
 // ── Segmented picker for timeframe ────────────────────────────────────────────
 
+/// Timeframes and report options are stored in Firestore as English tokens,
+/// so the option lists must keep their values. This maps a token to the
+/// catalog entry that names it; an unmapped token renders as-is.
+const kPlanTokenKeys = {
+  'All': 'admin.scUserFilterAll',
+  'Weekly': 'pages.weekly',
+  'Monthly': 'pages.monthly',
+  'Annually': 'pages.annually',
+  'Memriya': 'admin.levelMemriyaOne',
+  'Kifil': 'status.reportOptionKifil',
+  'Zerf': 'status.reportOptionZerf',
+};
+
+/// The display form of a stored plan/report token.
+String planTokenLabel(LocalizationService loc, String token) {
+  final key = kPlanTokenKeys[token];
+  return key == null ? token : loc.t(key);
+}
+
 class SegmentedPicker extends StatelessWidget {
   final List<String> options;
   final String selected;
@@ -498,6 +517,8 @@ class SegmentedPicker extends StatelessWidget {
       child: Row(
         children: options.map((opt) {
           final isSelected = opt == selected;
+          final label =
+              planTokenLabel(Provider.of<LocalizationService>(context), opt);
           return Expanded(
             child: GestureDetector(
               onTap: () => onChanged(opt),
@@ -516,7 +537,7 @@ class SegmentedPicker extends StatelessWidget {
                         ]
                       : [],
                 ),
-                child: Text(opt,
+                child: Text(label,
                     textAlign: TextAlign.center,
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 11,

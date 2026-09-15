@@ -51,11 +51,11 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
         builder: (ctx, setSheet) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
           return FormSheet(
-            title: 'New Announcement',
-            subtitle: 'Share important updates with the church community',
+            title: loc.t('pages.newAnnouncement'),
+            subtitle: loc.t('admin.newAnnouncementDesc'),
             isDark: isDark,
             saving: saving,
-            submitLabel: 'Post Announcement',
+            submitLabel: loc.t('admin.postAnnouncement'),
             onSubmit: () async {
               if (titleCtrl.text.trim().isEmpty ||
                   contentCtrl.text.trim().isEmpty) {
@@ -78,7 +78,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                 }
                 await _db.collection('announcements').add(data);
                 if (ctx.mounted) Navigator.pop(ctx);
-                _showSnack('Announcement created!', success: true);
+                _showSnack(loc.t('pages.announcementCreated'), success: true);
               } catch (e) {
                 _showSnack('Failed: $e');
               } finally {
@@ -87,13 +87,13 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
             },
             children: [
               buildLabel('Title *', isDark),
-              buildTextField(titleCtrl, 'Enter announcement title', isDark),
+              buildTextField(titleCtrl, loc.t('pages.announcementTitlePlaceholder'), isDark),
               const SizedBox(height: 16),
               buildLabel('Content *', isDark),
-              buildTextField(contentCtrl, 'Enter announcement content',
+              buildTextField(contentCtrl, loc.t('pages.announcementContentPlaceholder'),
                   isDark, maxLines: 5),
               const SizedBox(height: 16),
-              buildLabel('Expiration Date (optional)', isDark),
+              buildLabel(loc.t('pages.expirationDate'), isDark),
               _ExpiryPicker(
                 isDark: isDark,
                 value: expiresAt,
@@ -123,11 +123,11 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
         builder: (ctx, setSheet) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
           return FormSheet(
-            title: 'Edit Announcement',
-            subtitle: 'Update the announcement details',
+            title: loc.t('pages.editAnnouncement'),
+            subtitle: loc.t('admin.editAnnouncementSub'),
             isDark: isDark,
             saving: saving,
-            submitLabel: 'Update',
+            submitLabel: loc.t('admin.update'),
             onSubmit: () async {
               if (titleCtrl.text.trim().isEmpty ||
                   contentCtrl.text.trim().isEmpty) {
@@ -145,7 +145,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                 }
                 await _db.collection('announcements').doc(id).update(update);
                 if (ctx.mounted) Navigator.pop(ctx);
-                _showSnack('Announcement updated!', success: true);
+                _showSnack(loc.t('pages.announcementUpdated'), success: true);
               } catch (e) {
                 _showSnack('Failed: $e');
               } finally {
@@ -154,13 +154,13 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
             },
             children: [
               buildLabel('Title *', isDark),
-              buildTextField(titleCtrl, 'Enter announcement title', isDark),
+              buildTextField(titleCtrl, loc.t('pages.announcementTitlePlaceholder'), isDark),
               const SizedBox(height: 16),
               buildLabel('Content *', isDark),
-              buildTextField(contentCtrl, 'Enter announcement content',
+              buildTextField(contentCtrl, loc.t('pages.announcementContentPlaceholder'),
                   isDark, maxLines: 5),
               const SizedBox(height: 16),
-              buildLabel('Expiration Date (optional)', isDark),
+              buildLabel(loc.t('pages.expirationDate'), isDark),
               _ExpiryPicker(
                 isDark: isDark,
                 value: expiresAt,
@@ -198,7 +198,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
             onPressed: () async {
               Navigator.pop(ctx);
               await _db.collection('announcements').doc(id).delete();
-              _showSnack('Announcement deleted', success: true);
+              _showSnack(loc.t('pages.announcementDeleted'), success: true);
             },
             child: Text(loc.t('pages.delete'),
                 style: GoogleFonts.notoSansEthiopic(
@@ -367,7 +367,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  data['title'] ?? 'Untitled',
+                  data['title'] ?? loc.t('pages.nmUntitled'),
                   style: GoogleFonts.notoSansEthiopic(
                       fontWeight: FontWeight.w900,
                       fontSize: 15,
@@ -531,6 +531,7 @@ class _ExpiryPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     return GestureDetector(
       onTap: () async {
         final picked = await showDatePicker(
@@ -558,7 +559,7 @@ class _ExpiryPicker extends StatelessWidget {
             Text(
               value != null
                   ? value!.toLocal().toString().substring(0, 10)
-                  : 'Select expiry date (optional)',
+                  : loc.t('admin.selectExpiryOptional'),
               style: GoogleFonts.notoSansEthiopic(
                   fontSize: 13,
                   color: value != null

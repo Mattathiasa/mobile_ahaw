@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../services/landing_content_service.dart';
 import '../services/suggestion_service.dart';
 import '../services/localization_service.dart';
 import '../theme/app_colors.dart';
@@ -16,6 +17,9 @@ class SuggestionPage extends StatefulWidget {
 }
 
 class _SuggestionPageState extends State<SuggestionPage> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final _service = SuggestionService();
   final _formKey = GlobalKey<FormState>();
   final _messageCtrl = TextEditingController();
@@ -24,13 +28,6 @@ class _SuggestionPageState extends State<SuggestionPage> {
   String _category = 'Appreciation';
   bool _saving = false;
   bool _sent = false;
-
-  static const _categories = {
-    'Appreciation': 'Something I appreciate',
-    'Change': 'Something to change',
-    'Feature': 'Something to add',
-    'Problem': 'Something is not working',
-  };
 
   @override
   void dispose() {
@@ -57,7 +54,7 @@ class _SuggestionPageState extends State<SuggestionPage> {
       if (mounted) {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+            .showSnackBar(SnackBar(content: Text(loc.t('errors.suggestionFailed'))));
       }
     }
   }
@@ -65,6 +62,12 @@ class _SuggestionPageState extends State<SuggestionPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Every label here is admin-editable from the web's Landing Editor. The
+    // page used to hardcode its own copies, so an edit made on the web never
+    // reached the app.
+    final lang = Provider.of<LocalizationService>(context).language;
+    final c = LandingContent(
+        Provider.of<LandingContentService>(context).forLanguage(lang));
 
     return Scaffold(
       backgroundColor:
@@ -72,7 +75,7 @@ class _SuggestionPageState extends State<SuggestionPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Tell Us What You Think',
+        title: Text(c.suggestionsTitle,
             style: GoogleFonts.notoSansEthiopic(
                 fontWeight: FontWeight.w900,
                 color: isDark ? Colors.white : AppColors.lightText)),
@@ -82,29 +85,29 @@ class _SuggestionPageState extends State<SuggestionPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: _sent ? _thankYou(isDark) : _form(isDark),
+      body: _sent ? _thankYou(isDark, c) : _form(isDark, c),
     );
   }
 
-  Widget _form(bool isDark) {
+  Widget _form(bool isDark, LandingContent c) {
     return Form(
       key: _formKey,
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           Text(
-              'Something you appreciated, something you would change, something to build — it goes straight to the church office.',
+              c.suggestionsDescription,
               style: GoogleFonts.notoSansEthiopic(
                   fontSize: 13, color: Colors.grey, height: 1.5)),
           const SizedBox(height: 20),
           DropdownButtonFormField<String>(
             initialValue: _category,
-            decoration: const InputDecoration(
-                labelText: 'What is this about?',
-                border: OutlineInputBorder()),
-            items: _categories.entries
+            decoration: InputDecoration(
+                labelText: c.categoryFieldLabel,
+                border: const OutlineInputBorder()),
+            items: c.suggestionCategories
                 .map((e) =>
-                    DropdownMenuItem(value: e.key, child: Text(e.value)))
+                    DropdownMenuItem(value: e.token, child: Text(e.label)))
                 .toList(),
             onChanged: (v) => setState(() => _category = v ?? 'Appreciation'),
           ),
@@ -112,28 +115,33 @@ class _SuggestionPageState extends State<SuggestionPage> {
           TextFormField(
             controller: _messageCtrl,
             maxLines: 5,
-            decoration: const InputDecoration(
-                labelText: 'Your message', border: OutlineInputBorder()),
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Please write a message' : null,
+            decoration: InputDecoration(
+                labelText: c.messageFieldLabel,
+                hintText: c.messagePlaceholder,
+                border: const OutlineInputBorder()),
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? loc.t('errors.suggestionTooShort')
+                : null,
           ),
           const SizedBox(height: 14),
           TextFormField(
             controller: _nameCtrl,
-            decoration: const InputDecoration(
-                labelText: 'Your name (optional)',
-                border: OutlineInputBorder()),
+            decoration: InputDecoration(
+                labelText: c.nameFieldLabel,
+                hintText: c.namePlaceholder,
+                border: const OutlineInputBorder()),
           ),
           const SizedBox(height: 14),
           TextFormField(
             controller: _contactCtrl,
-            decoration: const InputDecoration(
-                labelText: 'Phone or email (optional)',
-                border: OutlineInputBorder()),
+            decoration: InputDecoration(
+                labelText: c.contactFieldLabel,
+                hintText: c.contactPlaceholder,
+                border: const OutlineInputBorder()),
           ),
           const SizedBox(height: 10),
           Text(
-              'Suggestions are read by the church office and are not shown publicly.',
+              c.suggestionsPrivacyNote,
               style: GoogleFonts.notoSansEthiopic(
                   fontSize: 11, color: Colors.grey)),
           const SizedBox(height: 20),
@@ -146,7 +154,7 @@ class _SuggestionPageState extends State<SuggestionPage> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14))),
               onPressed: _saving ? null : _submit,
-              child: Text(_saving ? 'Sending…' : 'Send Suggestion',
+              child: Text(_saving ? c.submittingLabel : c.submitLabel,
                   style: GoogleFonts.notoSansEthiopic(
                       color: Colors.white, fontWeight: FontWeight.w900)),
             ),
@@ -156,7 +164,7 @@ class _SuggestionPageState extends State<SuggestionPage> {
     );
   }
 
-  Widget _thankYou(bool isDark) {
+  Widget _thankYou(bool isDark, LandingContent c) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -170,14 +178,14 @@ class _SuggestionPageState extends State<SuggestionPage> {
                 size: 64, color: AppColors.success),
           ),
           const SizedBox(height: 24),
-          Text('Thank you',
+          Text(c.thankYouTitle,
               style: GoogleFonts.notoSansEthiopic(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: isDark ? Colors.white : AppColors.lightText)),
           const SizedBox(height: 10),
           Text(
-              'Your suggestion has reached the church office. We are grateful you took the time.',
+              c.thankYouMessage,
               textAlign: TextAlign.center,
               style: GoogleFonts.notoSansEthiopic(
                   fontSize: 14, color: Colors.grey, height: 1.6)),
@@ -190,7 +198,7 @@ class _SuggestionPageState extends State<SuggestionPage> {
               _nameCtrl.clear();
               _contactCtrl.clear();
             }),
-            child: const Text('Send another'),
+            child: Text(c.sendAnotherLabel),
           ),
         ]),
       ),

@@ -297,23 +297,33 @@ class LandingContent {
   String get suggestionsBadge => _str(_suggestions, 'badge', 'Your Voice');
   String get suggestionsTitle =>
       _str(_suggestions, 'sectionTitle', 'Tell Us What You Think');
-  String get suggestionsDescription => _str(_suggestions, 'sectionDescription');
+  String get suggestionsDescription => _str(_suggestions, 'sectionDescription',
+      'Something you appreciated, something you would change, something you '
+      'would like us to build — write it here. It goes straight to the church '
+      'office.');
   String get categoryFieldLabel =>
       _str(_suggestions, 'categoryFieldLabel', 'What is this about?');
   String get nameFieldLabel =>
       _str(_suggestions, 'nameFieldLabel', 'Your name (optional)');
-  String get namePlaceholder => _str(_suggestions, 'namePlaceholder');
+  String get namePlaceholder =>
+      _str(_suggestions, 'namePlaceholder', 'Leave blank to stay anonymous');
   String get contactFieldLabel =>
       _str(_suggestions, 'contactFieldLabel', 'Phone or email (optional)');
-  String get contactPlaceholder => _str(_suggestions, 'contactPlaceholder');
+  String get contactPlaceholder => _str(
+      _suggestions, 'contactPlaceholder', 'Only if you would like a reply');
   String get messageFieldLabel =>
       _str(_suggestions, 'messageFieldLabel', 'Your message');
-  String get messagePlaceholder => _str(_suggestions, 'messagePlaceholder');
-  String get suggestionsPrivacyNote => _str(_suggestions, 'privacyNote');
+  String get messagePlaceholder => _str(_suggestions, 'messagePlaceholder',
+      'Write as much or as little as you like.');
+  String get suggestionsPrivacyNote => _str(_suggestions, 'privacyNote',
+      'Suggestions are read by the church office and are not shown publicly '
+      'on this page.');
   String get submitLabel => _str(_suggestions, 'submitLabel', 'Send suggestion');
   String get submittingLabel => _str(_suggestions, 'submittingLabel', 'Sending…');
   String get thankYouTitle => _str(_suggestions, 'thankYouTitle', 'Thank you');
-  String get thankYouMessage => _str(_suggestions, 'thankYouMessage');
+  String get thankYouMessage => _str(_suggestions, 'thankYouMessage',
+      'Your suggestion has reached the church office. We are grateful you '
+      'took the time.');
   String get sendAnotherLabel =>
       _str(_suggestions, 'sendAnotherLabel', 'Send another');
 
