@@ -144,25 +144,20 @@ void main() {
     const baseline = <String, int>{
     'main.dart': 2,
     'screens/dashboard_items/church_map_page.dart': 1,
-    'screens/dashboard_items/church_rules_page.dart': 4,
     'screens/dashboard_items/documents_page.dart': 3,
     'screens/dashboard_items/finance_page.dart': 36,
-    'screens/dashboard_items/hige_denb_page.dart': 10,
     'screens/dashboard_items/hr_page.dart': 14,
     'screens/dashboard_items/inventory_page.dart': 15,
-    'screens/dashboard_items/meetings_page.dart': 8,
     'screens/dashboard_items/membership_requests_page.dart': 1,
     'screens/dashboard_items/missionary_page.dart': 6,
     'screens/dashboard_items/my_atbiya_page.dart': 1,
-    'screens/dashboard_items/news_page.dart': 4,
     'screens/dashboard_items/notifications_page.dart': 3,
     'screens/dashboard_items/organisation_page.dart': 7,
-    'screens/dashboard_items/partner_page.dart': 14,
+    'screens/dashboard_items/partner_page.dart': 3,
     'screens/dashboard_items/plans_page.dart': 1,
     'screens/dashboard_items/settings_page.dart': 2,
     'screens/dashboard_items/strategic_plan_page.dart': 8,
     'screens/dashboard_items/user_management_page.dart': 3,
-    'screens/dashboard_items/volunteer_page.dart': 10,
     'screens/gate_screens.dart': 3,
     'screens/login_page.dart': 1,
     'screens/signup_page.dart': 21,
@@ -171,6 +166,7 @@ void main() {
     'widgets/ethiopian_date_picker.dart': 1,
     'widgets/home/contact_section.dart': 4,
     'widgets/home/home_footer.dart': 3,
+    'widgets/home/home_nav.dart': 1,
     'widgets/home/suggestion_section.dart': 2,
     'widgets/image_upload_field.dart': 2,
     'widgets/main_drawer.dart': 2,
@@ -194,6 +190,8 @@ void main() {
         r'|Documents|Sermons|Missionary|Dashboard'
         // plan/report timeframe + option tokens
         r'|Weekly|Monthly|Annually|Kifil|Zerf)$');
+    // intl date/time format patterns are code, not display text
+    final dateFmt = RegExp(r"^[MdyHhmsajEQZ' ,\-:/.]+$");
     final englishish =
         RegExp(r"^[A-Z][A-Za-z0-9 ,'\u2019.?!:\-\u2014&\u2026()@]*$");
     final skipPrefix = RegExp(r'^(http|assets/|/|#|\{|package:)');
@@ -212,6 +210,7 @@ void main() {
       for (final m in lit.allMatches(src)) {
         final v = m[1]!;
         if (v.length < 3 || token.hasMatch(v)) continue;
+        if (dateFmt.hasMatch(v) && v.contains(RegExp('[MdyHhjm]'))) continue;
         if (skipPrefix.hasMatch(v)) continue;
         if (!englishish.hasMatch(v)) continue;
         if (!v.contains(RegExp('[a-z]'))) {

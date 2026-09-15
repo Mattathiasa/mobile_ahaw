@@ -71,7 +71,7 @@ class _NewsPageState extends State<NewsPage> {
               setState(() => _manageView = !_manageView);
               if (_manageView && _manageFuture == null) _loadManage();
             },
-            child: Text(_manageView ? 'Feed' : 'Manage',
+            child: Text(_manageView ? loc.t('admin.leFeed') : loc.t('admin.manage'),
                 style: GoogleFonts.notoSansEthiopic(
                     fontWeight: FontWeight.w900, color: AppColors.primary)),
           ),
@@ -161,7 +161,7 @@ class _NewsPageState extends State<NewsPage> {
                 children: [
                   Row(children: [
                     Expanded(
-                      child: Text(title.isEmpty ? 'Untitled' : title,
+                      child: Text(title.isEmpty ? loc.t('pages.nmUntitled') : title,
                           style: GoogleFonts.notoSansEthiopic(
                               fontWeight: FontWeight.w900,
                               fontSize: 15,
@@ -444,7 +444,7 @@ class _NewsPageState extends State<NewsPage> {
         decoration: InputDecoration(
             labelText: label, border: const OutlineInputBorder()),
         validator: required
-            ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
+            ? (v) => (v == null || v.trim().isEmpty) ? loc.t('admin.required') : null
             : null,
       ),
     );

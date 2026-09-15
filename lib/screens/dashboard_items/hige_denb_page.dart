@@ -13,40 +13,40 @@ import '../../theme/app_colors.dart';
 class HigeDenbPage extends StatelessWidget {
   const HigeDenbPage({super.key});
 
+  /// The four articles, as catalog keys rather than English text. The web
+  /// renders the same articles from i18n so an admin can reword them from
+  /// Settings; these used to be hardcoded here, so an edit made on the web
+  /// never reached the app.
   static const _rules = [
     {
-      'title': 'Church Governance Structure',
+      'titleKey': 'pages.higeDenbGovernanceTitle',
       'icon': FontAwesomeIcons.shieldHalved,
       'color': Colors.indigo,
-      'content':
-          'The Ethiopian Orthodox Tewahedo Church follows a hierarchical structure starting from Sinodos at the highest level, followed by KuamiSinodos (9 units), Memriya (7 members), Zone, Atbiya (individual churches), EnkesekaseMaikel, and HiyawanMahderat at the base level.',
+      'bodyKey': 'pages.higeDenbGovernanceBody',
     },
     {
-      'title': 'Reporting Requirements',
+      'titleKey': 'pages.higeDenbReportingTitle',
       'icon': FontAwesomeIcons.fileLines,
       'color': Colors.amber,
-      'content':
-          'All Memriya members and higher levels must submit regular reports on church activities, including attendance, financial matters, and ministry progress. Reports should be submitted according to the designated frequency: weekly, monthly, or yearly.',
+      'bodyKey': 'pages.higeDenbReportingBody',
     },
     {
-      'title': 'Ministry Conduct',
+      'titleKey': 'pages.higeDenbConductTitle',
       'icon': FontAwesomeIcons.bookOpen,
       'color': Colors.green,
-      'content':
-          'All church members serving in ministry roles must uphold the highest standards of spiritual conduct, maintain regular attendance at services, and actively participate in their assigned ministry areas. Sunday School teachers, youth leaders, and other ministry workers must complete appropriate training.',
+      'bodyKey': 'pages.higeDenbConductBody',
     },
     {
-      'title': 'Communication Protocol',
+      'titleKey': 'pages.higeDenbCommunicationTitle',
       'icon': FontAwesomeIcons.scaleBalanced,
       'color': AppColors.primary,
-      'content':
-          'Official announcements can only be made by Memriya level and above. All communications must follow the established chain of command. Urgent matters should be escalated through proper channels to ensure timely response and appropriate action.',
+      'bodyKey': 'pages.higeDenbCommunicationBody',
     },
   ];
 
   @override
   Widget build(BuildContext context) {
-    context.watch<LocalizationService>();
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return DashboardScaffold(
@@ -57,14 +57,15 @@ class HigeDenbPage extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         children: [
           for (var i = 0; i < _rules.length; i++)
-            _buildRuleCard(_rules[i], isDark, i),
-          _buildNoticeCard(),
+            _buildRuleCard(loc, _rules[i], isDark, i),
+          _buildNoticeCard(loc),
         ],
       ),
     );
   }
 
-  Widget _buildRuleCard(Map<String, dynamic> rule, bool isDark, int index) {
+  Widget _buildRuleCard(
+      LocalizationService loc, Map<String, dynamic> rule, bool isDark, int index) {
     final color = rule['color'] as Color;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -89,7 +90,7 @@ class HigeDenbPage extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: Text(rule['title'] as String,
+                child: Text(loc.t(rule['titleKey'] as String),
                     style: GoogleFonts.notoSansEthiopic(
                       fontWeight: FontWeight.w900,
                       fontSize: 15,
@@ -99,7 +100,7 @@ class HigeDenbPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Text(rule['content'] as String,
+          Text(loc.t(rule['bodyKey'] as String),
               style: GoogleFonts.notoSansEthiopic(
                 fontSize: 12.5,
                 height: 1.7,
@@ -111,7 +112,7 @@ class HigeDenbPage extends StatelessWidget {
     ).animate().fadeIn(delay: (index * 100).ms).slideY(begin: 0.05);
   }
 
-  Widget _buildNoticeCard() {
+  Widget _buildNoticeCard(LocalizationService loc) {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -130,7 +131,7 @@ class HigeDenbPage extends StatelessWidget {
               const FaIcon(FontAwesomeIcons.bookOpen,
                   color: Colors.white, size: 18),
               const SizedBox(width: 12),
-              Text('Important Notice',
+              Text(loc.t('pages.importantNotice'),
                   style: GoogleFonts.notoSansEthiopic(
                     fontWeight: FontWeight.w900,
                     fontSize: 17,
@@ -140,7 +141,7 @@ class HigeDenbPage extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'These regulations are based on the canonical laws of the Ethiopian Orthodox Tewahedo Church and should be followed by all members. For detailed information about specific rules or to request clarification, please contact your local Memriya representative or higher church authority.',
+            loc.t('pages.higeDenbNotice'),
             style: GoogleFonts.notoSansEthiopic(
               fontSize: 13,
               height: 1.8,

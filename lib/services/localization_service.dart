@@ -38,6 +38,16 @@ class LocalizationService extends ChangeNotifier {
   /// reads English, which is the wrong assumption for the button that escapes
   /// English. [languageNames] below keeps the parenthetical gloss for the
   /// settings list, where there is room for it.
+  /// A 2-character chip label for the nav, where the full endonym does not
+  /// fit: 'Afaan Oromoo' alone overflowed a 320dp row by 128px. The endonym
+  /// is still what the settings screen and the language sheet show.
+  static const languageShortCodes = {
+    'en': 'EN',
+    'am': 'አማ',
+    'om': 'OM',
+    'ti': 'ትግ',
+  };
+
   static const languageEndonyms = {
     'en': 'English',
     'am': 'አማርኛ',
@@ -84,16 +94,25 @@ class LocalizationService extends ChangeNotifier {
     } catch (_) {}
 
     // Live overrides — edits in the web admin appear here within seconds.
-    _sub = FirebaseFirestore.instance
-        .collection('siteConfig')
-        .doc('pageStrings')
-        .snapshots()
-        .listen((snap) {
-      _overrides = snap.data() ?? {};
-      notifyListeners();
-    }, onError: (e) {
-      if (kDebugMode) print('[Localization] overrides listen failed: $e');
-    });
+    //
+    // `FirebaseFirestore.instance` throws synchronously when there is no
+    // Firebase app, and onError only sees stream failures, so this needs its
+    // own guard: without one a failed Firebase init takes the whole app down
+    // here rather than falling back to the bundled catalog.
+    try {
+      _sub = FirebaseFirestore.instance
+          .collection('siteConfig')
+          .doc('pageStrings')
+          .snapshots()
+          .listen((snap) {
+        _overrides = snap.data() ?? {};
+        notifyListeners();
+      }, onError: (e) {
+        if (kDebugMode) print('[Localization] overrides listen failed: $e');
+      });
+    } catch (e) {
+      if (kDebugMode) print('[Localization] overrides unavailable: $e');
+    }
   }
 
   Future<void> setLanguage(String lang) async {

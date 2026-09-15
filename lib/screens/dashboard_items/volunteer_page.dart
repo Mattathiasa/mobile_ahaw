@@ -26,15 +26,22 @@ class _VolunteerPageState extends State<VolunteerPage> {
   /// Friendly label/description for the built-in ministry ids. The actual list
   /// of ministries comes from Module Config (`volunteer.ministries`) so admins
   /// can add/remove them; ids not in this map fall back to the id as the label.
-  static const _ministryMeta = {
-    'Ebet Metreg': ['Ebet Metreg (Cleaning)', 'Help keep the church clean and welcoming.'],
-    'Natanim Agelgelot': ['Natanim Agelgelot', 'Special service for helping the needy.'],
-    'Choir': ['Choir', 'Sing in the church choir.'],
-    'Ushering': ['Ushering', 'Welcome and guide guests during services.'],
-    'Sunday School': ['Sunday School', 'Teach and mentor children.'],
-    'Charity': ['Charity & Outreach', 'Community outreach programs.'],
-    'Evangelism': ['Evangelism', 'Spread the gospel in the community.'],
-    'Media': ['Media & Tech', 'Help with sound, video, and projection.'],
+  /// Description key per ministry id. The id itself is the value stored on
+  /// the member's record, so it stays an English token and is used as the
+  /// label untranslated — the same decision, and the same map, as
+  /// MINISTRY_DESCRIPTION_KEYS in the web's src/pages/Volunteer.tsx. Only the
+  /// description is translated. The list of ministries comes from Module
+  /// Config (`volunteer.ministries`), so an id with no entry here simply has
+  /// no description.
+  static const _ministryDescriptionKeys = {
+    'Ebet Metreg': 'pages.ministryEbetMetreg',
+    'Natanim Agelgelot': 'pages.ministryNatanimAgelgelot',
+    'Choir': 'pages.ministryChoir',
+    'Ushering': 'pages.ministryUshering',
+    'Sunday School': 'pages.ministrySundayServiceSchool',
+    'Charity': 'pages.ministryCharity',
+    'Evangelism': 'pages.ministryEvangelism',
+    'Media': 'pages.ministryMedia',
   };
 
   Set<String> _selected = {};
@@ -77,7 +84,7 @@ class _VolunteerPageState extends State<VolunteerPage> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Volunteer preferences updated!',
+          content: Text(loc.t('pages.volunteerSaved'),
               style: GoogleFonts.notoSansEthiopic()),
           backgroundColor: Colors.green,
         ));
@@ -85,7 +92,7 @@ class _VolunteerPageState extends State<VolunteerPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to update preferences',
+          content: Text(loc.t('pages.volunteerSaveFailed'),
               style: GoogleFonts.notoSansEthiopic()),
           backgroundColor: Colors.red,
         ));
@@ -192,9 +199,9 @@ class _VolunteerPageState extends State<VolunteerPage> {
   }
 
   Widget _buildMinistryTile(String id, bool isDark, int index) {
-    final meta = _ministryMeta[id];
-    final label = meta?[0] ?? id;
-    final description = meta?[1] ?? '';
+    final descriptionKey = _ministryDescriptionKeys[id];
+    final label = id;
+    final description = descriptionKey == null ? '' : loc.t(descriptionKey);
     final selected = _selected.contains(id);
 
     return GestureDetector(

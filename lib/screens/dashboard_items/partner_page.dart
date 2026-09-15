@@ -30,6 +30,9 @@ class _PartnerPageState extends State<PartnerPage> {
   String _type = 'Partnership';
   bool _submitting = false;
 
+  /// The key is the token stored on the request; the label is bilingual on
+  /// purpose and matches the web's PartnerContact.tsx verbatim, where the
+  /// same three strings are hardcoded in JSX rather than translated.
   static const _types = {
     'Partnership': 'Partnership (አጋር)',
     'JobApplication': 'Job Application (ስራ መጠየቂያ)',
@@ -73,7 +76,7 @@ class _PartnerPageState extends State<PartnerPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to submit request',
+          content: Text(loc.t('pages.requestFailed'),
               style: GoogleFonts.notoSansEthiopic()),
           backgroundColor: Colors.red,
         ));
@@ -108,7 +111,7 @@ class _PartnerPageState extends State<PartnerPage> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Interested in partnering with us or looking for job opportunities? Fill out the form below.',
+                loc.t('pages.partnerIntro'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.notoSansEthiopic(
                   fontSize: 12.5,
@@ -124,12 +127,12 @@ class _PartnerPageState extends State<PartnerPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _label('Full Name'),
+                _label(loc.t('pages.fullName')),
                 _textField(_nameController, isDark,
                     validator: (v) =>
-                        (v ?? '').trim().isEmpty ? 'Name is required' : null),
+                        (v ?? '').trim().isEmpty ? loc.t('admin.required') : null),
                 const SizedBox(height: 16),
-                _label('Interest Type'),
+                _label(loc.t('pages.interestType')),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   decoration: _boxDecoration(isDark),
@@ -153,28 +156,28 @@ class _PartnerPageState extends State<PartnerPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _label('Email'),
+                _label(loc.t('pages.csvEmail')),
                 _textField(_emailController, isDark,
                     keyboardType: TextInputType.emailAddress,
                     validator: (v) {
                       final value = (v ?? '').trim();
-                      if (value.isEmpty) return 'Email is required';
-                      if (!value.contains('@')) return 'Invalid email';
+                      if (value.isEmpty) return loc.t('admin.required');
+                      if (!value.contains('@')) return loc.t('errors.emailInvalid');
                       return null;
                     }),
                 const SizedBox(height: 16),
-                _label('Phone Number'),
+                _label(loc.t('pages.phoneNumber')),
                 _textField(_phoneController, isDark,
                     keyboardType: TextInputType.phone,
                     validator: (v) =>
-                        (v ?? '').trim().isEmpty ? 'Phone is required' : null),
+                        (v ?? '').trim().isEmpty ? loc.t('admin.required') : null),
                 const SizedBox(height: 16),
-                _label('Message / Cover Letter'),
+                _label(loc.t('pages.messageCoverLetter')),
                 _textField(_messageController, isDark,
                     maxLines: 5,
-                    hint: 'Tell us more about your request...',
+                    hint: loc.t('pages.messagePlaceholder'),
                     validator: (v) => (v ?? '').trim().isEmpty
-                        ? 'Message is required'
+                        ? loc.t('admin.required')
                         : null),
                 const SizedBox(height: 24),
                 SizedBox(

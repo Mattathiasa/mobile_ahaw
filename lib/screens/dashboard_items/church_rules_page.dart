@@ -19,6 +19,7 @@ class ChurchRulesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final rules = Provider.of<ChurchRulesService>(context);
     final perms = Provider.of<PermissionService>(context);
@@ -28,9 +29,9 @@ class ChurchRulesPage extends StatelessWidget {
     final canEdit = perms.isSuperAdmin || registry.isAdminRole(level);
 
     final categories = [
-      _Category('denb', 'Regulations', 'ደንብ', FontAwesomeIcons.scaleBalanced, Colors.indigo, rules.denb),
-      _Category('memerya', 'Directives', 'መመሪያ', FontAwesomeIcons.bookOpen, Colors.green, rules.memerya),
-      _Category('policies', 'Policies', 'ፖሊሲ', FontAwesomeIcons.clipboardList, Colors.amber, rules.policies),
+      _Category('denb', loc.t('pages.rulesRegulations'), 'ደንብ', FontAwesomeIcons.scaleBalanced, Colors.indigo, rules.denb),
+      _Category('memerya', loc.t('pages.rulesDirectives'), 'መመሪያ', FontAwesomeIcons.bookOpen, Colors.green, rules.memerya),
+      _Category('policies', loc.t('pages.rulesPolicies'), 'ፖሊሲ', FontAwesomeIcons.clipboardList, Colors.amber, rules.policies),
     ];
 
     return DefaultTabController(
@@ -264,8 +265,8 @@ class ChurchRulesPage extends StatelessWidget {
                         await svc.saveCategory(cat.key, list);
                         if (ctx.mounted) Navigator.pop(ctx);
                       },
-                      child: const Text('Save',
-                          style: TextStyle(color: Colors.white)),
+                      child: Text(loc.t('common.save'),
+                          style: const TextStyle(color: Colors.white)),
                     ),
                   ),
                 ],

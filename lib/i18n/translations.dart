@@ -397,6 +397,16 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.objectivesPlaceholder': 'Detail the objectives and spiritual milestones...',
     'admin.activitiesPlaceholder': 'Detail the activities completed...',
     'admin.selectExpiryOptional': 'Select expiry date (optional)',
+    // Self-authored: the closing notice on HigeDenb, the volunteer toasts and
+    // the meetings sheet subtitle have no upstream catalog entry.
+    'pages.higeDenbNotice': 'These regulations are based on the canonical laws of the Ethiopian Orthodox Tewahedo Church and should be followed by all members. For detailed information about specific rules or to request clarification, please contact your local Memriya representative or higher church authority.',
+    'pages.volunteerSaved': 'Volunteer preferences updated.',
+    'pages.volunteerSaveFailed': 'Could not update your preferences.',
+    'pages.scheduleMeetingDesc': 'Create a new leadership meeting and notify members',
+    'pages.selectDateTime': 'Select date & time',
+    // Self-authored: the web renders this intro as hardcoded JSX in
+    // PartnerContact.tsx, so there is no upstream catalog entry to copy.
+    'pages.partnerIntro': 'Interested in partnering with us or looking for job opportunities? Fill out the form below.',
     'admin.latitude': 'Latitude',
     // Self-authored: the web places pins by tapping a Leaflet map, so it has
     // no typed-coordinate validation message to copy.
@@ -3349,6 +3359,12 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.objectivesPlaceholder': 'ዓላማዎቹንና መንፈሳዊ ግቦችን ይዘርዝሩ...',
     'admin.activitiesPlaceholder': 'የተከናወኑ ተግባራትን ይዘርዝሩ...',
     'admin.selectExpiryOptional': 'የማብቂያ ቀን ይምረጡ (አማራጭ)',
+    'pages.higeDenbNotice': 'እነዚህ ደንቦች በኢትዮጵያ ኦርቶዶክስ ተዋሕዶ ቤተ ክርስቲያን ቀኖናዊ ሕጎች ላይ የተመሠረቱ ሲሆኑ በሁሉም አባላት ሊከበሩ ይገባል። ስለተወሰኑ ደንቦች ዝርዝር መረጃ ለማግኘት ወይም ማብራሪያ ለመጠየቅ እባክዎ በአካባቢዎ ያለውን የመምሪያ ተወካይ ወይም ከዚያ በላይ ያለውን የቤተ ክርስቲያን አካል ያነጋግሩ።',
+    'pages.volunteerSaved': 'የበጎ ፈቃድ ምርጫዎችዎ ተሻሽለዋል።',
+    'pages.volunteerSaveFailed': 'ምርጫዎችዎን ማሻሻል አልተቻለም።',
+    'pages.scheduleMeetingDesc': 'አዲስ የአመራር ስብሰባ ይፍጠሩና አባላትን ያሳውቁ',
+    'pages.selectDateTime': 'ቀንና ሰዓት ይምረጡ',
+    'pages.partnerIntro': 'ከእኛ ጋር በአጋርነት መሥራት ይፈልጋሉ ወይስ የሥራ ዕድል እየፈለጉ ነው? ከታች ያለውን ቅጽ ይሙሉ።',
     'admin.latitude': 'ኬክሮስ',
     'admin.invalidCoords': 'ትክክለኛ ኬክሮስና ኬንትሮስ ያስገቡ።',
     'admin.longitude': 'ኬንትሮስ',

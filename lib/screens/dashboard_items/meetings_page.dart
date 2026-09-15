@@ -55,9 +55,9 @@ class _MeetingsPageState extends State<MeetingsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Schedule Meeting', style: GoogleFonts.notoSansEthiopic(fontSize: 22, fontWeight: FontWeight.w900, color: isDark ? Colors.white : AppColors.lightText)),
+                      Text(loc.t('pages.scheduleMeeting'), style: GoogleFonts.notoSansEthiopic(fontSize: 22, fontWeight: FontWeight.w900, color: isDark ? Colors.white : AppColors.lightText)),
                       const SizedBox(height: 4),
-                      Text('Create a new leadership meeting and notify members', style: GoogleFonts.notoSansEthiopic(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey)),
+                      Text(loc.t('pages.scheduleMeetingDesc'), style: GoogleFonts.notoSansEthiopic(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey)),
                     ],
                   ),
                 ),
@@ -74,7 +74,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
                         _buildLabel('Date & Time *', isDark),
                         _buildDatePicker(context, selectedDate, (d) => setSheet(() => selectedDate = d), isDark),
                         const SizedBox(height: 20),
-                        _buildLabel('Location', isDark),
+                        _buildLabel(loc.t('admin.location'), isDark),
                         _buildTextField(locationCtrl, 'e.g. Main Hall / Online link', isDark),
                         const SizedBox(height: 20),
                         _buildLabel('Description *', isDark),
@@ -273,7 +273,8 @@ class _MeetingsPageState extends State<MeetingsPage> {
                 child: TextButton.icon(
                   onPressed: () => _confirmDelete(meeting),
                   icon: const Icon(Icons.delete_outline, color: AppColors.sacredRed, size: 18),
-                  label: const Text('Delete', style: TextStyle(color: AppColors.sacredRed)),
+                  label: Text(loc.t('common.delete'),
+                      style: const TextStyle(color: AppColors.sacredRed)),
                 ),
               ),
             ],
@@ -338,7 +339,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
         const SizedBox(height: 8),
         Row(
           children: [
-            chip('Going', 'going', Icons.check_circle_outline,
+            chip(loc.t('meetings.going'), 'going', Icons.check_circle_outline,
                 AppColors.success),
             const SizedBox(width: 10),
             chip(loc.t('meetings.notGoing'), 'not_going', Icons.cancel_outlined,
@@ -387,7 +388,7 @@ class _MeetingsPageState extends State<MeetingsPage> {
         children: [
           const Icon(Icons.calendar_today, size: 18, color: AppColors.primary),
           const SizedBox(width: 12),
-          Text(value == null ? 'Select Date & Time' : DateFormat('MMM d, yyyy - jm').format(value), style: TextStyle(color: value == null ? Colors.grey : (isDark ? Colors.white : Colors.black))),
+          Text(value == null ? loc.t('pages.selectDateTime') : DateFormat('MMM d, yyyy - jm').format(value), style: TextStyle(color: value == null ? Colors.grey : (isDark ? Colors.white : Colors.black))),
           const Spacer(),
           const Icon(Icons.arrow_drop_down),
         ],
