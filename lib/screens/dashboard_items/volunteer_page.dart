@@ -137,7 +137,7 @@ class _VolunteerPageState extends State<VolunteerPage> {
                   ),
                 ).animate().fadeIn(),
                 const SizedBox(height: 18),
-                Text('SELECT YOUR MINISTRY PREFERENCES',
+                Text(loc.t('pages.selectMinistryPreferences').toUpperCase(),
                     style: GoogleFonts.notoSansEthiopic(
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
@@ -175,7 +175,9 @@ class _VolunteerPageState extends State<VolunteerPage> {
                           )
                         : const Icon(Icons.volunteer_activism, size: 18),
                     label: Text(
-                      _saving ? 'SAVING…' : 'SAVE PREFERENCES',
+                      _saving
+                          ? loc.t('common.saving').toUpperCase()
+                          : loc.t('pages.savePreferences').toUpperCase(),
                       style: GoogleFonts.notoSansEthiopic(
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1,

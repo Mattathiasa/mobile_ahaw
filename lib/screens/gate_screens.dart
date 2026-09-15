@@ -378,6 +378,7 @@ class ForceUpdateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -438,7 +439,7 @@ class ForceUpdateScreen extends StatelessWidget {
                     ),
                     icon: const Icon(Icons.download),
                     label: Text(
-                      'UPDATE NOW',
+                      loc.t('admin.update').toUpperCase(),
                       style: GoogleFonts.notoSansEthiopic(
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1,

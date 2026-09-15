@@ -37,19 +37,20 @@ class _OrganisationPageState extends State<OrganisationPage>
   late TabController _tabController;
   final OrgUnitService _org = OrgUnitService();
 
-  static const List<String> _tabs = [
-    'Standing Synod',
-    'Secretariat',
-    'Dioceses',
-    'Woreda',
-    'Congregations',
-    'Mahedherat',
-  ];
+  /// Tab labels, resolved per build so a language change relabels them.
+  List<String> _tabLabels(LocalizationService loc) => [
+        loc.t('admin.tabStandingSynod'),
+        loc.t('admin.tabSecretariat'),
+        loc.t('admin.levelZone'),
+        loc.t('admin.woreda'),
+        loc.t('admin.levelAtbiya'),
+        loc.t('admin.tabMahderat'),
+      ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -60,6 +61,7 @@ class _OrganisationPageState extends State<OrganisationPage>
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final perms = Provider.of<PermissionService>(context);
     final registry = Provider.of<RoleRegistryService>(context);
@@ -88,7 +90,7 @@ class _OrganisationPageState extends State<OrganisationPage>
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          Provider.of<LocalizationService>(context).t('organisation'),
+          loc.t('organisation'),
           style: GoogleFonts.notoSansEthiopic(
               fontWeight: FontWeight.w900,
               color: isDark ? Colors.white : AppColors.lightText),
@@ -105,7 +107,7 @@ class _OrganisationPageState extends State<OrganisationPage>
           unselectedLabelColor: Colors.grey,
           indicatorColor: AppColors.primary,
           labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          tabs: _tabs.map((t) => Tab(text: t.toUpperCase())).toList(),
+          tabs: _tabLabels(loc).map((t) => Tab(text: t.toUpperCase())).toList(),
         ),
       ),
       body: TabBarView(
@@ -301,6 +303,7 @@ class _OrgUnitCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(18),
@@ -408,13 +411,13 @@ class _OrgUnitCard extends StatelessWidget {
                     }
                   },
                   itemBuilder: (_) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                         value: 'edit',
                         child: Row(children: [
-                          Icon(Icons.edit_outlined,
+                          const Icon(Icons.edit_outlined,
                               size: 16, color: AppColors.primary),
-                          SizedBox(width: 8),
-                          Text('Edit'),
+                          const SizedBox(width: 8),
+                          Text(loc.t('admin.edit')),
                         ])),
                     PopupMenuItem(
                         value: 'toggle',
@@ -426,7 +429,7 @@ class _OrgUnitCard extends StatelessWidget {
                               size: 16,
                               color: AppColors.primary),
                           const SizedBox(width: 8),
-                          Text(unit.active ? 'Hide' : 'Show'),
+                          Text(unit.active ? loc.t('admin.hide') : loc.t('admin.show')),
                         ])),
                   ],
                 ),
@@ -514,6 +517,9 @@ class _UnitFormSheetState extends State<_UnitFormSheet> {
 
   bool get _needsParent => widget.parentLevel != null;
 
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   @override
   void initState() {
     super.initState();
@@ -542,7 +548,7 @@ class _UnitFormSheetState extends State<_UnitFormSheet> {
 
   Future<void> _submit() async {
     if (_name.text.trim().isEmpty) {
-      setState(() => _error = 'The unit needs a name.');
+      setState(() => _error = loc.t('admin.unitNameRequired'));
       return;
     }
     if (_needsParent && (_parentId == null || _parentId!.isEmpty)) {
@@ -580,11 +586,13 @@ class _UnitFormSheetState extends State<_UnitFormSheet> {
     final isDark = widget.isDark;
     final isEditing = widget.existing != null;
     return FormSheet(
-      title: isEditing ? 'Edit ${widget.level}' : 'Create ${widget.level}',
-      subtitle: 'Organizational unit in the church hierarchy',
+      title: isEditing
+          ? '${loc.t('admin.edit')} ${widget.level}'
+          : '${loc.t('admin.create')} ${widget.level}',
+      subtitle: loc.t('admin.orgUnitSubtitle'),
       isDark: isDark,
       saving: _saving,
-      submitLabel: isEditing ? 'Save' : 'Create',
+      submitLabel: isEditing ? loc.t('admin.save') : loc.t('admin.create'),
       onSubmit: _submit,
       children: [
         if (_error != null)
@@ -603,7 +611,7 @@ class _UnitFormSheetState extends State<_UnitFormSheet> {
         buildLabel('Name (English) *', isDark),
         buildTextField(_name, 'e.g. East Shewa Zone', isDark),
         const SizedBox(height: 16),
-        buildLabel('Name (Amharic)', isDark),
+        buildLabel(loc.t('admin.nameAmharic'), isDark),
         buildTextField(_nameAm, 'e.g. ምስራቅ ሸዋ ዞን', isDark),
         const SizedBox(height: 16),
         if (_needsParent) ...[
@@ -617,20 +625,20 @@ class _UnitFormSheetState extends State<_UnitFormSheet> {
           ),
           const SizedBox(height: 16),
         ],
-        buildLabel('Leader', isDark),
+        buildLabel(loc.t('admin.leaderName'), isDark),
         buildTextField(_leader, 'e.g. Tesfaye Bekele', isDark),
         const SizedBox(height: 16),
-        buildLabel('Leader phone', isDark),
+        buildLabel(loc.t('admin.leaderPhone'), isDark),
         buildTextField(_leaderPhone, '+251911223344', isDark),
         const SizedBox(height: 16),
-        buildLabel('Location', isDark),
+        buildLabel(loc.t('admin.location'), isDark),
         buildTextField(_location, 'e.g. Addis Ababa', isDark),
         const SizedBox(height: 16),
-        buildLabel('Founded (Ethiopian calendar)', isDark),
+        buildLabel(loc.t('admin.foundedAt'), isDark),
         buildTextField(_founded, 'e.g. 2017 ዓ.ም', isDark),
         const SizedBox(height: 16),
-        buildLabel('Description', isDark),
-        buildTextField(_desc, 'Brief description...', isDark, maxLines: 3),
+        buildLabel(loc.t('admin.entityDescription'), isDark),
+        buildTextField(_desc, loc.t('admin.entityDescPlaceholder'), isDark, maxLines: 3),
       ],
     );
   }
@@ -703,6 +711,7 @@ class _SecretariatTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return StreamBuilder<List<OrgUnit>>(
       stream: org.streamByLevel('Teklay'),
@@ -713,10 +722,10 @@ class _SecretariatTab extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           children: [
             _SectionCard(
-              title: 'General Secretariat',
+              title: loc.t('admin.levelTeklayOne'),
               description: secretariat == null
-                  ? 'Create it first — departments and dioceses hang off it.'
-                  : 'Every level of the church, from the Standing Synod down to the fellowship groups.',
+                  ? loc.t('admin.secretariatNoneDesc')
+                  : loc.t('admin.orgDesc'),
               isDark: isDark,
             ),
             const SizedBox(height: 10),
@@ -725,11 +734,11 @@ class _SecretariatTab extends StatelessWidget {
                 level: 'Teklay',
                 parentLevel: null,
                 canEdit: canEdit,
-                emptyLabel: 'NO SECRETARIAT YET'),
+                emptyLabel: loc.t('admin.noSecretariatYet').toUpperCase()),
             const SizedBox(height: 20),
             _SectionCard(
-              title: 'Departments',
-              description: 'Memriya offices under the Secretariat.',
+              title: loc.t('admin.levelMemriya'),
+              description: loc.t('admin.deptUnderSecretariat'),
               isDark: isDark,
             ),
             const SizedBox(height: 10),
@@ -738,7 +747,7 @@ class _SecretariatTab extends StatelessWidget {
                 level: 'Memriya',
                 parentLevel: 'Teklay',
                 canEdit: canEdit,
-                emptyLabel: 'NO DEPARTMENTS YET'),
+                emptyLabel: loc.t('admin.noDepartmentsYet').toUpperCase()),
           ],
         );
       },
@@ -758,12 +767,13 @@ class _ZoneTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         _SectionCard(
-          title: 'Dioceses',
+          title: loc.t('admin.levelZone'),
           description:
               'ሀገረ ስብከት offices. Congregations are managed in the Congregations tab.',
           isDark: isDark,
@@ -774,13 +784,12 @@ class _ZoneTab extends StatelessWidget {
             level: 'Zone',
             parentLevel: 'Teklay',
             canEdit: canEdit,
-            emptyLabel: 'NO DIOCESES YET'),
+            emptyLabel: loc.t('admin.noDiocesesYet').toUpperCase()),
         const SizedBox(height: 20),
         _SectionCard(
-          title: 'Congregations under each Diocese',
+          title: loc.t('admin.atbiyaUnderDiocese'),
           description:
-              'Which congregations sit under which Diocese. Edit a congregation '
-              'in the Congregations tab to move it.',
+              loc.t('admin.diocesePlacementDesc'),
           isDark: isDark,
         ),
         const SizedBox(height: 10),
@@ -910,6 +919,7 @@ class _DiocesePlacement extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return StreamBuilder<List<OrgUnit>>(
       stream: org.streamByLevel('Zone'),
@@ -946,7 +956,7 @@ class _DiocesePlacement extends StatelessWidget {
             ].where((g) => g.items.isNotEmpty).toList();
 
             if (groups.isEmpty) {
-              return Text('No congregations registered yet.',
+              return Text(loc.t('admin.noCongregationsYet'),
                   style: GoogleFonts.notoSansEthiopic(
                       fontSize: 12, color: Colors.grey));
             }
@@ -1011,6 +1021,7 @@ class _MahderatOverviewTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return StreamBuilder<List<OrgUnit>>(
       stream: org.streamByLevel('Atbiya'),
@@ -1030,7 +1041,7 @@ class _MahderatOverviewTab extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(32),
                   child: Text(
-                    'No congregations registered yet, so there are no Mahedherat to show.',
+                    loc.t('admin.noCongregationsForMahderat'),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 13, color: Colors.grey),
@@ -1089,7 +1100,7 @@ class _MahderatOverviewTab extends StatelessWidget {
                                 ]),
                           ),
                           if (!m.hasCoords)
-                            Text('NO PIN',
+                            Text(loc.t('admin.noPin').toUpperCase(),
                                 style: GoogleFonts.notoSansEthiopic(
                                     fontSize: 8,
                                     fontWeight: FontWeight.w900,
@@ -1188,7 +1199,7 @@ class _StandingSynodTabState extends State<_StandingSynodTab> {
               child: Text(registry.roleLabel(r, loc.language)),
             ),
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(ctx), child: Text(loc.t('admin.cancel'))),
         ],
       ),
     );
@@ -1209,6 +1220,7 @@ class _StandingSynodTabState extends State<_StandingSynodTab> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final members = _members ?? const [];
     final overCapacity = members.length > kStandingSynodSeats;
@@ -1226,7 +1238,7 @@ class _StandingSynodTabState extends State<_StandingSynodTab> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Membership is the Standing Synod role on an account — the same role the permission system reads.',
+                loc.t('admin.synodMembershipNote'),
                 style: GoogleFonts.notoSansEthiopic(
                     fontSize: 10, color: Colors.grey),
               ),
@@ -1246,7 +1258,7 @@ class _StandingSynodTabState extends State<_StandingSynodTab> {
                 Icon(Icons.account_balance_outlined,
                     size: 64, color: AppColors.primary.withValues(alpha: 0.2)),
                 const SizedBox(height: 16),
-                Text('NO MEMBERS YET',
+                Text(loc.t('admin.noMembersYet').toUpperCase(),
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
@@ -1306,7 +1318,7 @@ class _StandingSynodTabState extends State<_StandingSynodTab> {
                     IconButton(
                       icon: const Icon(Icons.logout,
                           size: 18, color: AppColors.sacredRed),
-                      tooltip: 'Remove from Standing Synod',
+                      tooltip: loc.t('admin.synodRemoveFrom'),
                       onPressed: () => _removeMember(members[i]),
                     ),
                 ]),
@@ -1352,6 +1364,9 @@ class _SynodAddSheetState extends State<_SynodAddSheet> {
   String _pick = '';
   bool _saving = false;
   String? _error;
+
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
 
   @override
   void initState() {
@@ -1412,11 +1427,11 @@ class _SynodAddSheetState extends State<_SynodAddSheet> {
     final isDark = widget.isDark;
     final all = _candidates ?? const [];
     return FormSheet(
-      title: 'Add to the Standing Synod',
+      title: loc.t('admin.synodConfirmAdd'),
       subtitle: 'Nine seats by the bylaws; overlap during a handover is fine.',
       isDark: isDark,
       saving: _saving,
-      submitLabel: 'Add member',
+      submitLabel: loc.t('pages.addMember'),
       onSubmit: _submit,
       children: [
         if (_error != null)
@@ -1432,8 +1447,8 @@ class _SynodAddSheetState extends State<_SynodAddSheet> {
                 style: const TextStyle(
                     fontSize: 12, color: AppColors.sacredRed)),
           ),
-        buildLabel('Search members', isDark),
-        buildTextField(_search, 'Name or email...', isDark),
+        buildLabel(loc.t('admin.searchMembers'), isDark),
+        buildTextField(_search, loc.t('admin.searchNamePlaceholder'), isDark),
         const SizedBox(height: 8),
         // Rebuilds the filtered list live while typing — the field writes
         // straight into _search, so listening to it is enough.
@@ -1460,7 +1475,7 @@ class _SynodAddSheetState extends State<_SynodAddSheet> {
             if (list.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('No matching member found.',
+                child: Text(loc.t('admin.synodNoMatch'),
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 12, color: Colors.grey)),
               );

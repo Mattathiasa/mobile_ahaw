@@ -121,18 +121,17 @@ void main() {
     'screens/dashboard_items/church_map_page.dart': 1,
     'screens/dashboard_items/church_rules_page.dart': 4,
     'screens/dashboard_items/documents_page.dart': 3,
-    'screens/dashboard_items/finance_page.dart': 31,
+    'screens/dashboard_items/finance_page.dart': 36,
     'screens/dashboard_items/hige_denb_page.dart': 10,
     'screens/dashboard_items/hr_page.dart': 14,
     'screens/dashboard_items/inventory_page.dart': 15,
-    'screens/dashboard_items/mahderat_manager_page.dart': 28,
-    'screens/dashboard_items/meetings_page.dart': 7,
+    'screens/dashboard_items/meetings_page.dart': 8,
     'screens/dashboard_items/membership_requests_page.dart': 1,
     'screens/dashboard_items/missionary_page.dart': 6,
     'screens/dashboard_items/my_atbiya_page.dart': 1,
     'screens/dashboard_items/news_page.dart': 4,
     'screens/dashboard_items/notifications_page.dart': 3,
-    'screens/dashboard_items/organisation_page.dart': 44,
+    'screens/dashboard_items/organisation_page.dart': 7,
     'screens/dashboard_items/partner_page.dart': 14,
     'screens/dashboard_items/plans_page.dart': 20,
     'screens/dashboard_items/reports_page.dart': 24,
@@ -171,7 +170,7 @@ void main() {
         r'|Pages|Announcements|Plans|Reports|Members|Meetings|Finance'
         r'|Documents|Sermons|Missionary|Dashboard)$');
     final englishish =
-        RegExp(r"^[A-Z][A-Za-z0-9 ,'\u2019.?!:\-\u2014\u2026()@]*$");
+        RegExp(r"^[A-Z][A-Za-z0-9 ,'\u2019.?!:\-\u2014&\u2026()@]*$");
     final skipPrefix = RegExp(r'^(http|assets/|/|#|\{|package:)');
 
     final counts = <String, int>{};
@@ -189,7 +188,12 @@ void main() {
         final v = m[1]!;
         if (v.length < 3 || token.hasMatch(v)) continue;
         if (skipPrefix.hasMatch(v)) continue;
-        if (!englishish.hasMatch(v) || !v.contains(RegExp('[a-z]'))) continue;
+        if (!englishish.hasMatch(v)) continue;
+        if (!v.contains(RegExp('[a-z]'))) {
+          // All-caps display labels count too ('NO MEMBERS YET'); the brand
+          // name is not one of them.
+          if (v.split(' ').length < 2 || v.startsWith('MAHIBERE AHAW')) continue;
+        }
         // A literal immediately followed by ':' is a map key — structure.
         if (m.end < src.length && src[m.end] == ':') continue;
         final pre = src.substring(m.start < 40 ? 0 : m.start - 40, m.start);

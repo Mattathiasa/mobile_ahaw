@@ -422,7 +422,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             size: 10, color: AppColors.primary),
                         const SizedBox(width: 5),
                         Text(
-                          'MEMBER PROFILE',
+                          loc.t('pages.memberProfile').toUpperCase(),
                           style: GoogleFonts.notoSansEthiopic(
                             fontSize: 8,
                             fontWeight: FontWeight.w900,

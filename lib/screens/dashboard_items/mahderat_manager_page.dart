@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/auth_service.dart';
+import '../../services/localization_service.dart';
 import '../../services/mahderat_service.dart';
 import '../../services/phone_utils.dart';
 import '../../theme/app_colors.dart';
@@ -35,6 +36,9 @@ class MahderatManagerScreen extends StatefulWidget {
 }
 
 class _MahderatManagerScreenState extends State<MahderatManagerScreen> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final MahderatService _service = MahderatService();
   List<Mahder>? _groups;
   bool _loading = true;
@@ -66,7 +70,7 @@ class _MahderatManagerScreenState extends State<MahderatManagerScreen> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = 'Could not load the groups.';
+          _error = loc.t('admin.mahderLoadFailed');
         });
       }
     }
@@ -95,8 +99,8 @@ class _MahderatManagerScreenState extends State<MahderatManagerScreen> {
       _load();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Could not update that group.'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(loc.t('admin.mahderUpdateFailed')),
           backgroundColor: AppColors.sacredRed,
           behavior: SnackBarBehavior.floating,
         ));
@@ -115,7 +119,7 @@ class _MahderatManagerScreenState extends State<MahderatManagerScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Mahedherat',
+        title: Text(loc.t('admin.tabMahderat'),
             style: GoogleFonts.notoSansEthiopic(
                 fontWeight: FontWeight.w900,
                 color: isDark ? Colors.white : AppColors.lightText)),
@@ -163,7 +167,7 @@ class _MahderatManagerScreenState extends State<MahderatManagerScreen> {
                           size: 64,
                           color: AppColors.primary.withValues(alpha: 0.2)),
                       const SizedBox(height: 16),
-                      Text('NO MAHEDHERAT YET',
+                      Text(loc.t('admin.noMahderatYet').toUpperCase(),
                           style: GoogleFonts.notoSansEthiopic(
                               fontSize: 10,
                               fontWeight: FontWeight.w900,
@@ -209,6 +213,7 @@ class _MahderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -259,7 +264,7 @@ class _MahderCard extends StatelessWidget {
                         color: Colors.amber.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text('NO PIN',
+                      child: Text(loc.t('admin.noPin').toUpperCase(),
                           style: GoogleFonts.notoSansEthiopic(
                               fontSize: 9,
                               fontWeight: FontWeight.w900,
@@ -277,13 +282,13 @@ class _MahderCard extends StatelessWidget {
                   if (v == 'toggle') onToggle();
                 },
                 itemBuilder: (_) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                       value: 'edit',
                       child: Row(children: [
-                        Icon(Icons.edit_outlined,
+                        const Icon(Icons.edit_outlined,
                             size: 16, color: AppColors.primary),
-                        SizedBox(width: 8),
-                        Text('Edit'),
+                        const SizedBox(width: 8),
+                        Text(loc.t('admin.edit')),
                       ])),
                   PopupMenuItem(
                       value: 'toggle',
@@ -295,7 +300,7 @@ class _MahderCard extends StatelessWidget {
                             size: 16,
                             color: AppColors.primary),
                         const SizedBox(width: 8),
-                        Text(group.active ? 'Hide' : 'Show'),
+                        Text(group.active ? loc.t('admin.hide') : loc.t('admin.show')),
                       ])),
                 ],
               ),
@@ -355,6 +360,9 @@ class _MahderFormSheet extends StatefulWidget {
 }
 
 class _MahderFormSheetState extends State<_MahderFormSheet> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   late final TextEditingController _name;
   late final TextEditingController _nameAm;
   late final TextEditingController _location;
@@ -398,12 +406,12 @@ class _MahderFormSheetState extends State<_MahderFormSheet> {
   Future<void> _submit() async {
     final name = _name.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = 'The group needs a name.');
+      setState(() => _error = loc.t('admin.groupNameRequired'));
       return;
     }
     final rawPhone = _leaderPhone.text.trim();
     if (rawPhone.isNotEmpty && !isValidPhone(rawPhone)) {
-      setState(() => _error = 'That leader phone number does not look right.');
+      setState(() => _error = loc.t('admin.badLeaderPhone'));
       return;
     }
     setState(() {
@@ -447,11 +455,11 @@ class _MahderFormSheetState extends State<_MahderFormSheet> {
     return FormSheet(
       title: isEditing
           ? 'Editing ${widget.existing!.name}'
-          : 'New Mahedher',
+          : loc.t('admin.newMahder'),
       subtitle: 'A small Bible-study group in ${widget.atbiyaName}',
       isDark: isDark,
       saving: _saving,
-      submitLabel: isEditing ? 'Save' : 'Create',
+      submitLabel: isEditing ? loc.t('admin.save') : loc.t('admin.create'),
       onSubmit: _submit,
       children: [
         if (_error != null)
@@ -470,10 +478,10 @@ class _MahderFormSheetState extends State<_MahderFormSheet> {
         buildLabel('Name (English) *', isDark),
         buildTextField(_name, 'e.g. Bole Mahder', isDark),
         const SizedBox(height: 16),
-        buildLabel('Name (Amharic)', isDark),
+        buildLabel(loc.t('admin.nameAmharic'), isDark),
         buildTextField(_nameAm, 'ቦሌ ማኅደር', isDark),
         const SizedBox(height: 16),
-        buildLabel('Meeting day', isDark),
+        buildLabel(loc.t('admin.meetingDay'), isDark),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
@@ -502,28 +510,27 @@ class _MahderFormSheetState extends State<_MahderFormSheet> {
           ),
         ),
         const SizedBox(height: 16),
-        buildLabel('Meeting time', isDark),
+        buildLabel(loc.t('admin.meetingTime'), isDark),
         buildTextField(_meetingTime, 'e.g. 10:00 AM', isDark),
         const SizedBox(height: 16),
-        buildLabel('Landmark (English)', isDark),
+        buildLabel(loc.t('admin.landmarkEnglish'), isDark),
         buildTextField(_location, 'e.g. near Bole Medhanealem', isDark),
         const SizedBox(height: 16),
-        buildLabel('Landmark (Amharic)', isDark),
+        buildLabel(loc.t('admin.landmarkAmharic'), isDark),
         buildTextField(_locationAm, 'ቦሌ መድኃኔዓለም አካባቢ', isDark),
         const SizedBox(height: 16),
-        buildLabel('Leader', isDark),
-        buildTextField(_leader, 'Leader name', isDark),
+        buildLabel(loc.t('admin.leaderName'), isDark),
+        buildTextField(_leader, loc.t('admin.leaderName'), isDark),
         const SizedBox(height: 16),
-        buildLabel('Leader phone', isDark),
+        buildLabel(loc.t('admin.leaderPhone'), isDark),
         buildTextField(_leaderPhone, '0911223344', isDark),
         const SizedBox(height: 16),
-        buildLabel('Description', isDark),
-        buildTextField(_description, 'Brief description...', isDark,
+        buildLabel(loc.t('admin.entityDescription'), isDark),
+        buildTextField(_description, loc.t('admin.entityDescPlaceholder'), isDark,
             maxLines: 3),
         const SizedBox(height: 8),
         Text(
-          'Map pins are placed from the web — the pin decides which group is '
-          'suggested to new members living nearby.',
+          loc.t('admin.mahderPinFromWeb'),
           style: GoogleFonts.notoSansEthiopic(
               fontSize: 10, color: Colors.grey),
         ),
@@ -546,6 +553,9 @@ class ChooseMahderCard extends StatefulWidget {
 }
 
 class _ChooseMahderCardState extends State<ChooseMahderCard> {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
   final MahderatService _service = MahderatService();
   List<Mahder>? _groups;
   bool _loading = true;
@@ -588,7 +598,7 @@ class _ChooseMahderCardState extends State<ChooseMahderCard> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'Could not join that group.';
+          _error = loc.t('admin.joinFailed');
         });
       }
     }
@@ -640,7 +650,7 @@ class _ChooseMahderCardState extends State<ChooseMahderCard> {
             const Icon(Icons.groups, color: Colors.white, size: 22),
             const SizedBox(width: 10),
             Expanded(
-              child: Text('Choose your Mahedher',
+              child: Text(loc.t('admin.chooseMahderTitle'),
                   style: GoogleFonts.notoSansEthiopic(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
@@ -650,8 +660,8 @@ class _ChooseMahderCardState extends State<ChooseMahderCard> {
           const SizedBox(height: 6),
           Text(
             hasHome
-                ? 'Small Bible-study groups in your congregation, nearest to you first.'
-                : 'Small Bible-study groups in your congregation. Set where you live in your profile and we will show the closest one first.',
+                ? loc.t('admin.chooseMahderDescWithHome')
+                : loc.t('admin.chooseMahderDescNoHome'),
             style: GoogleFonts.notoSansEthiopic(
                 fontSize: 12, color: Colors.white70),
           ),
@@ -731,7 +741,7 @@ class _ChooseMahderCardState extends State<ChooseMahderCard> {
                         width: 16,
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2))
-                    : Text('Join this Mahedher',
+                    : Text(loc.t('admin.joinThisMahder'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 13, fontWeight: FontWeight.w900)),
               ),
@@ -739,7 +749,7 @@ class _ChooseMahderCardState extends State<ChooseMahderCard> {
             const SizedBox(width: 10),
             TextButton(
               onPressed: () => setState(() => _dismissed = true),
-              child: Text('Not now',
+              child: Text(loc.t('admin.notNow'),
                   style: GoogleFonts.notoSansEthiopic(
                       fontSize: 12, color: Colors.white70)),
             ),
