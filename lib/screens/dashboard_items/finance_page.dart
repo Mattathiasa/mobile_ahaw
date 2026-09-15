@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
+import '../../services/localization_service.dart';
 import '../../services/permission_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -13,8 +14,40 @@ class FinancePage extends StatefulWidget {
   State<FinancePage> createState() => _FinancePageState();
 }
 
+/// Finance stores English tokens ('Income', 'Cash', 'Pending') in Firestore,
+/// so the value lists below must not change. This maps a stored token to the
+/// catalog entry that describes it; anything unmapped renders as-is, which is
+/// right for admin-configured values that were never in the catalog.
+const _financeTokenKeys = {
+  'Income': 'finance.income',
+  'Expense': 'finance.expense',
+  'Expenses': 'finance.expenses',
+  'Tithe': 'pages.tithe',
+  'Donation': 'finance.catDonation',
+  'General': 'finance.general',
+  'Cash': 'finance.methodCash',
+  'Bank': 'finance.methodBank',
+  'Mobile': 'finance.methodMobile',
+  'Building Contribution': 'finance.buildingContribution',
+  'Active': 'status.budgetStatusActive',
+  'Completed': 'status.budgetStatusCompleted',
+  'Pending': 'status.voucherStatusPending',
+  'Approved': 'status.voucherStatusApproved',
+  'Paid': 'status.voucherStatusPaid',
+  'Rejected': 'status.voucherStatusRejected',
+};
+
 class _FinancePageState extends State<FinancePage>
     with SingleTickerProviderStateMixin {
+  LocalizationService get loc =>
+      Provider.of<LocalizationService>(context, listen: false);
+
+  /// The display form of a stored finance token.
+  String tokenLabel(String token) {
+    final key = _financeTokenKeys[token];
+    return key == null ? token : loc.t(key);
+  }
+
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   late TabController _tabController;
 
@@ -102,7 +135,7 @@ class _FinancePageState extends State<FinancePage>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Finance Management',
+        title: Text(loc.t('nav.finance'),
             style: GoogleFonts.notoSansEthiopic(
                 fontWeight: FontWeight.w900,
                 color: isDark ? Colors.white : AppColors.lightText)),
@@ -171,10 +204,10 @@ class _FinancePageState extends State<FinancePage>
   Widget _buildSummaryCards(bool isDark) {
     final t = _totals;
     final cards = [
-      {'label': 'Total Income', 'amount': t['income']!, 'color': const Color(0xFF10B981), 'icon': Icons.trending_up},
-      {'label': 'Total Expenses', 'amount': t['expenses']!, 'color': AppColors.sacredRed, 'icon': Icons.trending_down},
-      {'label': 'Remainder', 'amount': t['remainder']!, 'color': AppColors.primary, 'icon': Icons.account_balance_wallet_outlined},
-      {'label': 'Tithe', 'amount': t['tithes']!, 'color': AppColors.divineGold, 'icon': Icons.favorite_outline},
+      {'label': loc.t('pages.totalIncome'), 'amount': t['income']!, 'color': const Color(0xFF10B981), 'icon': Icons.trending_up},
+      {'label': loc.t('pages.totalExpenses'), 'amount': t['expenses']!, 'color': AppColors.sacredRed, 'icon': Icons.trending_down},
+      {'label': loc.t('pages.remainder'), 'amount': t['remainder']!, 'color': AppColors.primary, 'icon': Icons.account_balance_wallet_outlined},
+      {'label': loc.t('pages.tithe'), 'amount': t['tithes']!, 'color': AppColors.divineGold, 'icon': Icons.favorite_outline},
     ];
 
     return Container(
@@ -221,7 +254,7 @@ class _FinancePageState extends State<FinancePage>
   }
 
   Widget _buildTransactionsList(bool isDark) {
-    if (_transactions.isEmpty) return _emptyState('No transactions yet', FontAwesomeIcons.moneyCheckDollar);
+    if (_transactions.isEmpty) return _emptyState(loc.t('finance.noTransactions'), FontAwesomeIcons.moneyCheckDollar);
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
       itemCount: _transactions.length,
@@ -250,7 +283,7 @@ class _FinancePageState extends State<FinancePage>
             ),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(data['description'] ?? 'Transaction',
+              Text(data['description'] ?? loc.t('finance.transaction'),
                   style: GoogleFonts.notoSansEthiopic(
                       fontWeight: FontWeight.w900, fontSize: 13,
                       color: isDark ? Colors.white : AppColors.lightText)),
@@ -284,7 +317,7 @@ class _FinancePageState extends State<FinancePage>
   }
 
   Widget _buildBudgetsList(bool isDark) {
-    if (_budgets.isEmpty) return _emptyState('No budgets yet', FontAwesomeIcons.fileInvoiceDollar);
+    if (_budgets.isEmpty) return _emptyState(loc.t('finance.noBudgets'), FontAwesomeIcons.fileInvoiceDollar);
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
       itemCount: _budgets.length,
@@ -348,13 +381,13 @@ class _FinancePageState extends State<FinancePage>
               ),
             ]),
             const SizedBox(height: 14),
-            _budgetRow('Planned Income', plannedInc, AppColors.primary, isDark),
-            _budgetRow('Actual Income', actualInc, const Color(0xFF10B981), isDark),
-            _budgetRow('Variance', variance, variance >= 0 ? const Color(0xFF10B981) : AppColors.sacredRed, isDark, prefix: variance >= 0 ? '+' : ''),
-            _budgetRow('Planned Expenses', plannedExp, Colors.orange, isDark),
-            _budgetRow('Actual Expenses', actualExp, AppColors.sacredRed, isDark),
+            _budgetRow(loc.t('finance.colPlannedIncome'), plannedInc, AppColors.primary, isDark),
+            _budgetRow(loc.t('finance.actualIncome'), actualInc, const Color(0xFF10B981), isDark),
+            _budgetRow(loc.t('finance.variance'), variance, variance >= 0 ? const Color(0xFF10B981) : AppColors.sacredRed, isDark, prefix: variance >= 0 ? '+' : ''),
+            _budgetRow(loc.t('finance.colPlannedExpenses'), plannedExp, Colors.orange, isDark),
+            _budgetRow(loc.t('finance.actualExpenses'), actualExp, AppColors.sacredRed, isDark),
             Divider(color: AppColors.primary.withValues(alpha: 0.08)),
-            _budgetRow('Net Remainder', remainder, remainder >= 0 ? const Color(0xFF10B981) : AppColors.sacredRed, isDark, bold: true),
+            _budgetRow(loc.t('finance.netRemainder'), remainder, remainder >= 0 ? const Color(0xFF10B981) : AppColors.sacredRed, isDark, bold: true),
           ]),
         ).animate().fadeIn(delay: Duration(milliseconds: i * 60)).moveY(begin: 10);
       },
@@ -377,7 +410,7 @@ class _FinancePageState extends State<FinancePage>
   }
 
   Widget _buildReportsList(bool isDark) {
-    if (_reports.isEmpty) return _emptyState('No financial reports yet', FontAwesomeIcons.fileInvoice);
+    if (_reports.isEmpty) return _emptyState(loc.t('finance.noReports'), FontAwesomeIcons.fileInvoice);
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
       itemCount: _reports.length,
@@ -402,7 +435,7 @@ class _FinancePageState extends State<FinancePage>
               ),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(r['title'] ?? 'Financial Report',
+                  Text(r['title'] ?? loc.t('finance.financialReport'),
                       style: GoogleFonts.notoSansEthiopic(
                           fontSize: 15, fontWeight: FontWeight.w900,
                           color: isDark ? Colors.white : AppColors.lightText)),
@@ -425,9 +458,9 @@ class _FinancePageState extends State<FinancePage>
             Padding(
               padding: const EdgeInsets.all(18),
               child: Row(children: [
-                Expanded(child: _reportStat('Income', totalIncome, const Color(0xFF10B981))),
-                Expanded(child: _reportStat('Expenses', totalExpenses, AppColors.sacredRed)),
-                Expanded(child: _reportStat('Remainder', remainder,
+                Expanded(child: _reportStat(loc.t('finance.income'), totalIncome, const Color(0xFF10B981))),
+                Expanded(child: _reportStat(loc.t('finance.expenses'), totalExpenses, AppColors.sacredRed)),
+                Expanded(child: _reportStat(loc.t('pages.remainder'), remainder,
                     remainder >= 0 ? const Color(0xFF10B981) : AppColors.sacredRed)),
               ]),
             ),
@@ -494,23 +527,26 @@ class _FinancePageState extends State<FinancePage>
             Container(width: 40, height: 4,
                 decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
-            Text('Add Transaction', style: GoogleFonts.notoSansEthiopic(
+            Text(loc.t('finance.addTransaction'), style: GoogleFonts.notoSansEthiopic(
                 fontSize: 18, fontWeight: FontWeight.w900,
                 color: isDark ? Colors.white : AppColors.lightText)),
             const SizedBox(height: 20),
             Expanded(child: SingleChildScrollView(padding: const EdgeInsets.symmetric(horizontal: 24), child: Column(children: [
-              _sheetField(descCtrl, 'Description', Icons.description_outlined, isDark),
+              _sheetField(descCtrl, loc.t('finance.colDescription'), Icons.description_outlined, isDark),
               const SizedBox(height: 14),
-              _sheetField(amountCtrl, 'Amount (ETB)', Icons.attach_money, isDark, isNumber: true),
+              _sheetField(amountCtrl, loc.t('finance.colAmount'), Icons.attach_money, isDark, isNumber: true),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 initialValue: selectedType,
                 decoration: InputDecoration(
-                  labelText: 'Type',
+                  labelText: loc.t('finance.colType'),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
-                items: types.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                items: types
+                    .map((t) => DropdownMenuItem(
+                        value: t, child: Text(tokenLabel(t))))
+                    .toList(),
                 onChanged: (v) => setSheetState(() => selectedType = v!),
               ),
               const SizedBox(height: 24),
@@ -534,7 +570,7 @@ class _FinancePageState extends State<FinancePage>
                     if (ctx.mounted) Navigator.pop(ctx);
                     _loadData();
                   },
-                  child: Text('Save Transaction', style: GoogleFonts.notoSansEthiopic(
+                  child: Text(loc.t('common.save'), style: GoogleFonts.notoSansEthiopic(
                       fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
@@ -550,16 +586,16 @@ class _FinancePageState extends State<FinancePage>
     return _listWithAdd(
       isDark: isDark,
       canAdd: canAdd,
-      addLabel: 'Record tithe / offering',
+      addLabel: loc.t('admin.recordTitheReceipt'),
       onAdd: () => _showAddTitheSheet(isDark),
       empty: _tithes.isEmpty,
-      emptyMsg: 'No tithe records yet',
+      emptyMsg: loc.t('finance.noTithes'),
       emptyIcon: FontAwesomeIcons.handHoldingHeart,
       items: _tithes,
       itemBuilder: (t) {
         final amount = (t['amount'] as num?)?.toDouble() ?? 0;
         return _financeCard(isDark,
-            title: t['memberName'] ?? 'Member',
+            title: t['memberName'] ?? loc.t('admin.member'),
             subtitle: '${t['type'] ?? ''} · ${t['receiptNumber'] ?? ''}',
             trailing: '+${amount.toStringAsFixed(0)} ETB',
             trailingColor: const Color(0xFF10B981));
@@ -575,24 +611,24 @@ class _FinancePageState extends State<FinancePage>
     String method = 'Cash';
     _showFinanceFormSheet(
       isDark: isDark,
-      title: 'Record Tithe / Offering',
+      title: loc.t('admin.recordTitheReceipt'),
       fields: (setSheet) => [
-        _sheetField(nameCtrl, 'Member Name', Icons.person_outline, isDark),
+        _sheetField(nameCtrl, loc.t('finance.colMemberName'), Icons.person_outline, isDark),
         const SizedBox(height: 14),
-        _sheetField(amountCtrl, 'Amount (ETB)', Icons.attach_money, isDark,
+        _sheetField(amountCtrl, loc.t('finance.colAmount'), Icons.attach_money, isDark,
             isNumber: true),
         const SizedBox(height: 14),
-        _dropdown('Type', type, const [
+        _dropdown(loc.t('finance.colType'), type, const [
           'Asrat (10%)',
           'Offering (መባ)',
           'First Fruit (በኵራት)',
           'Building Contribution'
         ], (v) => setSheet(() => type = v)),
         const SizedBox(height: 14),
-        _dropdown('Payment Method', method,
+        _dropdown(loc.t('finance.colMethod'), method,
             const ['Cash', 'Bank', 'Mobile'], (v) => setSheet(() => method = v)),
         const SizedBox(height: 14),
-        _sheetField(receiptCtrl, 'Receipt Number', Icons.receipt_long, isDark),
+        _sheetField(receiptCtrl, loc.t('finance.colReceiptNo'), Icons.receipt_long, isDark),
       ],
       onSave: () async {
         if (nameCtrl.text.trim().isEmpty || amountCtrl.text.trim().isEmpty) {
@@ -630,10 +666,10 @@ class _FinancePageState extends State<FinancePage>
     return _listWithAdd(
       isDark: isDark,
       canAdd: canAdd,
-      addLabel: 'New pledge',
+      addLabel: loc.t('finance.addNewPledge'),
       onAdd: () => _showAddPledgeSheet(isDark),
       empty: _pledges.isEmpty,
-      emptyMsg: 'No pledges yet',
+      emptyMsg: loc.t('finance.noPledges'),
       emptyIcon: FontAwesomeIcons.handshakeAngle,
       items: _pledges,
       itemBuilder: (p) {
@@ -651,13 +687,13 @@ class _FinancePageState extends State<FinancePage>
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Expanded(
-                child: Text(p['memberName'] ?? 'Member',
+                child: Text(p['memberName'] ?? loc.t('admin.member'),
                     style: GoogleFonts.notoSansEthiopic(
                         fontWeight: FontWeight.w900,
                         fontSize: 13,
                         color: isDark ? Colors.white : AppColors.lightText)),
               ),
-              Text(p['status'] ?? 'Active',
+              Text(tokenLabel(p['status'] ?? 'Active'),
                   style: GoogleFonts.notoSansEthiopic(
                       fontSize: 9,
                       fontWeight: FontWeight.w900,
@@ -697,16 +733,16 @@ class _FinancePageState extends State<FinancePage>
     final paidCtrl = TextEditingController(text: '0');
     _showFinanceFormSheet(
       isDark: isDark,
-      title: 'New Pledge',
+      title: loc.t('finance.addNewPledge'),
       fields: (setSheet) => [
-        _sheetField(nameCtrl, 'Member Name', Icons.person_outline, isDark),
+        _sheetField(nameCtrl, loc.t('finance.colMemberName'), Icons.person_outline, isDark),
         const SizedBox(height: 14),
-        _sheetField(campaignCtrl, 'Campaign', Icons.campaign_outlined, isDark),
+        _sheetField(campaignCtrl, loc.t('finance.campaignTitle'), Icons.campaign_outlined, isDark),
         const SizedBox(height: 14),
-        _sheetField(pledgedCtrl, 'Pledged Amount (ETB)', Icons.attach_money,
+        _sheetField(pledgedCtrl, loc.t('finance.pledgedAmount'), Icons.attach_money,
             isDark, isNumber: true),
         const SizedBox(height: 14),
-        _sheetField(paidCtrl, 'Paid So Far (ETB)', Icons.payments_outlined,
+        _sheetField(paidCtrl, loc.t('finance.paidSoFar'), Icons.payments_outlined,
             isDark, isNumber: true),
       ],
       onSave: () async {
@@ -734,10 +770,10 @@ class _FinancePageState extends State<FinancePage>
     return _listWithAdd(
       isDark: isDark,
       canAdd: canAdd,
-      addLabel: 'New requisition voucher',
+      addLabel: loc.t('finance.newVoucherRequest'),
       onAdd: () => _showAddVoucherSheet(isDark),
       empty: _vouchers.isEmpty,
-      emptyMsg: 'No vouchers yet',
+      emptyMsg: loc.t('finance.noVouchers'),
       emptyIcon: FontAwesomeIcons.receipt,
       items: _vouchers,
       itemBuilder: (v) {
@@ -749,9 +785,9 @@ class _FinancePageState extends State<FinancePage>
                 ? AppColors.sacredRed
                 : AppColors.divineGold;
         return _financeCard(isDark,
-            title: v['purpose'] ?? 'Requisition',
+            title: v['purpose'] ?? loc.t('finance.requisition'),
             subtitle:
-                '${v['voucherNumber'] ?? ''} · ${v['department'] ?? ''} · $status',
+                '${v['voucherNumber'] ?? ''} · ${v['department'] ?? ''} · ${tokenLabel(status)}',
             subtitleColor: statusColor,
             trailing: '${amount.toStringAsFixed(0)} ETB',
             trailingColor: AppColors.sacredRed);
@@ -766,17 +802,17 @@ class _FinancePageState extends State<FinancePage>
     String department = 'Administration & Finance';
     _showFinanceFormSheet(
       isDark: isDark,
-      title: 'New Requisition Voucher',
+      title: loc.t('finance.newVoucherRequest'),
       fields: (setSheet) => [
-        _sheetField(requestedByCtrl, 'Requested By', Icons.person_outline,
+        _sheetField(requestedByCtrl, loc.t('finance.requestedBy'), Icons.person_outline,
             isDark),
         const SizedBox(height: 14),
-        _sheetField(purposeCtrl, 'Purpose', Icons.notes, isDark),
+        _sheetField(purposeCtrl, loc.t('finance.purposeDetails'), Icons.notes, isDark),
         const SizedBox(height: 14),
-        _sheetField(amountCtrl, 'Amount (ETB)', Icons.attach_money, isDark,
+        _sheetField(amountCtrl, loc.t('finance.colAmount'), Icons.attach_money, isDark,
             isNumber: true),
         const SizedBox(height: 14),
-        _dropdown('Department', department, const [
+        _dropdown(loc.t('forms.department'), department, const [
           'Evangelism',
           'Education & Training',
           'Services Coordination',
@@ -895,7 +931,7 @@ class _FinancePageState extends State<FinancePage>
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       items: items
-          .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+          .map((e) => DropdownMenuItem(value: e, child: Text(tokenLabel(e))))
           .toList(),
       onChanged: (v) => onChanged(v ?? value),
     );
@@ -967,11 +1003,11 @@ class _FinancePageState extends State<FinancePage>
                                 setSheet(() => saving = false);
                                 if (ctx.mounted) {
                                   ScaffoldMessenger.of(ctx).showSnackBar(
-                                      SnackBar(content: Text('Failed: $e')));
+                                      SnackBar(content: Text(loc.t('errors.generic'))));
                                 }
                               }
                             },
-                      child: Text(saving ? 'Saving…' : 'Save',
+                      child: Text(saving ? loc.t('common.saving') : loc.t('common.save'),
                           style: GoogleFonts.notoSansEthiopic(
                               fontWeight: FontWeight.bold, color: Colors.white)),
                     ),

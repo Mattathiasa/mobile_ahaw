@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
 import '../../services/auth_service.dart';
+import '../../services/localization_service.dart';
 import '../../services/permission_service.dart';
 import '../../services/role_permissions.dart';
 
@@ -31,61 +32,90 @@ const _permissionGroups = [
   'Meetings', 'Finance', 'Documents', 'Sermons', 'Missionary', 'Dashboard',
 ];
 
-const _permissionMeta = {
+/// Permission key -> the group it is shown under.
+///
+/// The label and description are NOT stored here: they live in the shared
+/// catalog under `permissions.<key>Label` / `permissions.<key>Desc`, so the
+/// web and the app describe each permission with the same words and an admin
+/// override reaches both. Keys here are Firestore field names and must not be
+/// renamed — where the app's field name differs from the web's catalog name,
+/// [_permissionCatalogKey] maps between them.
+const _permissionGroupOf = {
   // Pages
-  'canViewDashboard':       ('View Dashboard',           'Access the main dashboard',                    'Pages'),
-  'canViewAnnouncements':   ('View Announcements',       'See the announcements page',                   'Pages'),
-  'canViewPlans':           ('View Plans',               'See the plans & ministry page',                'Pages'),
-  'canViewReports':         ('View Reports',             'See the reports page',                         'Pages'),
-  'canViewMembers':         ('View Members',             'See the members directory',                    'Pages'),
-  'canViewMeetings':        ('View Meetings',            'See the meetings page',                        'Pages'),
-  'canViewFinance':         ('View Finance',             'See the finance page',                         'Pages'),
-  'canViewChurchRules':     ('View Church Rules',        'See the church rules page',                    'Pages'),
-  'canViewHigeDenb':        ('View HigeDenb',            'See the HigeDenb page',                        'Pages'),
-  'canViewStrategicPlan':   ('View Strategic Plan',      'See the strategic plan page',                  'Pages'),
-  'canViewDocuments':       ('View Documents',           'See the documents page',                       'Pages'),
-  'canViewHierarchy':       ('View Hierarchy',           'See the church hierarchy page',                'Pages'),
-  'canViewMissionary':      ('View Missionary',          'See the missionary page',                      'Pages'),
-  'canViewTeachings':       ('View Sermons',             'See the sermons page',                         'Pages'),
-  'canViewVolunteer':       ('View Volunteer',           'See the volunteer page',                       'Pages'),
-  'canViewUserManagement':  ('View User Management',     'See the user management page',                 'Pages'),
-  'canViewSettings':        ('View Settings',            'Access settings',                              'Pages'),
-  'canViewNotifications':   ('View Notifications',       'See notifications',                            'Pages'),
+  'canViewDashboard': 'Pages',
+  'canViewAnnouncements': 'Pages',
+  'canViewPlans': 'Pages',
+  'canViewReports': 'Pages',
+  'canViewMembers': 'Pages',
+  'canViewMeetings': 'Pages',
+  'canViewFinance': 'Pages',
+  'canViewChurchRules': 'Pages',
+  'canViewHigeDenb': 'Pages',
+  'canViewStrategicPlan': 'Pages',
+  'canViewDocuments': 'Pages',
+  'canViewHierarchy': 'Pages',
+  'canViewMissionary': 'Pages',
+  'canViewTeachings': 'Pages',
+  'canViewVolunteer': 'Pages',
+  'canViewUserManagement': 'Pages',
+  'canViewSettings': 'Pages',
+  'canViewNotifications': 'Pages',
   // Announcements
-  'canCreateAnnouncement':  ('Create Announcement',      'Post new announcements',                       'Announcements'),
-  'canEditAnnouncement':    ('Edit Announcement',        'Edit existing announcements',                  'Announcements'),
-  'canDeleteAnnouncement':  ('Delete Announcement',      'Delete announcements',                         'Announcements'),
+  'canCreateAnnouncement': 'Announcements',
+  'canEditAnnouncement': 'Announcements',
+  'canDeleteAnnouncement': 'Announcements',
   // Plans
-  'canCreatePlan':          ('Create Plan',              'Create new ministry plans',                    'Plans'),
-  'canDeletePlan':          ('Delete Plan',              'Delete ministry plans',                        'Plans'),
+  'canCreatePlan': 'Plans',
+  'canDeletePlan': 'Plans',
   // Reports
-  'canCreateReport':        ('Create Report',            'Submit new reports',                           'Reports'),
-  'canViewAllReports':      ('View All Reports',         'See reports from all units',                   'Reports'),
-  'canCommentOnReport':     ('Comment on Report',        'Add feedback to reports',                      'Reports'),
+  'canCreateReport': 'Reports',
+  'canViewAllReports': 'Reports',
+  'canCommentOnReport': 'Reports',
   // Members
-  'canAddMembers':          ('Add Members',              'Enroll new church members',                    'Members'),
-  'canEditMembers':         ('Edit Members',             'Edit member profiles',                         'Members'),
-  'canDeleteMembers':       ('Delete Members',           'Remove members from the system',               'Members'),
-  'canExportData':          ('Export Data',              'Export member and report data',                'Members'),
+  'canAddMembers': 'Members',
+  'canEditMembers': 'Members',
+  'canDeleteMembers': 'Members',
+  'canExportData': 'Members',
   // Meetings
-  'canScheduleMeeting':     ('Schedule Meeting',         'Create new meetings',                          'Meetings'),
-  'canDeleteMeeting':       ('Delete Meeting',           'Delete scheduled meetings',                    'Meetings'),
+  'canScheduleMeeting': 'Meetings',
+  'canDeleteMeeting': 'Meetings',
   // Finance
-  'canAddTransaction':      ('Add Transaction',          'Record financial transactions',                'Finance'),
-  'canCreateBudget':        ('Create Budget',            'Create monthly budgets',                       'Finance'),
-  'canGenerateFinancialReport': ('Generate Financial Report', 'Generate financial reports',             'Finance'),
+  'canAddTransaction': 'Finance',
+  'canCreateBudget': 'Finance',
+  'canGenerateFinancialReport': 'Finance',
   // Documents
-  'canUploadDocuments':     ('Upload Documents',         'Upload files and create folders',              'Documents'),
-  'canDeleteDocuments':     ('Delete Documents',         'Delete files and folders',                     'Documents'),
+  'canUploadDocuments': 'Documents',
+  'canDeleteDocuments': 'Documents',
   // Sermons (the collection stays `teachings`)
-  'canCreateTeaching':      ('Create Sermon',            'Publish new sermons',                          'Sermons'),
+  'canCreateTeaching': 'Sermons',
   // Missionary
-  'canSubmitMissionaryApplication': ('Submit Missionary Application', 'Apply for missionary service',   'Missionary'),
-  'canSubmitMissionaryReport':      ('Submit Missionary Report',      'Submit field reports',           'Missionary'),
+  'canSubmitMissionaryApplication': 'Missionary',
+  'canSubmitMissionaryReport': 'Missionary',
   // Dashboard
-  'canViewFullDashboard':   ('Full Dashboard View',      'See all stats and quick actions',              'Dashboard'),
-  'canViewLimitedDashboard':('Limited Dashboard View',   'See basic stats only',                         'Dashboard'),
+  'canViewFullDashboard': 'Dashboard',
+  'canViewLimitedDashboard': 'Dashboard',
 };
+
+/// The app stores `canViewTeachings` / `canCreateTeaching`; the web catalog
+/// calls the same permissions `canViewSermons` / `canCreateSermon`.
+const _permissionCatalogAlias = {
+  'canViewTeachings': 'canViewSermons',
+  'canCreateTeaching': 'canCreateSermon',
+};
+
+String _permissionCatalogKey(String perm) =>
+    _permissionCatalogAlias[perm] ?? perm;
+
+String permissionLabel(LocalizationService loc, String perm) =>
+    loc.t('permissions.${_permissionCatalogKey(perm)}Label');
+
+String permissionDescription(LocalizationService loc, String perm) =>
+    loc.t('permissions.${_permissionCatalogKey(perm)}Desc');
+
+/// Group headers come from the same catalog: `permissions.groupPages` etc.
+String permissionGroupLabel(LocalizationService loc, String group) =>
+    loc.t('permissions.group$group');
+
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -292,6 +322,7 @@ class _PermissionControlPageState extends State<PermissionControlPage>
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -316,7 +347,7 @@ class _PermissionControlPageState extends State<PermissionControlPage>
                   size: 16, color: AppColors.primary),
             ),
             const SizedBox(width: 10),
-            Text('Permission Control',
+            Text(loc.t('admin.permissionControl'),
                 style: GoogleFonts.notoSansEthiopic(
                     fontWeight: FontWeight.w900,
                     fontSize: 16,
@@ -334,7 +365,7 @@ class _PermissionControlPageState extends State<PermissionControlPage>
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 2))
                   : const Icon(Icons.save_outlined, size: 16),
-              label: Text(_saving ? 'Saving…' : 'Save All',
+              label: Text(_saving ? loc.t('common.saving') : loc.t('admin.pcSaveAll'),
                   style: GoogleFonts.notoSansEthiopic(
                       fontWeight: FontWeight.bold, fontSize: 12)),
               style: ElevatedButton.styleFrom(
@@ -369,16 +400,16 @@ class _PermissionControlPageState extends State<PermissionControlPage>
               children: [
                 // Save status banner
                 if (_saveStatus == 'success')
-                  const _StatusBanner(
+                  _StatusBanner(
                     color: AppColors.success,
                     icon: Icons.check_circle_outline,
-                    message: 'Changes saved and applied to all users immediately.',
+                    message: loc.t('admin.pcSaved'),
                   ),
                 if (_saveStatus == 'error')
-                  const _StatusBanner(
+                  _StatusBanner(
                     color: AppColors.sacredRed,
                     icon: Icons.error_outline,
-                    message: 'Failed to save. Check your connection.',
+                    message: loc.t('admin.pcSaveFailed'),
                   ),
 
                 Expanded(
@@ -449,6 +480,7 @@ class _RolePermissionsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -468,7 +500,7 @@ class _RolePermissionsTab extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Set which permissions each hierarchy level has by default. These apply to all users at that level unless overridden individually.',
+                    loc.t('admin.pcRolesDesc'),
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 11,
                         color: isDark ? Colors.white70 : AppColors.lightText.withValues(alpha: 0.7),
@@ -483,7 +515,7 @@ class _RolePermissionsTab extends StatelessWidget {
           // For each permission group
           ..._permissionGroups.map((group) {
             final groupPerms = allPermissions
-                .where((p) => _permissionMeta[p]?.$3 == group)
+                .where((p) => _permissionGroupOf[p] == group)
                 .toList();
             if (groupPerms.isEmpty) return const SizedBox.shrink();
             final isExpanded = expandedGroups.contains(group);
@@ -514,7 +546,7 @@ class _RolePermissionsTab extends StatelessWidget {
                             color: AppColors.primary,
                           ),
                           const SizedBox(width: 8),
-                          Text(group.toUpperCase(),
+                          Text(permissionGroupLabel(loc, group).toUpperCase(),
                               style: GoogleFonts.notoSansEthiopic(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w900,
@@ -537,12 +569,13 @@ class _RolePermissionsTab extends StatelessWidget {
                         color: AppColors.primary.withValues(alpha: 0.06), height: 1),
                     // Permission rows
                     ...groupPerms.map((perm) {
-                      final meta = _permissionMeta[perm];
-                      if (meta == null) return const SizedBox.shrink();
+                      if (!_permissionGroupOf.containsKey(perm)) {
+                        return const SizedBox.shrink();
+                      }
                       return _PermissionRow(
                         perm: perm,
-                        label: meta.$1,
-                        description: meta.$2,
+                        label: permissionLabel(loc, perm),
+                        description: permissionDescription(loc, perm),
                         isDark: isDark,
                         getRolePerms: getRolePerms,
                         roleOverrides: roleOverrides,
@@ -727,6 +760,7 @@ class _UserOverridesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     final filtered = users.where((u) {
       final name = ((u['fullNameEnglish'] ?? u['fullName'] ?? u['username'] ?? '') as String).toLowerCase();
       final email = ((u['email'] ?? '') as String).toLowerCase();
@@ -753,7 +787,7 @@ class _UserOverridesTab extends StatelessWidget {
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.search,
                       color: AppColors.primary, size: 18),
-                  hintText: 'Search users…',
+                  hintText: loc.t('admin.pcSearchUsers'),
                   hintStyle: GoogleFonts.notoSansEthiopic(
                       fontSize: 13, color: Colors.grey),
                   border: InputBorder.none,
@@ -772,9 +806,9 @@ class _UserOverridesTab extends StatelessWidget {
                 final hasOverrides =
                     (userOverrides[uid] ?? {}).isNotEmpty;
                 final isSA = superAdminUids.contains(uid);
-                final level = u['hierarchyLevel'] as String? ?? 'Unknown';
+                final level = u['hierarchyLevel'] as String? ?? loc.t('admin.notSet');
                 final color = _levelColors[level] ?? Colors.grey;
-                final name = u['fullNameEnglish'] ?? u['fullName'] ?? u['username'] ?? 'User';
+                final name = u['fullNameEnglish'] ?? u['fullName'] ?? u['username'] ?? loc.t('admin.scColUser');
 
                 return GestureDetector(
                   onTap: () => onUserSelected(u),
@@ -886,7 +920,7 @@ class _UserOverridesTab extends StatelessWidget {
     final name = selectedUser!['fullNameEnglish'] ??
         selectedUser!['fullName'] ??
         selectedUser!['username'] ??
-        'User';
+        loc.t('admin.scColUser');
     final color = _levelColors[level] ?? Colors.grey;
 
     return Column(
@@ -958,7 +992,7 @@ class _UserOverridesTab extends StatelessWidget {
                 onPressed: () => clearUserOverrides(uid),
                 icon: const Icon(Icons.refresh, size: 14,
                     color: AppColors.sacredRed),
-                label: Text('Clear',
+                label: Text(loc.t('admin.clear'),
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 11,
                         color: AppColors.sacredRed,
@@ -987,7 +1021,7 @@ class _UserOverridesTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 80),
             children: _permissionGroups.expand((group) {
               final groupPerms = allPermissions
-                  .where((p) => _permissionMeta[p]?.$3 == group)
+                  .where((p) => _permissionGroupOf[p] == group)
                   .toList();
               if (groupPerms.isEmpty) return <Widget>[];
               return [
@@ -1000,7 +1034,7 @@ class _UserOverridesTab extends StatelessWidget {
                               color: AppColors.primary.withValues(alpha: 0.1))),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Text(group.toUpperCase(),
+                        child: Text(permissionGroupLabel(loc, group).toUpperCase(),
                             style: GoogleFonts.notoSansEthiopic(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w900,
@@ -1016,8 +1050,9 @@ class _UserOverridesTab extends StatelessWidget {
                   ),
                 ),
                 ...groupPerms.map((perm) {
-                  final meta = _permissionMeta[perm];
-                  if (meta == null) return const SizedBox.shrink();
+                  if (!_permissionGroupOf.containsKey(perm)) {
+                    return const SizedBox.shrink();
+                  }
                   final roleHas = getRolePerms(level).contains(perm);
                   final override = getUserPerm(uid, perm);
                   final effective = override ?? roleHas;
@@ -1071,14 +1106,14 @@ class _UserOverridesTab extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(meta.$1,
+                              Text(permissionLabel(loc, perm),
                                   style: GoogleFonts.notoSansEthiopic(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w900,
                                       color: isDark
                                           ? Colors.white
                                           : AppColors.lightText)),
-                              Text(meta.$2,
+                              Text(permissionDescription(loc, perm),
                                   style: GoogleFonts.notoSansEthiopic(
                                       fontSize: 10,
                                       color: isDark
@@ -1163,6 +1198,7 @@ class _SuperAdminTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1186,14 +1222,14 @@ class _SuperAdminTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Super Admin Management',
+                      Text(loc.t('admin.pcSuperAdminTitle'),
                           style: GoogleFonts.notoSansEthiopic(
                               fontWeight: FontWeight.w900,
                               fontSize: 13,
                               color: AppColors.divineGold)),
                       const SizedBox(height: 4),
                       Text(
-                        'Super Admins bypass all permission checks and have full access to everything including this control panel. Assign this role with extreme care.',
+                        loc.t('admin.pcSuperAdminDesc'),
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 11,
                             color: isDark
@@ -1283,12 +1319,12 @@ class _SuperAdminTab extends StatelessWidget {
           ...users.map((u) {
             final uid = u['id'] as String;
             final isSA = superAdminUids.contains(uid);
-            final level = u['hierarchyLevel'] as String? ?? 'Unknown';
+            final level = u['hierarchyLevel'] as String? ?? loc.t('admin.notSet');
             final color = _levelColors[level] ?? Colors.grey;
             final name = u['fullNameEnglish'] ??
                 u['fullName'] ??
                 u['username'] ??
-                'User';
+                loc.t('admin.scColUser');
 
             return Container(
               margin: const EdgeInsets.only(bottom: 10),

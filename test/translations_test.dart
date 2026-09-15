@@ -121,20 +121,19 @@ void main() {
     'screens/dashboard_items/church_map_page.dart': 1,
     'screens/dashboard_items/church_rules_page.dart': 4,
     'screens/dashboard_items/documents_page.dart': 3,
-    'screens/dashboard_items/finance_page.dart': 75,
+    'screens/dashboard_items/finance_page.dart': 31,
     'screens/dashboard_items/hige_denb_page.dart': 10,
     'screens/dashboard_items/hr_page.dart': 14,
     'screens/dashboard_items/inventory_page.dart': 15,
     'screens/dashboard_items/mahderat_manager_page.dart': 28,
     'screens/dashboard_items/meetings_page.dart': 7,
     'screens/dashboard_items/membership_requests_page.dart': 1,
-    'screens/dashboard_items/missionary_page.dart': 7,
-    'screens/dashboard_items/my_atbiya_page.dart': 2,
+    'screens/dashboard_items/missionary_page.dart': 6,
+    'screens/dashboard_items/my_atbiya_page.dart': 1,
     'screens/dashboard_items/news_page.dart': 4,
     'screens/dashboard_items/notifications_page.dart': 3,
     'screens/dashboard_items/organisation_page.dart': 44,
     'screens/dashboard_items/partner_page.dart': 14,
-    'screens/dashboard_items/permission_control_page.dart': 150,
     'screens/dashboard_items/plans_page.dart': 20,
     'screens/dashboard_items/reports_page.dart': 24,
     'screens/dashboard_items/settings_page.dart': 2,
@@ -152,7 +151,7 @@ void main() {
     'widgets/home/home_footer.dart': 3,
     'widgets/home/suggestion_section.dart': 2,
     'widgets/image_upload_field.dart': 2,
-    'widgets/main_drawer.dart': 4,
+    'widgets/main_drawer.dart': 2,
     };
 
     final lit = RegExp(r"'((?:\\.|[^'\\\n])*)'");
@@ -167,7 +166,10 @@ void main() {
         r'|Sinodos|KuamiSinodos|Memriya|Zone|Atbiya|EnkesekaseMaikel'
         r'|HiyawanMahderat|Staff|Priest|FullTime|PartTime|New|Good|Fair'
         r'|Poor|Appreciation|Change|Feature|Problem|English|Amharic'
-        r'|Published|Draft|Other|Male|Female)$');
+        r'|Published|Draft|Other|Male|Female'
+        // permission group identifiers, translated at render
+        r'|Pages|Announcements|Plans|Reports|Members|Meetings|Finance'
+        r'|Documents|Sermons|Missionary|Dashboard)$');
     final englishish =
         RegExp(r"^[A-Z][A-Za-z0-9 ,'\u2019.?!:\-\u2014\u2026()@]*$");
     final skipPrefix = RegExp(r'^(http|assets/|/|#|\{|package:)');
