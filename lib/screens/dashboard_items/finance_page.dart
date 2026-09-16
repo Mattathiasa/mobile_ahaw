@@ -4,6 +4,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
+import '../../services/audit_log_service.dart';
+import '../../services/auth_service.dart';
 import '../../services/localization_service.dart';
 import '../../services/permission_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -312,7 +314,14 @@ class _FinancePageState extends State<FinancePage>
             Text('${isIncome ? "+" : "-"}${amount.toStringAsFixed(0)}',
                 style: GoogleFonts.notoSansEthiopic(
                     fontWeight: FontWeight.w900, fontSize: 15, color: color)),
-            if (canManage)
+            if (canManage) ...[
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                onPressed: () => _showAddTransactionSheet(context, isDark,
+                    existing: data),
+                icon: const Icon(Icons.edit_outlined,
+                    size: 17, color: AppColors.primary),
+              ),
               IconButton(
                 visualDensity: VisualDensity.compact,
                 onPressed: () => _confirmDeleteFinance(
@@ -320,8 +329,9 @@ class _FinancePageState extends State<FinancePage>
                     data['id'] as String,
                     data['description'] ?? loc.t('finance.transaction')),
                 icon: const Icon(Icons.delete_outline,
-                    size: 18, color: AppColors.sacredRed),
+                    size: 17, color: AppColors.sacredRed),
               ),
+            ],
           ]),
         ).animate().fadeIn(delay: Duration(milliseconds: i * 40)).slideX(begin: 0.02);
       },
@@ -515,11 +525,15 @@ class _FinancePageState extends State<FinancePage>
     ]));
   }
 
-  void _showAddTransactionSheet(BuildContext context, bool isDark) {
-    final descCtrl = TextEditingController();
-    final amountCtrl = TextEditingController();
-    String selectedType = 'Income';
-    String selectedCategory = 'General';
+  void _showAddTransactionSheet(BuildContext context, bool isDark,
+      {Map<String, dynamic>? existing}) {
+    final isEditing = existing != null;
+    final descCtrl =
+        TextEditingController(text: existing?['description']?.toString());
+    final amountCtrl = TextEditingController(
+        text: existing == null ? '' : '${existing['amount'] ?? ''}');
+    String selectedType = existing?['type']?.toString() ?? 'Income';
+    String selectedCategory = existing?['category']?.toString() ?? 'General';
     final types = ['Income', 'Expense', 'Tithe', 'Offering', 'Donation', 'Collection', 'Asrat', 'YefikirSetota', 'Deposit'];
 
     showModalBottomSheet(
@@ -539,7 +553,7 @@ class _FinancePageState extends State<FinancePage>
             Container(width: 40, height: 4,
                 decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
-            Text(loc.t('finance.addTransaction'), style: GoogleFonts.notoSansEthiopic(
+            Text(isEditing ? loc.t('common.edit') : loc.t('finance.addTransaction'), style: GoogleFonts.notoSansEthiopic(
                 fontSize: 18, fontWeight: FontWeight.w900,
                 color: isDark ? Colors.white : AppColors.lightText)),
             const SizedBox(height: 20),
@@ -570,15 +584,33 @@ class _FinancePageState extends State<FinancePage>
                   ),
                   onPressed: () async {
                     if (descCtrl.text.isEmpty || amountCtrl.text.isEmpty) return;
-                    await _db.collection('finance_transactions').add({
+                    final amount = double.tryParse(amountCtrl.text) ?? 0;
+                    final fields = {
                       'description': descCtrl.text.trim(),
-                      'amount': double.tryParse(amountCtrl.text) ?? 0,
+                      'amount': amount,
                       'type': selectedType,
                       'category': selectedCategory,
-                      'date': DateTime.now().toIso8601String(),
-                      'createdAt': FieldValue.serverTimestamp(),
                       'updatedAt': FieldValue.serverTimestamp(),
-                    });
+                    };
+                    if (isEditing) {
+                      await _db
+                          .collection('finance_transactions')
+                          .doc(existing['id'] as String)
+                          .update(fields);
+                      _audit('update', 'finance_transactions',
+                          existing['id'] as String,
+                          'Amended transaction amount to $amount');
+                    } else {
+                      final ref = await _db
+                          .collection('finance_transactions')
+                          .add({
+                        ...fields,
+                        'date': DateTime.now().toIso8601String(),
+                        'createdAt': FieldValue.serverTimestamp(),
+                      });
+                      _audit('create', 'finance_transactions', ref.id,
+                          'Recorded a transaction of $amount');
+                    }
                     if (ctx.mounted) Navigator.pop(ctx);
                     _loadData();
                   },
@@ -610,11 +642,7 @@ class _FinancePageState extends State<FinancePage>
             title: t['memberName'] ?? loc.t('admin.member'),
             subtitle: '${t['type'] ?? ''} · ${t['receiptNumber'] ?? ''}',
             trailing: '+${amount.toStringAsFixed(0)} ETB',
-            trailingColor: const Color(0xFF10B981),
-            onDelete: canAdd
-                ? () => _confirmDeleteFinance('finance_tithes',
-                    t['id'] as String, t['memberName'] ?? '')
-                : null);
+            trailingColor: const Color(0xFF10B981));
       },
     );
   }
@@ -719,10 +747,10 @@ class _FinancePageState extends State<FinancePage>
               if (canAdd)
                 IconButton(
                   visualDensity: VisualDensity.compact,
-                  onPressed: () => _confirmDeleteFinance('finance_pledges',
-                      p['id'] as String, p['memberName'] ?? ''),
-                  icon: const Icon(Icons.delete_outline,
-                      size: 18, color: AppColors.sacredRed),
+                  tooltip: loc.t('finance.recordPayment'),
+                  onPressed: () => _recordPledgePayment(p),
+                  icon: const Icon(Icons.payments_outlined,
+                      size: 18, color: AppColors.primary),
                 ),
             ]),
             if ((p['campaignTitle'] ?? '').toString().isNotEmpty)
@@ -815,10 +843,7 @@ class _FinancePageState extends State<FinancePage>
             subtitleColor: statusColor,
             trailing: '${amount.toStringAsFixed(0)} ETB',
             trailingColor: AppColors.sacredRed,
-            onDelete: canAdd
-                ? () => _confirmDeleteFinance('finance_requisitions',
-                    v['id'] as String, v['purpose'] ?? '')
-                : null);
+            onEdit: canAdd ? () => _changeVoucherStatus(v) : null);
       },
     );
   }
@@ -908,6 +933,116 @@ class _FinancePageState extends State<FinancePage>
     );
   }
 
+  /// Adds to a pledge's paid amount and recalculates its status, mirroring
+  /// updatePledgePayment in the web's src/services/finance.ts. A pledge is
+  /// amended by recording payments against it, not by editing the total.
+  Future<void> _recordPledgePayment(Map<String, dynamic> pledge) async {
+    final ctrl = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(loc.t('finance.recordPayment')),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+              labelText: loc.t('finance.paymentAmount'),
+              border: const OutlineInputBorder()),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(loc.t('common.cancel'))),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(loc.t('common.save'))),
+        ],
+      ),
+    );
+    final extra = double.tryParse(ctrl.text.trim()) ?? 0;
+    ctrl.dispose();
+    if (ok != true || extra <= 0) return;
+
+    final pledged = (pledge['pledgedAmount'] as num?)?.toDouble() ?? 0;
+    final paid = ((pledge['paidAmount'] as num?)?.toDouble() ?? 0) + extra;
+    try {
+      await _db.collection('finance_pledges').doc(pledge['id'] as String).update({
+        'paidAmount': paid,
+        // The same rule the web applies, so both clients agree on when a
+        // pledge is settled.
+        'status': paid >= pledged && pledged > 0 ? 'Completed' : 'Active',
+      });
+      _audit('update', 'finance_pledges', pledge['id'] as String,
+          'Recorded a pledge payment of $extra');
+      _loadData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(loc.t('finance.pledgePaymentRecorded'))));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(loc.t('errors.generic'))));
+      }
+    }
+  }
+
+  /// Moves a voucher through its statuses, mirroring updateRequisitionStatus
+  /// in the web. Vouchers are never deleted — the trail of who approved or
+  /// refused a payment request is the point of having them.
+  Future<void> _changeVoucherStatus(Map<String, dynamic> voucher) async {
+    const statuses = ['Pending', 'Approved', 'Paid', 'Rejected'];
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(loc.t('finance.changeStatus')),
+        children: statuses
+            .map((st) => SimpleDialogOption(
+                  onPressed: () => Navigator.pop(ctx, st),
+                  child: Text(tokenLabel(st)),
+                ))
+            .toList(),
+      ),
+    );
+    if (picked == null || picked == voucher['status']) return;
+    if (!mounted) return;
+    final me = Provider.of<AuthService>(context, listen: false).userModel;
+    try {
+      await _db
+          .collection('finance_requisitions')
+          .doc(voucher['id'] as String)
+          .update({
+        'status': picked,
+        if (picked == 'Approved' && me != null) 'approvedBy': me.id,
+      });
+      _audit('update', 'finance_requisitions', voucher['id'] as String,
+          'Voucher marked $picked');
+      _loadData();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(loc.t('errors.generic'))));
+      }
+    }
+  }
+
+  /// Records a finance mutation in the audit log, the way the web's
+  /// finance.ts does through auditLogService. These are the church's books:
+  /// an amended amount with nobody attached to it is the thing an audit is
+  /// supposed to answer. Failures are swallowed inside AuditLogService — a
+  /// lost log entry must not fail the write the user asked for.
+  void _audit(String action, String targetType, String id, String what) {
+    final me = Provider.of<AuthService>(context, listen: false).userModel;
+    if (me == null) return;
+    AuditLogService.log(
+      user: me,
+      action: action,
+      targetType: targetType,
+      targetId: id,
+      description: what,
+    );
+  }
+
   /// Removes one finance document.
   ///
   /// firestore.rules gates all six finance collections with
@@ -936,6 +1071,7 @@ class _FinancePageState extends State<FinancePage>
     if (ok != true) return;
     try {
       await _db.collection(collection).doc(id).delete();
+      _audit('delete', collection, id, 'Deleted $what');
       _loadData();
     } catch (_) {
       if (mounted) {
@@ -951,6 +1087,7 @@ class _FinancePageState extends State<FinancePage>
       Color? subtitleColor,
       required String trailing,
       required Color trailingColor,
+      VoidCallback? onEdit,
       VoidCallback? onDelete}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -981,6 +1118,13 @@ class _FinancePageState extends State<FinancePage>
                 fontWeight: FontWeight.w900,
                 fontSize: 14,
                 color: trailingColor)),
+        if (onEdit != null)
+          IconButton(
+            onPressed: onEdit,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.edit_outlined,
+                size: 18, color: AppColors.primary),
+          ),
         if (onDelete != null)
           IconButton(
             onPressed: onDelete,

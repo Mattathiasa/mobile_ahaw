@@ -189,9 +189,8 @@ void main() {
     // dashboard itself, which had zero t() calls, as clean.
     const baseline = <String, int>{
     'main.dart': 2,
-    'screens/dashboard_items/finance_page.dart': 33,
-    'screens/dashboard_items/hr_page.dart': 6,
-    'screens/dashboard_items/inventory_page.dart': 7,
+    'screens/dashboard_items/finance_page.dart': 28,
+    'screens/dashboard_items/hr_page.dart': 2,
     'screens/dashboard_items/organisation_page.dart': 7,
     'screens/dashboard_items/partner_page.dart': 3,
     'screens/dashboard_items/plans_page.dart': 1,
@@ -218,7 +217,9 @@ void main() {
         r'|Pages|Announcements|Plans|Reports|Members|Meetings|Finance'
         r'|Documents|Sermons|Missionary|Dashboard'
         // plan/report timeframe + option tokens
-        r'|Weekly|Monthly|Annually|Kifil|Zerf)$');
+        r'|Weekly|Monthly|Annually|Kifil|Zerf'
+        // stored status tokens, shown through tokenLabel()
+        r'|Pending|Approved|Paid|Rejected|Completed|Active|Inactive|OnLeave|Terminated|FullTime|PartTime|InStorage|InUse|Disposed|Retired|Purchased|Rented|Maintenance)$');
     // intl date/time format patterns are code, not display text
     final dateFmt = RegExp(r"^[MdyHhmsajEQZ' ,\-:/.]+$");
     final englishish =
