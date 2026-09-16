@@ -176,8 +176,20 @@ class OrgUnitService {
   /// Deliberately does not carry `active`: editing a hidden unit must not
   /// silently re-activate it — that is the Hide/Show action's job. [create]
   /// adds `active: true` itself.
-  Map<String, dynamic> unitPayload({
+  /// Builds the `/hierarchy` document for a unit.
+  ///
+  /// [level] decides where the leader's name and phone go. For a congregation
+  /// they are NOT written here: /hierarchy is world-readable
+  /// (`allow get, list: if resource.data.level == 'Atbiya'`, no auth clause),
+  /// so a parish leader's phone number in this document is readable by anyone
+  /// on the internet. They go into `atbiyaPrivate.contact` instead, which is
+  /// where the web keeps them and where MyAtbiya reads them from. Every other
+  /// level is an office rather than a person's home congregation and its
+  /// document is not publicly readable, so the fields stay.
+  /// Pure: static so it can be checked without a Firebase app.
+  static Map<String, dynamic> unitPayload({
     required String name,
+    required String level,
     String? nameAmharic,
     String? parentId,
     String? leaderName,
@@ -190,14 +202,28 @@ class OrgUnitService {
         'name': name.trim(),
         'nameAmharic': (nameAmharic ?? '').trim(),
         'parentId': (parentId ?? '').isEmpty ? null : parentId,
-        'leaderName': (leaderName ?? '').trim(),
-        'leaderPhone': (leaderPhone ?? '').trim(),
+        if (level != 'Atbiya') 'leaderName': (leaderName ?? '').trim(),
+        if (level != 'Atbiya') 'leaderPhone': (leaderPhone ?? '').trim(),
         'location': (location ?? '').trim(),
         'description': (description ?? '').trim(),
         'foundedAt': (foundedAt ?? '').trim(),
       };
 
-  Future<void> create(String level, Map<String, dynamic> data) async {
+  /// The contact block for a congregation, for [unitPayload]'s counterpart.
+  static Map<String, dynamic> atbiyaContact({
+    String? leaderName,
+    String? leaderPhone,
+  }) =>
+      {
+        'contact': {
+          'nameEn': (leaderName ?? '').trim(),
+          'phone': (leaderPhone ?? '').trim(),
+        }
+      };
+
+  /// Returns the new document's id, so a congregation's private contact
+  /// block can be written against it straight after.
+  Future<String> create(String level, Map<String, dynamic> data) async {
     final ref = await _db.collection('hierarchy').add({
       ...data,
       'level': level,
@@ -211,6 +237,7 @@ class OrgUnitService {
       targetId: ref.id,
       description: 'Created $level ${data['name'] ?? ''}'.trim(),
     );
+    return ref.id;
   }
 
   /// The parish fields that must not live in `/hierarchy`.

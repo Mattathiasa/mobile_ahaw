@@ -436,7 +436,8 @@ class _OrgUnitCard extends StatelessWidget {
             ],
           ),
           if ((unit.location?.isNotEmpty ?? false) ||
-              (unit.leaderName?.isNotEmpty ?? false)) ...[
+              (unit.level != 'Atbiya' &&
+                  (unit.leaderName?.isNotEmpty ?? false))) ...[
             const SizedBox(height: 12),
             Wrap(
               spacing: 14,
@@ -453,7 +454,11 @@ class _OrgUnitCard extends StatelessWidget {
                             color:
                                 isDark ? Colors.white60 : Colors.black54)),
                   ]),
-                if (unit.leaderName?.isNotEmpty ?? false)
+                // Not shown for a congregation: its leader belongs to the
+                // private record, and anything on the public document is a
+                // legacy value this app no longer writes.
+                if (unit.level != 'Atbiya' &&
+                    (unit.leaderName?.isNotEmpty ?? false))
                   Row(mainAxisSize: MainAxisSize.min, children: [
                     const Icon(Icons.person_outline,
                         size: 14, color: AppColors.primary),
@@ -532,6 +537,24 @@ class _UnitFormSheetState extends State<_UnitFormSheet> {
     _desc = TextEditingController(text: e?.description);
     _founded = TextEditingController(text: e?.foundedAt);
     _parentId = e?.parentId;
+    // A congregation's leader lives in atbiyaPrivate.contact, not on the
+    // public document, so it has to be fetched before the form can show it —
+    // otherwise saving would overwrite it with an empty box.
+    if (e != null && widget.level == 'Atbiya') _loadContact(e.id);
+  }
+
+  Future<void> _loadContact(String id) async {
+    final private = await widget.org.getAtbiyaPrivate(id);
+    final contact = (private['contact'] as Map?) ?? const {};
+    if (!mounted) return;
+    setState(() {
+      // Legacy records still carry the leader on the public document; prefer
+      // the private block once it exists.
+      final name = (contact['nameEn'] as String?) ?? '';
+      final phone = (contact['phone'] as String?) ?? '';
+      if (name.isNotEmpty) _leader.text = name;
+      if (phone.isNotEmpty) _leaderPhone.text = phone;
+    });
   }
 
   @override
@@ -557,8 +580,9 @@ class _UnitFormSheetState extends State<_UnitFormSheet> {
     }
     setState(() { _saving = true; _error = null; });
     try {
-      final data = widget.org.unitPayload(
+      final data = OrgUnitService.unitPayload(
         name: _name.text,
+        level: widget.level,
         nameAmharic: _nameAm.text,
         parentId: _parentId,
         leaderName: _leader.text,
@@ -567,13 +591,30 @@ class _UnitFormSheetState extends State<_UnitFormSheet> {
         description: _desc.text,
         foundedAt: _founded.text,
       );
+      // A congregation's leader details belong in atbiyaPrivate, not in the
+      // world-readable /hierarchy document — see unitPayload.
+      final isAtbiya = widget.level == 'Atbiya';
       if (widget.existing == null) {
-        await widget.org.create(widget.level, data);
+        final id = await widget.org.create(widget.level, data);
+        if (isAtbiya) {
+          await widget.org.updateAtbiya(
+              id,
+              OrgUnitService.atbiyaContact(
+                  leaderName: _leader.text, leaderPhone: _leaderPhone.text));
+        }
       } else {
         // level never changes; parentId only when the level allows one.
         final payload = {...data};
         if (!_needsParent) payload.remove('parentId');
-        await widget.org.update(widget.existing!.id, payload);
+        if (isAtbiya) {
+          await widget.org.updateAtbiya(widget.existing!.id, {
+            ...payload,
+            ...OrgUnitService.atbiyaContact(
+                leaderName: _leader.text, leaderPhone: _leaderPhone.text),
+          });
+        } else {
+          await widget.org.update(widget.existing!.id, payload);
+        }
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {

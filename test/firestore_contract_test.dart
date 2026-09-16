@@ -91,6 +91,32 @@ void main() {
           containsAll(<String>['bankAccounts', 'contact', 'lat', 'lng']));
       expect(OrgUnitService.atbiyaPrivateKeys.length, 4);
     });
+
+    test('a congregation payload carries no leader details', () {
+      // privateParishKeys() does not list leaderName/leaderPhone, so the rule
+      // would ALLOW them onto the public document. They are a parish leader's
+      // name and phone number, and that document is world-readable, so this
+      // app stops sending them for a congregation and routes them into
+      // contact instead. Every other level is an office, not a person, and its
+      // document is not publicly readable.
+      final parish = OrgUnitService.unitPayload(
+          name: 'St Mary', level: 'Atbiya',
+          leaderName: 'Abebe', leaderPhone: '+251911');
+      expect(parish.containsKey('leaderName'), isFalse);
+      expect(parish.containsKey('leaderPhone'), isFalse);
+
+      final office = OrgUnitService.unitPayload(
+          name: 'Zone 1', level: 'Zone',
+          leaderName: 'Abebe', leaderPhone: '+251911');
+      expect(office['leaderName'], 'Abebe');
+      expect(office['leaderPhone'], '+251911');
+
+      // And the contact block is shaped the way the web's AtbiyaContact is.
+      final contact = OrgUnitService.atbiyaContact(
+          leaderName: 'Abebe', leaderPhone: '+251911')['contact'] as Map;
+      expect(contact['nameEn'], 'Abebe');
+      expect(contact['phone'], '+251911');
+    });
   });
 
   group('suggestions', () {
