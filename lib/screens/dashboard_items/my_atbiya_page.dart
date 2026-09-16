@@ -8,9 +8,11 @@ import '../../services/permission_service.dart';
 import '../../services/role_registry_service.dart';
 import '../../services/member_service.dart';
 import '../../services/membership_requests_service.dart';
+import '../../services/org_unit_service.dart';
 import '../../services/localization_service.dart';
 import '../../widgets/dashboard/dashboard_scaffold.dart';
 import '../../theme/app_colors.dart';
+import 'announcements_page.dart' show buildLabel, buildTextField, FormSheet;
 import 'membership_requests_page.dart';
 import 'mahderat_manager_page.dart';
 
@@ -35,6 +37,13 @@ class _MyAtbiyaPageState extends State<MyAtbiyaPage>
   int? _pendingCount;
   bool _loading = true;
 
+  final _org = OrgUnitService();
+  OrgUnit? _parish;
+  Map<String, dynamic> _parishPrivate = const {};
+  bool _detailsLoading = true;
+  bool _savingDetails = false;
+  String? _detailsError;
+
   late final TabController _tabs;
   final _searchCtrl = TextEditingController();
   String _search = '';
@@ -45,6 +54,32 @@ class _MyAtbiyaPageState extends State<MyAtbiyaPage>
     super.initState();
     _tabs = TabController(length: 4, vsync: this);
     _loadCounts();
+    _loadParish();
+  }
+
+  /// Reads both halves of the congregation record — the public document and,
+  /// where the reader is allowed it, the private one.
+  Future<void> _loadParish() async {
+    final id =
+        Provider.of<AuthService>(context, listen: false).userModel?.atbiyaId ??
+            '';
+    if (id.isEmpty) {
+      if (mounted) setState(() => _detailsLoading = false);
+      return;
+    }
+    try {
+      final unit = await _org.getById(id);
+      final private = await _org.getAtbiyaPrivate(id);
+      if (mounted) {
+        setState(() {
+          _parish = unit;
+          _parishPrivate = private;
+          _detailsLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _detailsLoading = false);
+    }
   }
 
   @override
@@ -337,14 +372,237 @@ class _MyAtbiyaPageState extends State<MyAtbiyaPage>
     );
   }
 
-  /// Read-only for now. The parish record spans two collections — the public
-  /// fields in `hierarchy`, and `contact`/`bankAccounts`/`lat`/`lng` in
-  /// `atbiyaPrivate`, because /hierarchy is readable by anonymous visitors and
-  /// firestore.rules refuses any hierarchy write that touches those keys. An
-  /// editor has to write both, so it is deliberately not bolted on here.
+  /// The congregation record, across both of its documents.
+  ///
+  /// The public fields live in `hierarchy`; contact, bankAccounts, lat and lng
+  /// live in `atbiyaPrivate`, because /hierarchy is readable by anonymous
+  /// visitors so the sign-up dropdown works without an account. Saving goes
+  /// through OrgUnitService.updateAtbiya, which splits the payload and writes
+  /// both in one batch — sending a private key to /hierarchy is refused by the
+  /// rules, and would publish a parish leader's phone number if it were not.
   Widget _detailsTab(bool isDark) {
-    return _notice(loc.t('admin.tabDetails'),
-        loc.t('admin.detailsPublicNote'), Icons.church_outlined, isDark);
+    if (_detailsLoading) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    }
+    final parish = _parish;
+    if (parish == null) {
+      return _notice(loc.t('admin.congregationLoadFailed'), '',
+          Icons.church_outlined, isDark);
+    }
+
+    final perms = Provider.of<PermissionService>(context, listen: false);
+    final mayEdit = perms.isSuperAdmin ||
+        perms.can('canEditOwnAtbiya') ||
+        perms.can('canManageAtbiyas');
+    final contact = (_parishPrivate['contact'] as Map?) ?? const {};
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      children: [
+        Text(
+          mayEdit
+              ? loc.t('admin.detailsPublicNote')
+              : '${loc.t('admin.detailsPublicNote')} ${loc.t('admin.detailsReadOnly')}',
+          style: GoogleFonts.notoSansEthiopic(
+              fontSize: 11, color: Colors.grey, height: 1.5),
+        ),
+        const SizedBox(height: 14),
+        if (_detailsError != null) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: AppColors.sacredRed.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(_detailsError!,
+                style: const TextStyle(
+                    fontSize: 12, color: AppColors.sacredRed)),
+          ),
+        ],
+        _detailRow(loc.t('admin.entityName'), parish.name, isDark),
+        _detailRow(loc.t('admin.entityNameAm'), parish.nameAmharic, isDark),
+        _detailRow(loc.t('admin.location'), parish.location, isDark),
+        _detailRow(loc.t('admin.foundedAt'), parish.foundedAt, isDark),
+        _detailRow(loc.t('admin.entityDescription'), parish.description, isDark),
+        const SizedBox(height: 18),
+        Row(children: [
+          Expanded(child: Divider(color: AppColors.primary.withValues(alpha: 0.15))),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Icon(Icons.lock_outline,
+                size: 13, color: Colors.grey.withValues(alpha: 0.7)),
+          ),
+          Expanded(child: Divider(color: AppColors.primary.withValues(alpha: 0.15))),
+        ]),
+        const SizedBox(height: 8),
+        Text(loc.t('admin.contactPrivateHint'),
+            style: GoogleFonts.notoSansEthiopic(
+                fontSize: 10, color: Colors.grey, height: 1.5)),
+        const SizedBox(height: 10),
+        _detailRow(loc.t('admin.contactNameEn'), contact['nameEn'] as String?, isDark),
+        _detailRow(loc.t('admin.contactNameAm'), contact['nameAm'] as String?, isDark),
+        _detailRow(loc.t('admin.phone'), contact['phone'] as String?, isDark),
+        _detailRow(loc.t('admin.altPhone'), contact['phone2'] as String?, isDark),
+        _detailRow(loc.t('admin.email'), contact['email'] as String?, isDark),
+        if (mayEdit) ...[
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _savingDetails ? null : () => _editDetails(parish, contact),
+              icon: const Icon(Icons.edit_outlined, size: 16),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              label: Text(loc.t('admin.edit')),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _detailRow(String label, String? value, bool isDark) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(
+            width: 130,
+            child: Text(label.toUpperCase(),
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.6,
+                    color: Colors.grey)),
+          ),
+          Expanded(
+            child: Text(
+              (value ?? '').trim().isEmpty ? loc.t('admin.notSet') : value!,
+              style: GoogleFonts.notoSansEthiopic(
+                  fontSize: 13,
+                  color: (value ?? '').trim().isEmpty
+                      ? Colors.grey
+                      : (isDark ? Colors.white : AppColors.lightText)),
+            ),
+          ),
+        ]),
+      );
+
+  Future<void> _editDetails(OrgUnit parish, Map contact) async {
+    final nameCtrl = TextEditingController(text: parish.name);
+    final nameAmCtrl = TextEditingController(text: parish.nameAmharic ?? '');
+    final locationCtrl = TextEditingController(text: parish.location ?? '');
+    final foundedCtrl = TextEditingController(text: parish.foundedAt ?? '');
+    final descCtrl = TextEditingController(text: parish.description ?? '');
+    final cNameEnCtrl =
+        TextEditingController(text: (contact['nameEn'] as String?) ?? '');
+    final cNameAmCtrl =
+        TextEditingController(text: (contact['nameAm'] as String?) ?? '');
+    final phoneCtrl =
+        TextEditingController(text: (contact['phone'] as String?) ?? '');
+    final phone2Ctrl =
+        TextEditingController(text: (contact['phone2'] as String?) ?? '');
+    final emailCtrl =
+        TextEditingController(text: (contact['email'] as String?) ?? '');
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return StatefulBuilder(builder: (ctx, setSheet) {
+          return FormSheet(
+            title: loc.t('admin.tabDetails'),
+            subtitle: loc.t('admin.detailsPublicNote'),
+            isDark: isDark,
+            saving: _savingDetails,
+            submitLabel: loc.t('admin.save'),
+            onSubmit: () async {
+              if (nameCtrl.text.trim().isEmpty) {
+                setState(() =>
+                    _detailsError = loc.t('admin.englishNameRequired'));
+                return;
+              }
+              setSheet(() => _savingDetails = true);
+              try {
+                await _org.updateAtbiya(parish.id, {
+                  'name': nameCtrl.text.trim(),
+                  'nameAmharic': nameAmCtrl.text.trim(),
+                  'location': locationCtrl.text.trim(),
+                  'foundedAt': foundedCtrl.text.trim(),
+                  'description': descCtrl.text.trim(),
+                  // Goes to atbiyaPrivate, never to /hierarchy.
+                  'contact': {
+                    'nameEn': cNameEnCtrl.text.trim(),
+                    'nameAm': cNameAmCtrl.text.trim(),
+                    'phone': phoneCtrl.text.trim(),
+                    'phone2': phone2Ctrl.text.trim(),
+                    'email': emailCtrl.text.trim(),
+                  },
+                });
+                if (ctx.mounted) Navigator.pop(ctx, true);
+              } catch (e) {
+                final denied = e.toString().contains('permission-denied');
+                setState(() => _detailsError = denied
+                    ? loc.t('admin.permissionDenied')
+                    : loc.t('admin.congregationSaveFailed'));
+                if (ctx.mounted) Navigator.pop(ctx, false);
+              } finally {
+                if (ctx.mounted) setSheet(() => _savingDetails = false);
+              }
+            },
+            children: [
+              buildLabel('${loc.t('admin.entityName')} *', isDark),
+              buildTextField(nameCtrl, '', isDark),
+              const SizedBox(height: 14),
+              buildLabel(loc.t('admin.entityNameAm'), isDark),
+              buildTextField(nameAmCtrl, '', isDark),
+              const SizedBox(height: 14),
+              buildLabel(loc.t('admin.location'), isDark),
+              buildTextField(locationCtrl, '', isDark),
+              const SizedBox(height: 14),
+              buildLabel(loc.t('admin.foundedAt'), isDark),
+              buildTextField(foundedCtrl, '', isDark),
+              const SizedBox(height: 14),
+              buildLabel(loc.t('admin.entityDescription'), isDark),
+              buildTextField(descCtrl, '', isDark, maxLines: 3),
+              const SizedBox(height: 18),
+              buildLabel(loc.t('admin.contactPrivateHint'), isDark),
+              const SizedBox(height: 8),
+              buildLabel(loc.t('admin.contactNameEn'), isDark),
+              buildTextField(cNameEnCtrl, '', isDark),
+              const SizedBox(height: 14),
+              buildLabel(loc.t('admin.contactNameAm'), isDark),
+              buildTextField(cNameAmCtrl, '', isDark),
+              const SizedBox(height: 14),
+              buildLabel(loc.t('admin.phone'), isDark),
+              buildTextField(phoneCtrl, '', isDark),
+              const SizedBox(height: 14),
+              buildLabel(loc.t('admin.altPhone'), isDark),
+              buildTextField(phone2Ctrl, '', isDark),
+              const SizedBox(height: 14),
+              buildLabel(loc.t('admin.email'), isDark),
+              buildTextField(emailCtrl, '', isDark),
+            ],
+          );
+        });
+      },
+    );
+
+    if (saved == true) {
+      setState(() => _detailsError = null);
+      await _loadParish();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(loc.t('admin.congregationSaved'))));
+      }
+    }
   }
 
   Widget _notice(String title, String body, IconData icon, bool isDark) =>

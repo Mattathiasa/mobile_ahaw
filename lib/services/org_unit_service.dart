@@ -213,6 +213,66 @@ class OrgUnitService {
     );
   }
 
+  /// The parish fields that must not live in `/hierarchy`.
+  ///
+  /// `allow get, list: if resource.data.level == 'Atbiya'` carries no auth
+  /// condition, so every congregation document is readable by anyone on the
+  /// internet — that is deliberate, it is what makes the public sign-up
+  /// dropdown work without an account. It is also why the web moved the
+  /// leader's name and phone, the bank accounts and the map pin out into
+  /// `atbiyaPrivate`, and why firestore.rules refuses a hierarchy write that
+  /// touches any of them.
+  static const atbiyaPrivateKeys = ['bankAccounts', 'contact', 'lat', 'lng'];
+
+  /// Writes a congregation across both of its documents, mirroring
+  /// `updateAtbiya` in the web's src/services/hierarchy.ts.
+  ///
+  /// The private half is merged rather than set, so an edit that touches only
+  /// the contact block does not blank the bank accounts.
+  Future<void> updateAtbiya(String id, Map<String, dynamic> data) async {
+    final publicPart = <String, dynamic>{};
+    final privatePart = <String, dynamic>{};
+    data.forEach((k, v) {
+      if (atbiyaPrivateKeys.contains(k)) {
+        if (v != null) privatePart[k] = v;
+      } else {
+        publicPart[k] = v;
+      }
+    });
+
+    final batch = _db.batch();
+    batch.update(_db.collection('hierarchy').doc(id), {
+      ...publicPart,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    if (privatePart.isNotEmpty) {
+      batch.set(
+        _db.collection('atbiyaPrivate').doc(id),
+        {...privatePart, 'updatedAt': FieldValue.serverTimestamp()},
+        SetOptions(merge: true),
+      );
+    }
+    await batch.commit();
+
+    await AuditLogService.dataChange(
+      action: 'update',
+      targetType: 'hierarchy',
+      targetId: id,
+      description: 'Updated parish ${data['name'] ?? id}',
+    );
+  }
+
+  /// The private half of a congregation record. Returns an empty map when the
+  /// caller may not read it, so a form renders blank rather than failing.
+  Future<Map<String, dynamic>> getAtbiyaPrivate(String id) async {
+    try {
+      final snap = await _db.collection('atbiyaPrivate').doc(id).get();
+      return snap.data() ?? const {};
+    } catch (_) {
+      return const {};
+    }
+  }
+
   Future<void> update(String id, Map<String, dynamic> data) async {
     await _db.collection('hierarchy').doc(id).update({
       ...data,

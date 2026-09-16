@@ -432,6 +432,9 @@ const Map<String, Map<String, String>> kTranslations = {
     'finance.changeStatus': 'Change status',
     'finance.reportTypeQuarterly': 'Quarterly',
     'finance.reportTypeCustom': 'Custom',
+    // Self-authored: the web shows the public/private split through section
+    // headings rather than a sentence, so there is no entry to copy.
+    'admin.contactPrivateHint': 'Kept private to your congregation and head office. The fields above appear on the public sign-up form.',
     'admin.latitude': 'Latitude',
     // Self-authored: the web places pins by tapping a Leaflet map, so it has
     // no typed-coordinate validation message to copy.
@@ -3411,6 +3414,7 @@ const Map<String, Map<String, String>> kTranslations = {
     'finance.changeStatus': 'ሁኔታ ቀይር',
     'finance.reportTypeQuarterly': 'ሩብ ዓመታዊ',
     'finance.reportTypeCustom': 'ብጁ',
+    'admin.contactPrivateHint': 'ለጉባኤዎና ለጠቅላይ ጽሕፈት ቤቱ ብቻ የሚታይ ነው። ከላይ ያሉት መስኮች በሕዝባዊ የምዝገባ ቅጽ ላይ ይታያሉ።',
     'admin.latitude': 'ኬክሮስ',
     'admin.invalidCoords': 'ትክክለኛ ኬክሮስና ኬንትሮስ ያስገቡ።',
     'admin.longitude': 'ኬንትሮስ',

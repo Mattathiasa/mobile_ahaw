@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mobile_ahaw/models/meeting_model.dart';
+import 'package:mobile_ahaw/services/org_unit_service.dart';
 import 'package:mobile_ahaw/services/suggestion_service.dart';
 
 /// These pin client-side behaviour to what firestore.rules actually enforces.
@@ -67,6 +68,28 @@ void main() {
       expect(legacy.canBeEditedBy('uid-1', isAdmin: true), isTrue);
       // And an empty uid must never match an empty createdBy.
       expect(legacy.canBeEditedBy('', isAdmin: false), isFalse);
+    });
+  });
+
+  group('parish records', () {
+    // allow get, list: if resource.data.level == 'Atbiya'   <- no auth clause
+    //
+    // Every congregation document is world-readable, which is what the public
+    // sign-up dropdown needs. The consequence is that these four keys must
+    // never reach /hierarchy:
+    //
+    //   function privateParishKeys() {
+    //     return ['bankAccounts', 'contact', 'lat', 'lng'];
+    //   }
+    //   allow update: if !(resource.data.level == 'Atbiya'
+    //                      && changed(privateParishKeys())) && ...
+    //
+    // A write that includes one is refused outright; the danger if it were not
+    // is a parish leader's phone number readable by anyone on the internet.
+    test('the private key list matches the rule', () {
+      expect(OrgUnitService.atbiyaPrivateKeys,
+          containsAll(<String>['bankAccounts', 'contact', 'lat', 'lng']));
+      expect(OrgUnitService.atbiyaPrivateKeys.length, 4);
     });
   });
 
