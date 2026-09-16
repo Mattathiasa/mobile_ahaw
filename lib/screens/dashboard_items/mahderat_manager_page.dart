@@ -24,11 +24,16 @@ class MahderatManagerScreen extends StatefulWidget {
   /// False renders the list read-only.
   final bool canEdit;
 
+  /// True when this sits inside another screen's tab, in which case it renders
+  /// only its body rather than a second Scaffold and app bar.
+  final bool embedded;
+
   const MahderatManagerScreen({
     super.key,
     required this.atbiyaId,
     required this.atbiyaName,
     required this.canEdit,
+    this.embedded = false,
   });
 
   @override
@@ -111,7 +116,27 @@ class _MahderatManagerScreenState extends State<MahderatManagerScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final groups = _groups ?? const [];
+
+    final body = _loading
+        ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+        : _list();
+
+    if (widget.embedded) {
+      return Stack(children: [
+        body,
+        if (widget.canEdit)
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              heroTag: 'mahderat-embedded-add',
+              backgroundColor: AppColors.primary,
+              onPressed: () => _openEditor(),
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
+          ),
+      ]);
+    }
 
     return Scaffold(
       backgroundColor:
@@ -141,9 +166,13 @@ class _MahderatManagerScreenState extends State<MahderatManagerScreen> {
               onPressed: () => _openEditor(),
             )
           : null,
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-          : ListView(
+      body: body,
+    );
+  }
+
+  Widget _list() {
+    final groups = _groups ?? const [];
+    return ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 if (_error != null)
@@ -193,7 +222,6 @@ class _MahderatManagerScreenState extends State<MahderatManagerScreen> {
                     if (i < groups.length - 1) const SizedBox(height: 10),
                   ],
               ],
-            ),
     );
   }
 }

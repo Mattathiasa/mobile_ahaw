@@ -15,7 +15,12 @@ import '../../theme/app_colors.dart';
 /// Approve/reject the pending self-signups created by the Signup flow.
 /// Head-office approvers see every parish; a parish approver sees only its own.
 class MembershipRequestsPage extends StatefulWidget {
-  const MembershipRequestsPage({super.key});
+  /// True when this sits inside another screen's tab, in which case it renders
+  /// only its body — a DashboardScaffold within a tab would stack a second
+  /// app bar under the first.
+  final bool embedded;
+
+  const MembershipRequestsPage({super.key, this.embedded = false});
 
   @override
   State<MembershipRequestsPage> createState() => _MembershipRequestsPageState();
@@ -67,16 +72,7 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
     context.watch<LocalizationService>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return DashboardScaffold(
-      titleKey: 'admin.requestsTitle',
-      moduleKey: 'membershipRequests',
-      constrainWidth: false,
-      actions: [
-        IconButton(
-            onPressed: _reload,
-            icon: const Icon(Icons.refresh, color: AppColors.primary)),
-      ],
-      body: FutureBuilder<List<Map<String, dynamic>>>(
+    final body = FutureBuilder<List<Map<String, dynamic>>>(
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -111,7 +107,19 @@ class _MembershipRequestsPageState extends State<MembershipRequestsPage> {
             ),
           );
         },
-      ),
+    );
+
+    if (widget.embedded) return body;
+    return DashboardScaffold(
+      titleKey: 'admin.requestsTitle',
+      moduleKey: 'membershipRequests',
+      constrainWidth: false,
+      actions: [
+        IconButton(
+            onPressed: _reload,
+            icon: const Icon(Icons.refresh, color: AppColors.primary)),
+      ],
+      body: body,
     );
   }
 
