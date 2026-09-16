@@ -430,6 +430,8 @@ const Map<String, Map<String, String>> kTranslations = {
     'finance.recordPayment': 'Record payment',
     'finance.paymentAmount': 'Payment amount (ETB)',
     'finance.changeStatus': 'Change status',
+    'finance.reportTypeQuarterly': 'Quarterly',
+    'finance.reportTypeCustom': 'Custom',
     'admin.latitude': 'Latitude',
     // Self-authored: the web places pins by tapping a Leaflet map, so it has
     // no typed-coordinate validation message to copy.
@@ -3407,6 +3409,8 @@ const Map<String, Map<String, String>> kTranslations = {
     'finance.recordPayment': 'ክፍያ መዝግብ',
     'finance.paymentAmount': 'የክፍያ መጠን (ብር)',
     'finance.changeStatus': 'ሁኔታ ቀይር',
+    'finance.reportTypeQuarterly': 'ሩብ ዓመታዊ',
+    'finance.reportTypeCustom': 'ብጁ',
     'admin.latitude': 'ኬክሮስ',
     'admin.invalidCoords': 'ትክክለኛ ኬክሮስና ኬንትሮስ ያስገቡ።',
     'admin.longitude': 'ኬንትሮስ',

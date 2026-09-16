@@ -219,7 +219,7 @@ void main() {
         // plan/report timeframe + option tokens
         r'|Weekly|Monthly|Annually|Kifil|Zerf'
         // stored status tokens, shown through tokenLabel()
-        r'|Pending|Approved|Paid|Rejected|Completed|Active|Inactive|OnLeave|Terminated|FullTime|PartTime|InStorage|InUse|Disposed|Retired|Purchased|Rented|Maintenance)$');
+        r'|Pending|Approved|Paid|Rejected|Completed|Active|Inactive|OnLeave|Terminated|FullTime|PartTime|InStorage|InUse|Disposed|Retired|Purchased|Rented|Maintenance|Quarterly|Yearly|Custom)$');
     // intl date/time format patterns are code, not display text
     final dateFmt = RegExp(r"^[MdyHhmsajEQZ' ,\-:/.]+$");
     final englishish =

@@ -37,6 +37,11 @@ const _financeTokenKeys = {
   'Approved': 'status.voucherStatusApproved',
   'Paid': 'status.voucherStatusPaid',
   'Rejected': 'status.voucherStatusRejected',
+  // Financial report types.
+  'Monthly': 'pages.monthly',
+  'Quarterly': 'finance.reportTypeQuarterly',
+  'Yearly': 'pages.annually',
+  'Custom': 'finance.reportTypeCustom',
 };
 
 class _FinancePageState extends State<FinancePage>
@@ -191,8 +196,14 @@ class _FinancePageState extends State<FinancePage>
                         _buildTransactionsList(isDark,
                             perms.can('canAddTransaction') ||
                                 perms.isSuperAdmin),
-                        _buildBudgetsList(isDark),
-                        _buildReportsList(isDark),
+                        _buildBudgetsList(
+                            isDark,
+                            perms.can('canAddTransaction') ||
+                                perms.isSuperAdmin),
+                        _buildReportsList(
+                            isDark,
+                            perms.can('canAddTransaction') ||
+                                perms.isSuperAdmin),
                         _buildTithesList(isDark, perms.can('canAddTransaction') || perms.isSuperAdmin),
                         _buildPledgesList(isDark, perms.can('canAddTransaction') || perms.isSuperAdmin),
                         _buildVouchersList(isDark, perms.can('canAddTransaction') || perms.isSuperAdmin),
@@ -338,82 +349,254 @@ class _FinancePageState extends State<FinancePage>
     );
   }
 
-  Widget _buildBudgetsList(bool isDark) {
-    if (_budgets.isEmpty) return _emptyState(loc.t('finance.noBudgets'), FontAwesomeIcons.fileInvoiceDollar);
+  // ── Budgets ─────────────────────────────────────────────────────────────────
+
+  /// Create or amend a monthly budget. Field names match the web's
+  /// CreateBudgetDialog payload exactly — month, year, plannedIncome,
+  /// plannedExpenses, notes, userId — so a budget written here reads correctly
+  /// in the web's table and vice versa. (The web's MonthlyBudgetInput type
+  /// disagrees with its own dialog, which sends plannedIncome/plannedExpenses;
+  /// the dialog is what actually runs, so that is what this follows.)
+  void _showBudgetSheet(bool isDark, {Map<String, dynamic>? existing}) {
+    final isEditing = existing != null;
+    final now = DateTime.now();
+    final monthCtrl = TextEditingController(
+        text: '${(existing?['month'] as num?)?.toInt() ?? now.month}');
+    final yearCtrl = TextEditingController(
+        text: '${(existing?['year'] as num?)?.toInt() ?? now.year}');
+    final incomeCtrl = TextEditingController(
+        text: existing == null ? '' : '${existing['plannedIncome'] ?? ''}');
+    final expenseCtrl = TextEditingController(
+        text: existing == null ? '' : '${existing['plannedExpenses'] ?? ''}');
+    final notesCtrl =
+        TextEditingController(text: existing?['notes']?.toString() ?? '');
+
+    _showFinanceFormSheet(
+      isDark: isDark,
+      title: isEditing
+          ? loc.t('common.edit')
+          : loc.t('finance.createMonthlyBudget'),
+      fields: (setSheet) => [
+        _sheetField(monthCtrl, loc.t('finance.monthRequired'),
+            Icons.calendar_month_outlined, isDark, isNumber: true),
+        const SizedBox(height: 14),
+        _sheetField(yearCtrl, loc.t('finance.yearRequired'),
+            Icons.event_outlined, isDark, isNumber: true),
+        const SizedBox(height: 14),
+        _sheetField(incomeCtrl, loc.t('finance.plannedIncomeRequired'),
+            Icons.trending_up, isDark, isNumber: true),
+        const SizedBox(height: 14),
+        _sheetField(expenseCtrl, loc.t('finance.plannedExpensesRequired'),
+            Icons.trending_down, isDark, isNumber: true),
+        const SizedBox(height: 14),
+        _sheetField(notesCtrl, loc.t('finance.notesOptional'),
+            Icons.notes_outlined, isDark),
+      ],
+      onSave: () async {
+        final month = int.tryParse(monthCtrl.text.trim());
+        final year = int.tryParse(yearCtrl.text.trim());
+        if (month == null || month < 1 || month > 13 || year == null) {
+          return false;
+        }
+        final me =
+            Provider.of<AuthService>(context, listen: false).userModel;
+        final fields = {
+          'month': month,
+          'year': year,
+          'plannedIncome': double.tryParse(incomeCtrl.text.trim()) ?? 0,
+          'plannedExpenses': double.tryParse(expenseCtrl.text.trim()) ?? 0,
+          'notes': notesCtrl.text.trim(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+        if (isEditing) {
+          final id = existing['id'] as String;
+          await _db.collection('finance_budgets').doc(id).update(fields);
+          _audit('update', 'finance_budgets', id,
+              'Amended budget for $month/$year');
+        } else {
+          final ref = await _db.collection('finance_budgets').add({
+            ...fields,
+            'userId': me?.id,
+            'status': 'Draft',
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+          _audit('create', 'finance_budgets', ref.id,
+              'Created budget for $month/$year');
+        }
+        return true;
+      },
+    );
+  }
+
+  // ── Financial reports ───────────────────────────────────────────────────────
+
+  /// Mirrors the web's CreateFinancialReportDialog payload.
+  void _showReportSheet(bool isDark) {
+    final now = DateTime.now();
+    final titleCtrl = TextEditingController();
+    final titleAmCtrl = TextEditingController();
+    final recipientCtrl = TextEditingController();
+    String reportType = 'Monthly';
+    final startCtrl = TextEditingController(
+        text: DateTime(now.year, now.month, 1).toIso8601String().split('T').first);
+    final endCtrl = TextEditingController(text:
+        DateTime(now.year, now.month + 1, 0).toIso8601String().split('T').first);
+
+    _showFinanceFormSheet(
+      isDark: isDark,
+      title: loc.t('finance.generateFinancialReport'),
+      fields: (setSheet) => [
+        _sheetField(titleCtrl, loc.t('finance.reportTitleEn'),
+            Icons.title_outlined, isDark),
+        const SizedBox(height: 14),
+        _sheetField(titleAmCtrl, loc.t('finance.reportTitleAm'),
+            Icons.translate_outlined, isDark),
+        const SizedBox(height: 14),
+        _dropdown(loc.t('finance.reportTypeRequired'), reportType,
+            const ['Monthly', 'Quarterly', 'Yearly', 'Custom'],
+            (v) => setSheet(() => reportType = v)),
+        const SizedBox(height: 14),
+        _sheetField(startCtrl, loc.t('finance.dateEthiopian'),
+            Icons.date_range_outlined, isDark),
+        const SizedBox(height: 14),
+        _sheetField(endCtrl, loc.t('finance.dueDateEthiopian'),
+            Icons.event_available_outlined, isDark),
+        const SizedBox(height: 14),
+        _sheetField(recipientCtrl, loc.t('finance.recipientInfoOptional'),
+            Icons.person_outline, isDark),
+      ],
+      onSave: () async {
+        if (titleCtrl.text.trim().isEmpty) return false;
+        final me =
+            Provider.of<AuthService>(context, listen: false).userModel;
+        final ref = await _db.collection('finance_reports').add({
+          'title': titleCtrl.text.trim(),
+          'titleAmharic': titleAmCtrl.text.trim(),
+          'reportType': reportType,
+          'startDate': startCtrl.text.trim(),
+          'endDate': endCtrl.text.trim(),
+          'recipientInfo': recipientCtrl.text.trim(),
+          'generatedBy': me?.id,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        _audit('create', 'finance_reports', ref.id,
+            'Generated financial report "${titleCtrl.text.trim()}"');
+        return true;
+      },
+    );
+  }
+
+  Widget _buildBudgetsList(bool isDark, bool canManage) {
+    if (_budgets.isEmpty && !canManage) {
+      return _emptyState(
+          loc.t('finance.noBudgets'), FontAwesomeIcons.fileInvoiceDollar);
+    }
+    if (canManage) {
+      return _listWithAdd(
+        isDark: isDark,
+        canAdd: true,
+        addLabel: loc.t('finance.createBudget'),
+        onAdd: () => _showBudgetSheet(isDark),
+        empty: _budgets.isEmpty,
+        emptyMsg: loc.t('finance.noBudgets'),
+        emptyIcon: FontAwesomeIcons.fileInvoiceDollar,
+        items: _budgets,
+        itemBuilder: (b) => _budgetCard(b, isDark, canManage),
+      );
+    }
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
       itemCount: _budgets.length,
-      itemBuilder: (context, i) {
-        final b = _budgets[i];
-        final month = (b['month'] as num?)?.toInt() ?? 1;
-        final year = (b['year'] as num?)?.toInt() ?? DateTime.now().year;
-        final plannedInc = (b['plannedIncome'] as num?)?.toDouble() ?? 0;
-        final plannedExp = (b['plannedExpenses'] as num?)?.toDouble() ?? 0;
-        final status = b['status'] as String? ?? 'Draft';
-
-        // Calculate actuals from transactions
-        final monthTx = _transactions.where((t) {
-          final dateStr = t['date'] as String?;
-          if (dateStr == null) return false;
-          try {
-            final d = DateTime.parse(dateStr);
-            return d.month == month && d.year == year;
-          } catch (_) { return false; }
-        }).toList();
-        final actualInc = monthTx
-            .where((t) => _incomeTypes.contains(t['type']))
-            .fold(0.0, (s, t) => s + ((t['amount'] as num?)?.toDouble() ?? 0));
-        final actualExp = monthTx
-            .where((t) => t['type'] == 'Expense')
-            .fold(0.0, (s, t) => s + ((t['amount'] as num?)?.toDouble() ?? 0));
-        final variance = actualInc - plannedInc;
-        final remainder = actualInc - actualExp;
-
-        final statusColor = status == 'Approved'
-            ? const Color(0xFF10B981)
-            : status == 'Rejected'
-                ? AppColors.sacredRed
-                : AppColors.divineGold;
-
-        final monthName = ['Jan','Feb','Mar','Apr','May','Jun',
-            'Jul','Aug','Sep','Oct','Nov','Dec'][month - 1];
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
-          ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('$monthName $year',
-                  style: GoogleFonts.notoSansEthiopic(
-                      fontSize: 16, fontWeight: FontWeight.w900,
-                      color: isDark ? Colors.white : AppColors.lightText)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8)),
-                child: Text(status,
-                    style: GoogleFonts.notoSansEthiopic(
-                        fontSize: 9, fontWeight: FontWeight.w900, color: statusColor)),
-              ),
-            ]),
-            const SizedBox(height: 14),
-            _budgetRow(loc.t('finance.colPlannedIncome'), plannedInc, AppColors.primary, isDark),
-            _budgetRow(loc.t('finance.actualIncome'), actualInc, const Color(0xFF10B981), isDark),
-            _budgetRow(loc.t('finance.variance'), variance, variance >= 0 ? const Color(0xFF10B981) : AppColors.sacredRed, isDark, prefix: variance >= 0 ? '+' : ''),
-            _budgetRow(loc.t('finance.colPlannedExpenses'), plannedExp, Colors.orange, isDark),
-            _budgetRow(loc.t('finance.actualExpenses'), actualExp, AppColors.sacredRed, isDark),
-            Divider(color: AppColors.primary.withValues(alpha: 0.08)),
-            _budgetRow(loc.t('finance.netRemainder'), remainder, remainder >= 0 ? const Color(0xFF10B981) : AppColors.sacredRed, isDark, bold: true),
-          ]),
-        ).animate().fadeIn(delay: Duration(milliseconds: i * 60)).moveY(begin: 10);
-      },
+      itemBuilder: (context, i) =>
+          _budgetCard(_budgets[i], isDark, canManage),
     );
+  }
+
+  Widget _budgetCard(
+      Map<String, dynamic> b, bool isDark, bool canManage) {
+      final month = (b['month'] as num?)?.toInt() ?? 1;
+      final year = (b['year'] as num?)?.toInt() ?? DateTime.now().year;
+      final plannedInc = (b['plannedIncome'] as num?)?.toDouble() ?? 0;
+      final plannedExp = (b['plannedExpenses'] as num?)?.toDouble() ?? 0;
+      final status = b['status'] as String? ?? 'Draft';
+
+      // Calculate actuals from transactions
+      final monthTx = _transactions.where((t) {
+        final dateStr = t['date'] as String?;
+        if (dateStr == null) return false;
+        try {
+          final d = DateTime.parse(dateStr);
+          return d.month == month && d.year == year;
+        } catch (_) { return false; }
+      }).toList();
+      final actualInc = monthTx
+          .where((t) => _incomeTypes.contains(t['type']))
+          .fold(0.0, (s, t) => s + ((t['amount'] as num?)?.toDouble() ?? 0));
+      final actualExp = monthTx
+          .where((t) => t['type'] == 'Expense')
+          .fold(0.0, (s, t) => s + ((t['amount'] as num?)?.toDouble() ?? 0));
+      final variance = actualInc - plannedInc;
+      final remainder = actualInc - actualExp;
+
+      final statusColor = status == 'Approved'
+          ? const Color(0xFF10B981)
+          : status == 'Rejected'
+              ? AppColors.sacredRed
+              : AppColors.divineGold;
+
+      final monthName = ['Jan','Feb','Mar','Apr','May','Jun',
+          'Jul','Aug','Sep','Oct','Nov','Dec'][month - 1];
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text('$monthName $year',
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 16, fontWeight: FontWeight.w900,
+                    color: isDark ? Colors.white : AppColors.lightText)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8)),
+              child: Text(tokenLabel(status),
+                  style: GoogleFonts.notoSansEthiopic(
+                      fontSize: 9, fontWeight: FontWeight.w900, color: statusColor)),
+            ),
+            if (canManage) ...[
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                onPressed: () => _showBudgetSheet(isDark, existing: b),
+                icon: const Icon(Icons.edit_outlined,
+                    size: 17, color: AppColors.primary),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                onPressed: () => _confirmDeleteFinance('finance_budgets',
+                    b['id'] as String, '$monthName $year'),
+                icon: const Icon(Icons.delete_outline,
+                    size: 17, color: AppColors.sacredRed),
+              ),
+            ],
+          ]),
+          const SizedBox(height: 14),
+          _budgetRow(loc.t('finance.colPlannedIncome'), plannedInc, AppColors.primary, isDark),
+          _budgetRow(loc.t('finance.actualIncome'), actualInc, const Color(0xFF10B981), isDark),
+          _budgetRow(loc.t('finance.variance'), variance, variance >= 0 ? const Color(0xFF10B981) : AppColors.sacredRed, isDark, prefix: variance >= 0 ? '+' : ''),
+          _budgetRow(loc.t('finance.colPlannedExpenses'), plannedExp, Colors.orange, isDark),
+          _budgetRow(loc.t('finance.actualExpenses'), actualExp, AppColors.sacredRed, isDark),
+          Divider(color: AppColors.primary.withValues(alpha: 0.08)),
+          _budgetRow(loc.t('finance.netRemainder'), remainder, remainder >= 0 ? const Color(0xFF10B981) : AppColors.sacredRed, isDark, bold: true),
+        ]),
+    ).animate().fadeIn().moveY(begin: 10);
   }
 
   Widget _budgetRow(String label, double amount, Color color, bool isDark, {String prefix = '', bool bold = false}) {
@@ -431,65 +614,82 @@ class _FinancePageState extends State<FinancePage>
     );
   }
 
-  Widget _buildReportsList(bool isDark) {
-    if (_reports.isEmpty) return _emptyState(loc.t('finance.noReports'), FontAwesomeIcons.fileInvoice);
+  Widget _buildReportsList(bool isDark, bool canManage) {
+    if (_reports.isEmpty && !canManage) {
+      return _emptyState(
+          loc.t('finance.noReports'), FontAwesomeIcons.fileInvoice);
+    }
+    if (canManage) {
+      return _listWithAdd(
+        isDark: isDark,
+        canAdd: true,
+        addLabel: loc.t('finance.generateReport'),
+        onAdd: () => _showReportSheet(isDark),
+        empty: _reports.isEmpty,
+        emptyMsg: loc.t('finance.noReports'),
+        emptyIcon: FontAwesomeIcons.fileInvoice,
+        items: _reports,
+        itemBuilder: (r) => _reportCard(r, isDark),
+      );
+    }
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
       itemCount: _reports.length,
-      itemBuilder: (context, i) {
-        final r = _reports[i];
-        final totalIncome = (r['totalIncome'] as num?)?.toDouble() ?? 0;
-        final totalExpenses = (r['totalExpenses'] as num?)?.toDouble() ?? 0;
-        final remainder = (r['remainder'] as num?)?.toDouble() ?? (totalIncome - totalExpenses);
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 14),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
-          ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.primary.withValues(alpha: 0.07))),
-              ),
-              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(r['title'] ?? loc.t('finance.financialReport'),
-                      style: GoogleFonts.notoSansEthiopic(
-                          fontSize: 15, fontWeight: FontWeight.w900,
-                          color: isDark ? Colors.white : AppColors.lightText)),
-                  if (r['reportType'] != null)
-                    Text(r['reportType'],
-                        style: GoogleFonts.notoSansEthiopic(
-                            fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold)),
-                ])),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10)),
-                  child: Text(r['period'] ?? '',
-                      style: GoogleFonts.notoSansEthiopic(
-                          fontSize: 9, fontWeight: FontWeight.w900, color: AppColors.primary)),
-                ),
-              ]),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(18),
-              child: Row(children: [
-                Expanded(child: _reportStat(loc.t('finance.income'), totalIncome, const Color(0xFF10B981))),
-                Expanded(child: _reportStat(loc.t('finance.expenses'), totalExpenses, AppColors.sacredRed)),
-                Expanded(child: _reportStat(loc.t('pages.remainder'), remainder,
-                    remainder >= 0 ? const Color(0xFF10B981) : AppColors.sacredRed)),
-              ]),
-            ),
-          ]),
-        ).animate().fadeIn(delay: Duration(milliseconds: i * 80)).moveY(begin: 10);
-      },
+      itemBuilder: (context, i) => _reportCard(_reports[i], isDark),
     );
+  }
+
+  Widget _reportCard(Map<String, dynamic> r, bool isDark) {
+      final totalIncome = (r['totalIncome'] as num?)?.toDouble() ?? 0;
+      final totalExpenses = (r['totalExpenses'] as num?)?.toDouble() ?? 0;
+      final remainder = (r['remainder'] as num?)?.toDouble() ?? (totalIncome - totalExpenses);
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.08)),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.primary.withValues(alpha: 0.07))),
+            ),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(r['title'] ?? loc.t('finance.financialReport'),
+                    style: GoogleFonts.notoSansEthiopic(
+                        fontSize: 15, fontWeight: FontWeight.w900,
+                        color: isDark ? Colors.white : AppColors.lightText)),
+                if (r['reportType'] != null)
+                  Text(r['reportType'],
+                      style: GoogleFonts.notoSansEthiopic(
+                          fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold)),
+              ])),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10)),
+                child: Text(r['period'] ?? '',
+                    style: GoogleFonts.notoSansEthiopic(
+                        fontSize: 9, fontWeight: FontWeight.w900, color: AppColors.primary)),
+              ),
+            ]),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(children: [
+              Expanded(child: _reportStat(loc.t('finance.income'), totalIncome, const Color(0xFF10B981))),
+              Expanded(child: _reportStat(loc.t('finance.expenses'), totalExpenses, AppColors.sacredRed)),
+              Expanded(child: _reportStat(loc.t('pages.remainder'), remainder,
+                  remainder >= 0 ? const Color(0xFF10B981) : AppColors.sacredRed)),
+            ]),
+          ),
+        ]),
+      ).animate().fadeIn().moveY(begin: 10);
   }
 
   Widget _reportStat(String label, double amount, Color color) {
