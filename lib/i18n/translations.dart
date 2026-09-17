@@ -454,6 +454,9 @@ const Map<String, Map<String, String>> kTranslations = {
     'pages.notifiedNobody': 'Posted, but it reached nobody you can see.',
     'pages.notifyFailed': 'Posted, but the notifications could not be sent.',
     'pages.announcementTooLong': 'That announcement is too long. Please shorten it and try again.',
+    'pages.loadMore': 'Load more',
+    'pages.showExpired': 'Show expired',
+    'pages.hideExpired': 'Hide expired',
     'admin.latitude': 'Latitude',
     // Self-authored: the web places pins by tapping a Leaflet map, so it has
     // no typed-coordinate validation message to copy.
@@ -3448,6 +3451,9 @@ const Map<String, Map<String, String>> kTranslations = {
     'pages.notifiedNobody': 'ተለጥፏል፣ ነገር ግን እርስዎ ማየት ወደሚችሉት ማንም አልደረሰም።',
     'pages.notifyFailed': 'ተለጥፏል፣ ነገር ግን ማሳወቂያዎቹን መላክ አልተቻለም።',
     'pages.announcementTooLong': 'ይህ ማስታወቂያ በጣም ረጅም ነው። አሳጥረው እንደገና ይሞክሩ።',
+    'pages.loadMore': 'ተጨማሪ ጫን',
+    'pages.showExpired': 'ጊዜው ያለፈባቸውን አሳይ',
+    'pages.hideExpired': 'ጊዜው ያለፈባቸውን ደብቅ',
     'admin.latitude': 'ኬክሮስ',
     'admin.invalidCoords': 'ትክክለኛ ኬክሮስና ኬንትሮስ ያስገቡ።',
     'admin.longitude': 'ኬንትሮስ',

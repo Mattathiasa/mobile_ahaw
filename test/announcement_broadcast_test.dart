@@ -83,6 +83,38 @@ void main() {
     });
   });
 
+  group('isAnnouncementExpired', () {
+    final now = DateTime.utc(2026, 6, 1, 12);
+
+    test('an announcement with no expiry never expires', () {
+      // This is the case that matters. A Firestore range filter on expiresAt
+      // drops documents that LACK the field, so querying for "not expired"
+      // would hide every permanent announcement — most of them.
+      expect(isAnnouncementExpired(null, now: now), isFalse);
+      expect(isAnnouncementExpired('', now: now), isFalse);
+      expect(isAnnouncementExpired('   ', now: now), isFalse);
+    });
+
+    test('a past expiry is expired, a future one is not', () {
+      expect(
+          isAnnouncementExpired('2026-05-31T12:00:00.000Z', now: now), isTrue);
+      expect(
+          isAnnouncementExpired('2026-06-02T12:00:00.000Z', now: now), isFalse);
+    });
+
+    test('the moment it expires counts as expired', () {
+      expect(
+          isAnnouncementExpired('2026-06-01T12:00:00.000Z', now: now), isTrue);
+    });
+
+    test('an unparseable value never expires', () {
+      // Better to keep showing an announcement than to hide it because
+      // somebody wrote a date the parser does not understand.
+      expect(isAnnouncementExpired('not a date', now: now), isFalse);
+      expect(isAnnouncementExpired(12345, now: now), isFalse);
+    });
+  });
+
   group('chunk', () {
     test('never exceeds the Firestore batch limit', () {
       final items = List.generate(1000, (i) => i);

@@ -31,6 +31,16 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
   final _searchCtrl = TextEditingController();
   String _search = '';
 
+  /// The stream is bounded. It used to listen to the whole collection, so
+  /// every member held a live listener over every announcement ever posted.
+  /// "Load more" raises this rather than paging with a cursor, which keeps the
+  /// live updates the page relies on after a create or delete.
+  int _limit = kAnnouncementPageSize;
+
+  /// Expired announcements are hidden but still reachable, because somebody
+  /// has to be able to find them in order to delete them.
+  bool _showExpired = false;
+
   @override
   void dispose() {
     _searchCtrl.dispose();
@@ -367,6 +377,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
               stream: _db
                   .collection('announcements')
                   .orderBy('createdAt', descending: true)
+                  .limit(_limit)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -376,19 +387,41 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
 
-                final docs = (snapshot.data?.docs ?? []).where((doc) {
-                  if (_search.isEmpty) return true;
+                final loaded = snapshot.data?.docs ?? [];
+                // Search covers what has been loaded, not the whole
+                // collection — a client cannot search a server-side page it
+                // has not read.
+                final docs = loaded.where((doc) {
                   final d = doc.data() as Map<String, dynamic>;
+                  if (!_showExpired && isAnnouncementExpired(d['expiresAt'])) {
+                    return false;
+                  }
+                  if (_search.isEmpty) return true;
                   return (d['title'] ?? '').toString().toLowerCase().contains(_search) ||
                       (d['content'] ?? '').toString().toLowerCase().contains(_search);
                 }).toList();
 
-                if (docs.isEmpty) return _buildEmptyState();
+                final expiredHidden = _showExpired
+                    ? 0
+                    : loaded
+                        .where((doc) => isAnnouncementExpired(
+                            (doc.data() as Map<String, dynamic>)['expiresAt']))
+                        .length;
+                // A full page only MIGHT have more behind it; that is the
+                // usual cost of paging without a count.
+                final mayHaveMore = loaded.length >= _limit;
+
+                if (docs.isEmpty && expiredHidden == 0 && !mayHaveMore) {
+                  return _buildEmptyState();
+                }
 
                 return ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
-                  itemCount: docs.length,
+                  itemCount: docs.length + 1,
                   itemBuilder: (context, index) {
+                    if (index == docs.length) {
+                      return _listFooter(expiredHidden, mayHaveMore);
+                    }
                     final data = docs[index].data() as Map<String, dynamic>;
                     final id = docs[index].id;
                     return _buildCard(context, data, id, index, isDark,
@@ -543,6 +576,37 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
         ],
       ),
     ).animate().fadeIn(delay: (index * 40).ms).slideY(begin: 0.04);
+  }
+
+  /// The expired toggle and "load more", below the last card.
+  Widget _listFooter(int expiredHidden, bool mayHaveMore) {
+    if (expiredHidden == 0 && !_showExpired && !mayHaveMore) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 24),
+      child: Column(children: [
+        if (expiredHidden > 0 || _showExpired)
+          TextButton(
+            onPressed: () => setState(() => _showExpired = !_showExpired),
+            child: Text(
+              _showExpired
+                  ? loc.t('pages.hideExpired')
+                  : '${loc.t('pages.showExpired')} ($expiredHidden)',
+              style: GoogleFonts.notoSansEthiopic(
+                  fontSize: 12, fontWeight: FontWeight.w900),
+            ),
+          ),
+        if (mayHaveMore)
+          OutlinedButton(
+            onPressed: () =>
+                setState(() => _limit += kAnnouncementPageSize),
+            child: Text(loc.t('pages.loadMore'),
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 12, fontWeight: FontWeight.w900)),
+          ),
+      ]),
+    );
   }
 
   Widget _buildEmptyState() => const DashboardEmpty(

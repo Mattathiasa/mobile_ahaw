@@ -51,6 +51,26 @@ class AnnouncementAudience {
       };
 }
 
+/// How many announcements a page holds.
+const int kAnnouncementPageSize = 20;
+
+/// Whether an announcement has passed its expiry.
+///
+/// An absent, blank or unparseable `expiresAt` means it never expires — most
+/// announcements have none, and treating those as expired would empty the
+/// page.
+///
+/// Deliberately NOT a Firestore range filter. `where('expiresAt', isGreaterThan
+/// : now)` drops every document that lacks the field, so it would hide exactly
+/// the permanent announcements it should keep. Filtering after the read is
+/// also why expiry cannot drive the pagination.
+bool isAnnouncementExpired(dynamic expiresAt, {DateTime? now}) {
+  if (expiresAt is! String || expiresAt.trim().isEmpty) return false;
+  final at = DateTime.tryParse(expiresAt);
+  if (at == null) return false;
+  return !at.isAfter(now ?? DateTime.now());
+}
+
 /// Firestore caps a batch at 500 writes. The web uses 450 for headroom; the
 /// same number here keeps a send that succeeds on one client succeeding on the
 /// other.
