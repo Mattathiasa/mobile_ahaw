@@ -129,7 +129,12 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
-    - assets/
+    # Only what the app loads at runtime. The rest of assets/ is icon SOURCE
+    # art — logo_icon_1024, logo_icon_ios, logo_seal_edge, logo_seal_full_bleed
+    # — which flutter_launcher_icons reads off disk at build time to generate
+    # the launcher icons. Bundling the directory wholesale shipped 3.1 MB of
+    # it inside every install, where nothing could ever load it.
+    - assets/logo.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
