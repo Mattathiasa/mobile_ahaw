@@ -64,11 +64,23 @@ class NotificationService {
           ?.createNotificationChannel(channel);
     }
 
-    // 4. Subscribe to topics
-    await _messaging.subscribeToTopic('announcements');
-    await _messaging.subscribeToTopic('meetings');
+    // No topic subscriptions.
+    //
+    // The app used to join `announcements` and `meetings`. Nothing publishes
+    // to them — sending needs a server, and Cloud Functions need the Blaze
+    // plan — so they delivered nothing. The undeployed function in the web
+    // repo that would publish to `announcements` sends to EVERY subscriber
+    // regardless of who the announcement was addressed to, which is precisely
+    // the targeting these topics cannot express. Announcements are delivered
+    // instead by resolving the audience to people and writing one notification
+    // each; see AnnouncementBroadcast.
+    //
+    // Anyone previously subscribed is unsubscribed so a later deploy cannot
+    // start blasting them.
+    await _messaging.unsubscribeFromTopic('announcements');
+    await _messaging.unsubscribeFromTopic('meetings');
 
-    // 5. Save FCM token to Firestore for direct notifications
+    // Save FCM token to Firestore for direct notifications
     await _saveFcmToken();
 
     // Refresh token when it rotates

@@ -445,6 +445,14 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.tabDecided': 'Decided',
     'admin.noDecidedYet': 'Nothing decided yet',
     'admin.noDecidedYetDesc': 'Requests you approve or reject appear here.',
+    // Self-authored: the web labels this control with literal JSX ("Send to")
+    // and reports delivery through a toast built inline, so there are no
+    // upstream entries for either.
+    'pages.sendTo': 'Send to',
+    'pages.pickAtLeastOneRole': 'Choose at least one role.',
+    'pages.notifiedCount': '{n} people notified',
+    'pages.notifiedNobody': 'Posted, but it reached nobody you can see.',
+    'pages.notifyFailed': 'Posted, but the notifications could not be sent.',
     'admin.latitude': 'Latitude',
     // Self-authored: the web places pins by tapping a Leaflet map, so it has
     // no typed-coordinate validation message to copy.
@@ -3433,6 +3441,11 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.tabDecided': 'የተወሰነ',
     'admin.noDecidedYet': 'እስካሁን የተወሰነ የለም',
     'admin.noDecidedYetDesc': 'የሚያጸድቋቸው ወይም የሚያጥሏቸው ጥያቄዎች እዚህ ይታያሉ።',
+    'pages.sendTo': 'ለማን ይላክ',
+    'pages.pickAtLeastOneRole': 'ቢያንስ አንድ ኃላፊነት ይምረጡ።',
+    'pages.notifiedCount': '{n} ሰዎች ተነግሯቸዋል',
+    'pages.notifiedNobody': 'ተለጥፏል፣ ነገር ግን እርስዎ ማየት ወደሚችሉት ማንም አልደረሰም።',
+    'pages.notifyFailed': 'ተለጥፏል፣ ነገር ግን ማሳወቂያዎቹን መላክ አልተቻለም።',
     'admin.latitude': 'ኬክሮስ',
     'admin.invalidCoords': 'ትክክለኛ ኬክሮስና ኬንትሮስ ያስገቡ።',
     'admin.longitude': 'ኬንትሮስ',

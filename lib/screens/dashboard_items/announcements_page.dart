@@ -7,7 +7,9 @@ import '../../services/localization_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/dashboard/dashboard_scaffold.dart';
 import '../../widgets/dashboard/dashboard_widgets.dart';
+import '../../services/announcement_broadcast.dart';
 import '../../services/auth_service.dart';
+import '../../services/role_registry_service.dart';
 import '../../services/permission_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -43,6 +45,16 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
     DateTime? expiresAt;
     bool saving = false;
 
+    final registry = Provider.of<RoleRegistryService>(context, listen: false);
+    final perms = Provider.of<PermissionService>(context, listen: false);
+    final myAtbiyaId = userModel?.atbiyaId ?? '';
+    final wholeDirectory = perms.isSuperAdmin ||
+        registry.scopeOf(userModel?.hierarchyLevel) == RoleScope.global;
+    // A parish officer has no congregation to aim at other than their own, so
+    // that option only appears when they actually have one.
+    String audienceKind = myAtbiyaId.isEmpty ? 'everyone' : 'parish';
+    final selectedRoles = <String>{};
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -61,6 +73,12 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                   contentCtrl.text.trim().isEmpty) {
                 return;
               }
+              // 'roles' with nothing chosen would resolve to nobody and post
+              // an announcement no one is told about.
+              if (audienceKind == 'roles' && selectedRoles.isEmpty) {
+                _showSnack(loc.t('pages.pickAtLeastOneRole'));
+                return;
+              }
               setSheet(() => saving = true);
               try {
                 final data = <String, dynamic>{
@@ -76,11 +94,46 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                 if (expiresAt != null) {
                   data['expiresAt'] = expiresAt!.toIso8601String();
                 }
+
+                final audience = audienceKind == 'roles'
+                    ? AnnouncementAudience.roles(selectedRoles.toList())
+                    : audienceKind == 'parish'
+                        ? AnnouncementAudience.parish(myAtbiyaId)
+                        : const AnnouncementAudience.everyone();
+                data['audience'] = audience.toMap();
+
                 await _db.collection('announcements').add(data);
                 if (ctx.mounted) Navigator.pop(ctx);
-                _showSnack(loc.t('pages.announcementCreated'), success: true);
+
+                // The announcement is posted either way. Delivery is a
+                // separate step and is allowed to fail on its own — an
+                // ordinary member has no Announcements screen, so the
+                // notification is the only thing that reaches them, and
+                // saying "posted!" when nobody was told would be a lie.
+                try {
+                  final broadcast = AnnouncementBroadcast();
+                  final recipients = await broadcast.resolveRecipients(
+                    audience,
+                    wholeDirectory: wholeDirectory,
+                    myAtbiyaId: myAtbiyaId,
+                    authorId: userModel?.id,
+                  );
+                  final sent = await broadcast.broadcast(
+                    title: titleCtrl.text.trim(),
+                    content: contentCtrl.text.trim(),
+                    recipients: recipients,
+                  );
+                  _showSnack(
+                      sent == 0
+                          ? loc.t('pages.notifiedNobody')
+                          : '${loc.t('pages.announcementCreated')} · '
+                              '${loc.t('pages.notifiedCount', {'n': '$sent'})}',
+                      success: sent > 0);
+                } catch (_) {
+                  _showSnack(loc.t('pages.notifyFailed'));
+                }
               } catch (e) {
-                _showSnack('Failed: $e');
+                _showSnack(loc.t('errors.generic'));
               } finally {
                 if (ctx.mounted) setSheet(() => saving = false);
               }
@@ -98,6 +151,22 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                 isDark: isDark,
                 value: expiresAt,
                 onChanged: (d) => setSheet(() => expiresAt = d),
+              ),
+              const SizedBox(height: 16),
+              buildLabel(loc.t('pages.sendTo'), isDark),
+              _AudiencePicker(
+                isDark: isDark,
+                kind: audienceKind,
+                showParish: myAtbiyaId.isNotEmpty,
+                roles: registry.assignableRoles(isHeadOffice: wholeDirectory),
+                roleLabel: (k) => registry.roleLabel(k, loc.language),
+                selectedRoles: selectedRoles,
+                onKind: (k) => setSheet(() => audienceKind = k),
+                onToggleRole: (k) => setSheet(() {
+                  selectedRoles.contains(k)
+                      ? selectedRoles.remove(k)
+                      : selectedRoles.add(k);
+                }),
               ),
             ],
           );
@@ -744,5 +813,105 @@ class FormSheet extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Who an announcement goes to.
+///
+/// The same three choices the web offers, in the same order — "my
+/// congregation" only when the author has one, since a head-office account has
+/// no parish to aim at.
+class _AudiencePicker extends StatelessWidget {
+  final bool isDark;
+  final String kind;
+  final bool showParish;
+  final List<String> roles;
+  final String Function(String) roleLabel;
+  final Set<String> selectedRoles;
+  final ValueChanged<String> onKind;
+  final ValueChanged<String> onToggleRole;
+
+  const _AudiencePicker({
+    required this.isDark,
+    required this.kind,
+    required this.showParish,
+    required this.roles,
+    required this.roleLabel,
+    required this.selectedRoles,
+    required this.onKind,
+    required this.onToggleRole,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = Provider.of<LocalizationService>(context);
+    final options = <({String key, String label})>[
+      if (showParish)
+        (key: 'parish', label: loc.t('pages.audienceMyAtbiya')),
+      (key: 'everyone', label: loc.t('pages.audienceEveryone')),
+      (key: 'roles', label: loc.t('pages.audienceChosenRoles')),
+    ];
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: options.map((o) {
+          final on = kind == o.key;
+          return GestureDetector(
+            onTap: () => onKind(o.key),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: on
+                    ? AppColors.primary
+                    : AppColors.primary.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(o.label,
+                  style: GoogleFonts.notoSansEthiopic(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: on ? Colors.white : AppColors.primary)),
+            ),
+          );
+        }).toList(),
+      ),
+      if (kind == 'roles') ...[
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: roles.map((r) {
+            final on = selectedRoles.contains(r);
+            return GestureDetector(
+              onTap: () => onToggleRole(r),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: on
+                      ? AppColors.divineGold.withValues(alpha: 0.18)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                      color: on
+                          ? AppColors.divineGold
+                          : AppColors.primary.withValues(alpha: 0.2)),
+                ),
+                child: Text(roleLabel(r),
+                    style: GoogleFonts.notoSansEthiopic(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: on
+                            ? AppColors.divineGold
+                            : (isDark ? Colors.white70 : AppColors.lightText))),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    ]);
   }
 }

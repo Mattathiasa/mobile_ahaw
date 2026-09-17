@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mobile_ahaw/models/meeting_model.dart';
+import 'package:mobile_ahaw/services/announcement_broadcast.dart';
 import 'package:mobile_ahaw/services/org_unit_service.dart';
 import 'package:mobile_ahaw/services/signup_service.dart';
 import 'package:mobile_ahaw/services/suggestion_service.dart';
@@ -198,6 +199,35 @@ void main() {
           leaderName: 'Abebe', leaderPhone: '+251911')['contact'] as Map;
       expect(contact['nameEn'], 'Abebe');
       expect(contact['phone'], '+251911');
+    });
+  });
+
+  group('notifications', () {
+    // allow create: if isActive()
+    //   && request.resource.data.senderId == request.auth.uid
+    //   && request.resource.data.get('senderName', '') in [ '', the caller's
+    //        own fullNameEnglish / fullName / username ]
+    //   && request.resource.data.keys().hasOnly([ ...9 keys... ]);
+    //
+    // An announcement fans out as one document per recipient, so a payload
+    // that trips hasOnly() does not fail once — it fails for everybody, and
+    // the announcement reaches nobody.
+    test('the key list matches the rule', () {
+      expect(
+        kNotificationKeys,
+        containsAll(<String>[
+          'userId', 'senderId', 'senderName', 'title', 'message',
+          'type', 'link', 'status', 'createdAt',
+        ]),
+      );
+      expect(kNotificationKeys.length, 9);
+    });
+
+    test('the batch size stays under the Firestore cap', () {
+      // 500 is the hard limit; 450 is the web's headroom, and matching it
+      // keeps a send that succeeds on one client succeeding on the other.
+      expect(kNotificationBatchLimit, lessThan(500));
+      expect(kNotificationBatchLimit, 450);
     });
   });
 

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -147,21 +148,53 @@ class _AuthWrapperState extends State<AuthWrapper> {
     if (_statusHookAttached) return;
     _statusHookAttached = true;
     auth.onStatusChanged = (previous, next) {
-      if (previous != 'pending') return;
-      if (next == 'active') {
-        NotificationService.showLocal(
-          id: 90001,
-          title: loc.t('pages.approvedNotificationTitle'),
-          body: loc.t('pages.approvedNotificationBody'),
-        );
-      } else if (next == 'rejected') {
-        NotificationService.showLocal(
-          id: 90002,
-          title: loc.t('pages.rejectedNotificationTitle'),
-          body: loc.t('pages.rejectedGeneric'),
-        );
-      }
+      // `previous` is null on the first snapshot after a cold start, so a
+      // decision made while the app was closed would go unannounced if this
+      // relied on the in-memory transition alone. The last status seen on this
+      // device is remembered instead, and compared on launch.
+      _announceDecision(loc, auth.userModel?.id, previous, next);
     };
+  }
+
+  /// Tells the member their request was decided, at most once per decision.
+  ///
+  /// This is the free half of it: the app already watches its own user
+  /// document, so the client raises the notification itself with no server and
+  /// no Blaze plan. The honest limit is that it lands when the app next runs,
+  /// not at the moment the approver acts — waking a closed app needs a real
+  /// push, and therefore a sender this project does not have.
+  Future<void> _announceDecision(LocalizationService loc, String? uid,
+      String? previous, String? next) async {
+    if (next == null || uid == null || uid.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    // Keyed by uid: phones get shared. A single key would announce one
+    // member's approval to whoever signed in after them.
+    final key = 'last-seen-status:$uid';
+    final remembered = previous ?? prefs.getString(key);
+
+    // Nothing known before: record and stay quiet rather than announce a
+    // decision the member may have been told about on another device.
+    if (remembered == null) {
+      await prefs.setString(key, next);
+      return;
+    }
+    if (remembered == next) return;
+    await prefs.setString(key, next);
+
+    if (remembered != 'pending') return;
+    if (next == 'active') {
+      await NotificationService.showLocal(
+        id: 90001,
+        title: loc.t('pages.approvedNotificationTitle'),
+        body: loc.t('pages.approvedNotificationBody'),
+      );
+    } else if (next == 'rejected') {
+      await NotificationService.showLocal(
+        id: 90002,
+        title: loc.t('pages.rejectedNotificationTitle'),
+        body: loc.t('pages.rejectedGeneric'),
+      );
+    }
   }
 
   @override
