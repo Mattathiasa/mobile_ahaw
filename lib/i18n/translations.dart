@@ -439,6 +439,12 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.biRowsReady': '{n} rows ready to import',
     'admin.biResult': '{ok} created, {failed} failed',
     'admin.biPasswordNote': 'Every imported account is created with the same starting password, changeme123. Tell the people you import to change it when they first sign in.',
+    // Self-authored: the web has listDecided() in its service but no screen
+    // that calls it, so there are no upstream labels for this history.
+    'admin.tabPending': 'Pending',
+    'admin.tabDecided': 'Decided',
+    'admin.noDecidedYet': 'Nothing decided yet',
+    'admin.noDecidedYetDesc': 'Requests you approve or reject appear here.',
     'admin.latitude': 'Latitude',
     // Self-authored: the web places pins by tapping a Leaflet map, so it has
     // no typed-coordinate validation message to copy.
@@ -3423,6 +3429,10 @@ const Map<String, Map<String, String>> kTranslations = {
     'admin.biRowsReady': '{n} ረድፎች ለማስገባት ዝግጁ ናቸው',
     'admin.biResult': '{ok} ተፈጥረዋል፣ {failed} አልተሳኩም',
     'admin.biPasswordNote': 'እያንዳንዱ የገባ መለያ በተመሳሳይ የመነሻ የይለፍ ቃል changeme123 ይፈጠራል። ያስገቧቸው ሰዎች መጀመሪያ ሲገቡ እንዲቀይሩት ይንገሯቸው።',
+    'admin.tabPending': 'በመጠባበቅ ላይ',
+    'admin.tabDecided': 'የተወሰነ',
+    'admin.noDecidedYet': 'እስካሁን የተወሰነ የለም',
+    'admin.noDecidedYetDesc': 'የሚያጸድቋቸው ወይም የሚያጥሏቸው ጥያቄዎች እዚህ ይታያሉ።',
     'admin.latitude': 'ኬክሮስ',
     'admin.invalidCoords': 'ትክክለኛ ኬክሮስና ኬንትሮስ ያስገቡ።',
     'admin.longitude': 'ኬንትሮስ',

@@ -76,33 +76,28 @@ class SignupService {
         if (sr is String && sr.isNotEmpty) signupRole = sr;
       } catch (_) {}
 
-      // This object must match the keys().hasOnly([...]) whitelist in
-      // firestore.rules exactly — an extra field makes the whole write fail.
-      final profile = {
-        'username': uname,
-        'email': email.trim(),
-        'fullNameEnglish': fullNameEnglish.trim(),
-        'fullNameAmharic': fullNameAmharic.trim(),
-        'fullName': fullNameEnglish.trim(),
-        'phone': normalizeEthiopianPhone(phone) ?? phone.trim(),
-        'dateOfBirth': dateOfBirth,
-        'gender': gender,
-        'maritalStatus': '',
-        'hasChildren': false,
-        'childrenCount': 0,
-        'workSchool': '',
-        'address': {'region': '', 'zone': '', 'woreda': ''},
-        'ministryType': <String>[],
-        'churchRoles': <String>[],
-        'atbiyaId': atbiyaId,
-        'atbiyaName': atbiyaName,
-        'hierarchyLevel': signupRole,
-        'role': 'user',
-        'status': 'pending',
-        'signupSource': 'self',
-        'requestedAt': DateTime.now().toIso8601String(),
-        'createdAt': DateTime.now().toIso8601String(),
-      };
+      final profile = buildSignupProfile(
+        username: uname,
+        email: email,
+        fullNameEnglish: fullNameEnglish,
+        fullNameAmharic: fullNameAmharic,
+        phone: phone,
+        dateOfBirth: dateOfBirth,
+        gender: gender,
+        maritalStatus: maritalStatus,
+        hasChildren: hasChildren,
+        childrenCount: childrenCount,
+        workSchool: workSchool,
+        region: region,
+        zone: zone,
+        woreda: woreda,
+        lat: lat,
+        lng: lng,
+        ministryType: ministryType,
+        atbiyaId: atbiyaId,
+        atbiyaName: atbiyaName,
+        signupRole: signupRole,
+      );
 
       await db.collection('users').doc(uid).set(profile);
 
@@ -153,4 +148,88 @@ class SignupService {
         return e.message ?? 'Could not complete your registration.';
     }
   }
+}
+
+/// The keys firestore.rules accepts on a self sign-up.
+///
+///   allow create: if ... && request.resource.data.keys().hasOnly([...])
+///
+/// An extra key fails the WHOLE write, so this list and the rule must agree.
+/// It checks top-level keys only, which is why coordinates ride inside
+/// `address` rather than as fields of their own.
+const kSignupProfileKeys = <String>[
+  'username', 'email', 'fullName', 'fullNameEnglish', 'fullNameAmharic',
+  'phone', 'phoneNumber', 'dateOfBirth', 'gender', 'maritalStatus',
+  'hasChildren', 'childrenCount', 'workSchool', 'address',
+  'ministryType', 'churchRoles', 'profilePicture',
+  'atbiyaId', 'atbiyaName', 'hierarchyLevel', 'role', 'status',
+  'signupSource', 'requestedAt', 'createdAt', 'updatedAt',
+];
+
+/// Builds the `users/{uid}` document a self sign-up creates.
+///
+/// Pure, and separate from [SignupService] so it can be checked against
+/// kSignupProfileKeys without a Firebase app. It is separate for a reason:
+/// this function used to be inline and silently dropped everything the
+/// applicant typed beyond their name, phone and congregation — region, zone,
+/// woreda, marital status, work/school, children and ministries were all
+/// written as blanks. Nothing failed; the data was simply gone.
+Map<String, dynamic> buildSignupProfile({
+  required String username,
+  required String email,
+  required String fullNameEnglish,
+  required String fullNameAmharic,
+  required String phone,
+  required String atbiyaId,
+  required String atbiyaName,
+  required String signupRole,
+  String dateOfBirth = '',
+  String gender = '',
+  String maritalStatus = '',
+  bool hasChildren = false,
+  int childrenCount = 0,
+  String workSchool = '',
+  String region = '',
+  String zone = '',
+  String woreda = '',
+  double? lat,
+  double? lng,
+  List<String> ministryType = const [],
+  DateTime? now,
+}) {
+  final stamp = (now ?? DateTime.now()).toIso8601String();
+  return {
+    'username': username.trim(),
+    'email': email.trim(),
+    'fullNameEnglish': fullNameEnglish.trim(),
+    'fullNameAmharic': fullNameAmharic.trim(),
+    'fullName': fullNameEnglish.trim(),
+    'phone': normalizeEthiopianPhone(phone) ?? phone.trim(),
+    'dateOfBirth': dateOfBirth,
+    'gender': gender,
+    'maritalStatus': maritalStatus,
+    'hasChildren': hasChildren,
+    'childrenCount': childrenCount,
+    'workSchool': workSchool.trim(),
+    // Coordinates ride INSIDE `address`: hasOnly() checks top-level keys only
+    // and `address` is already whitelisted. Same reasoning as the web's
+    // src/services/signup.ts:140.
+    'address': {
+      'region': region,
+      'zone': zone.trim(),
+      'woreda': woreda.trim(),
+      if (lat != null && lng != null) 'lat': lat,
+      if (lat != null && lng != null) 'lng': lng,
+    },
+    'ministryType': ministryType,
+    'churchRoles': <String>[],
+    'atbiyaId': atbiyaId,
+    'atbiyaName': atbiyaName,
+    'hierarchyLevel': signupRole,
+    'role': 'user',
+    'status': 'pending',
+    'signupSource': 'self',
+    'requestedAt': stamp,
+    'createdAt': stamp,
+  };
 }

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mobile_ahaw/models/meeting_model.dart';
 import 'package:mobile_ahaw/services/org_unit_service.dart';
+import 'package:mobile_ahaw/services/signup_service.dart';
 import 'package:mobile_ahaw/services/suggestion_service.dart';
 
 /// These pin client-side behaviour to what firestore.rules actually enforces.
@@ -68,6 +69,87 @@ void main() {
       expect(legacy.canBeEditedBy('uid-1', isAdmin: true), isTrue);
       // And an empty uid must never match an empty createdBy.
       expect(legacy.canBeEditedBy('', isAdmin: false), isFalse);
+    });
+  });
+
+  group('self sign-up', () {
+    // allow create: if signedIn() && request.auth.uid == userId
+    //   && request.resource.data.status == 'pending'
+    //   && request.resource.data.signupSource == 'self'
+    //   && request.resource.data.keys().hasOnly([ ...26 keys... ]);
+    //
+    // hasOnly() fails the WHOLE write on one unexpected key, so the payload
+    // and the rule have to agree exactly.
+    Map<String, dynamic> profile() => buildSignupProfile(
+          username: 'abebek',
+          email: 'abebe@example.org',
+          fullNameEnglish: 'Abebe Kebede',
+          fullNameAmharic: 'አበበ ከበደ',
+          phone: '0911223344',
+          atbiyaId: 'atb-1',
+          atbiyaName: 'St Mary',
+          signupRole: 'HiyawanMahderat',
+          dateOfBirth: '1995-03-07',
+          gender: 'Male',
+          maritalStatus: 'Married',
+          hasChildren: true,
+          childrenCount: 2,
+          workSchool: 'Addis Ababa University',
+          region: 'Oromia',
+          zone: 'Finfinne',
+          woreda: 'Bole',
+          lat: 9.01,
+          lng: 38.76,
+          ministryType: const ['Choir', 'Ushering'],
+        );
+
+    test('stays inside the whitelist', () {
+      for (final k in profile().keys) {
+        expect(kSignupProfileKeys, contains(k),
+            reason: '"\$k" is not in the rule\'s hasOnly list; the whole '
+                'sign-up write would be refused');
+      }
+    });
+
+    test('the rule requires these three exactly', () {
+      final p = profile();
+      expect(p['status'], 'pending');
+      expect(p['signupSource'], 'self');
+      expect(p['role'], 'user');
+    });
+
+    test('carries every field the form collects', () {
+      // The regression this exists for: register() accepted all of these and
+      // wrote blanks, so an applicant's region and ministries reached nobody.
+      final p = profile();
+      expect(p['maritalStatus'], 'Married');
+      expect(p['hasChildren'], isTrue);
+      expect(p['childrenCount'], 2);
+      expect(p['workSchool'], 'Addis Ababa University');
+      expect(p['ministryType'], ['Choir', 'Ushering']);
+
+      final address = p['address'] as Map;
+      expect(address['region'], 'Oromia');
+      expect(address['zone'], 'Finfinne');
+      expect(address['woreda'], 'Bole');
+    });
+
+    test('coordinates nest inside address, never at the top level', () {
+      final p = profile();
+      // At the top level they would be two keys the rule does not list, and
+      // hasOnly() would refuse the entire sign-up.
+      expect(p.containsKey('lat'), isFalse);
+      expect(p.containsKey('lng'), isFalse);
+      expect((p['address'] as Map)['lat'], 9.01);
+      expect((p['address'] as Map)['lng'], 38.76);
+
+      // Omitted entirely when unknown, rather than written as nulls.
+      final noCoords = buildSignupProfile(
+        username: 'x', email: '', fullNameEnglish: 'X', fullNameAmharic: '',
+        phone: '0911223344', atbiyaId: 'a', atbiyaName: 'b',
+        signupRole: 'HiyawanMahderat',
+      );
+      expect((noCoords['address'] as Map).containsKey('lat'), isFalse);
     });
   });
 
