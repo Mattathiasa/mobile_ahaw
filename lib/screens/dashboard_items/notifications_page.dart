@@ -134,13 +134,20 @@ class _NotificationCard extends StatelessWidget {
     final message = (data['message'] as String?) ?? '';
     final senderName = (data['senderName'] as String?) ?? '';
     final unread = data['status'] == 'unread';
+    // Both clients write `createdAt` as an ISO STRING, so handling only
+    // Timestamp meant no notification ever showed a date. Timestamp is still
+    // accepted because a server-written row would carry one.
     final createdAt = data['createdAt'];
-    String when = '';
+    DateTime? at;
     if (createdAt is Timestamp) {
-      final d = createdAt.toDate();
-      when =
-          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+      at = createdAt.toDate();
+    } else if (createdAt is String) {
+      at = DateTime.tryParse(createdAt)?.toLocal();
     }
+    final when = at == null
+        ? ''
+        : '${at.year}-${at.month.toString().padLeft(2, '0')}-${at.day.toString().padLeft(2, '0')} '
+            '${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

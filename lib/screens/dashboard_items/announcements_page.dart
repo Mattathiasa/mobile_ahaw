@@ -79,6 +79,15 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                 _showSnack(loc.t('pages.pickAtLeastOneRole'));
                 return;
               }
+              // Caught here so the sender gets a sentence they can act on.
+              // Past the notification bounds firestore.rules would refuse the
+              // fan-out instead — part-way through, after the announcement was
+              // already posted.
+              if (titleCtrl.text.trim().length > kNotificationTitleMax ||
+                  contentCtrl.text.trim().length > kNotificationMessageMax) {
+                _showSnack(loc.t('pages.announcementTooLong'));
+                return;
+              }
               setSheet(() => saving = true);
               try {
                 final data = <String, dynamic>{

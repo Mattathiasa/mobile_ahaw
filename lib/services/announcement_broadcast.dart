@@ -65,10 +65,19 @@ const int kNotificationBatchLimit = 450;
 ///     && request.resource.data.keys().hasOnly([...]);
 ///
 /// hasOnly() fails the whole write on one unexpected key.
+/// `link` is deliberately absent. Nothing has ever read it on either client,
+/// and the rules no longer accept it: an unvalidated destination carried by a
+/// message the app renders as its own is in-app phishing waiting to happen.
 const kNotificationKeys = <String>[
   'userId', 'senderId', 'senderName', 'title', 'message', 'type',
-  'link', 'status', 'createdAt',
+  'status', 'createdAt',
 ];
+
+/// The bound firestore.rules puts on a notification. Checked here so an
+/// oversized announcement fails with something the sender can act on, rather
+/// than as a permission denial part-way through a fan-out.
+const int kNotificationTitleMax = 200;
+const int kNotificationMessageMax = 2000;
 
 /// Chooses which members an [audience] actually refers to.
 ///
@@ -175,8 +184,12 @@ class AnnouncementBroadcast {
     if (recipients.isEmpty) return 0;
     final sender = await _sender();
     final createdAt = DateTime.now().toIso8601String();
+    // 300 is the web's preview length, well inside the 2000 the rules allow.
     final message =
         content.length > 300 ? '${content.substring(0, 300)}…' : content;
+    final subject = title.length > kNotificationTitleMax
+        ? title.substring(0, kNotificationTitleMax)
+        : title;
 
     var written = 0;
     for (final group in chunk(recipients)) {
@@ -186,10 +199,9 @@ class AnnouncementBroadcast {
           'userId': r['id'],
           'senderId': sender.senderId,
           'senderName': sender.senderName,
-          'title': title,
+          'title': subject,
           'message': message,
           'type': 'info',
-          'link': '/notifications',
           'status': 'unread',
           'createdAt': createdAt,
         });

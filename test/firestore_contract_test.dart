@@ -217,10 +217,23 @@ void main() {
         kNotificationKeys,
         containsAll(<String>[
           'userId', 'senderId', 'senderName', 'title', 'message',
-          'type', 'link', 'status', 'createdAt',
+          'type', 'status', 'createdAt',
         ]),
       );
-      expect(kNotificationKeys.length, 9);
+      expect(kNotificationKeys.length, 8);
+    });
+
+    test('link is not among them', () {
+      // The rules stopped accepting it. Nothing read it on either client, so
+      // removing it costs nothing and cannot be reopened by accident — a
+      // message the app renders as its own, carrying an unvalidated
+      // destination, is in-app phishing.
+      expect(kNotificationKeys, isNot(contains('link')));
+    });
+
+    test('the size bounds match the rule', () {
+      expect(kNotificationTitleMax, 200);
+      expect(kNotificationMessageMax, 2000);
     });
 
     test('the batch size stays under the Firestore cap', () {
