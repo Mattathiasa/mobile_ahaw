@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/church_map_service.dart';
@@ -13,9 +15,21 @@ import '../../widgets/dashboard/dashboard_scaffold.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/home/home_common.dart';
 
-/// Lightweight Church Map: lists congregations with their pin status, opens a
-/// pin in the phone's maps app, and lets admins set/edit coordinates. Pins are
-/// stored in atbiyaPrivate (same as the web); no embedded map / API key needed.
+/// Church Map: an OpenStreetMap canvas of the pinned congregations over the
+/// list of all of them, with their pin status.
+///
+/// An admin places a pin by choosing a congregation and tapping the map, the
+/// way the web's ChurchMap does; the coordinate dialog stays for anyone
+/// entering a surveyed position. Pins live in `atbiyaPrivate` — never on the
+/// congregation's own document, which anonymous visitors can read.
+///
+/// Only the congregation layer is drawn. The web also plots the head office,
+/// the dioceses (including an estimated position for a diocese with no pin of
+/// its own) and the Mahedherat; this screen has only ever managed
+/// congregations, and the other three would each need their own query.
+///
+/// Tiles come from OpenStreetMap over the network, so with no connection the
+/// canvas is blank and the list below it is the whole screen.
 class ChurchMapPage extends StatefulWidget {
   const ChurchMapPage({super.key});
 
@@ -31,6 +45,28 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
   final HierarchyService _hierarchy = HierarchyService();
   // Cache of loaded coords per atbiya id (null = loaded & unpinned).
   final Map<String, ({double lat, double lng})?> _coords = {};
+
+  final MapController _map = MapController();
+
+  /// The congregation being placed, if any. While this is set, a tap on the
+  /// map drops its pin instead of doing nothing.
+  Map<String, dynamic>? _placing;
+
+  /// Ids whose coordinates have been fetched, so the map can be drawn once
+  /// rather than a marker at a time.
+  bool _coordsLoaded = false;
+
+  Future<void> _loadAllCoords(List<Map<String, dynamic>> atbiyas) async {
+    final ids = atbiyas.map((a) => a['id'] as String).toList();
+    final found = await _mapService.getCoordsFor(ids);
+    if (!mounted) return;
+    setState(() {
+      for (final id in ids) {
+        _coords[id] = found[id];
+      }
+      _coordsLoaded = true;
+    });
+  }
 
   bool get _canEdit {
     final perms = Provider.of<PermissionService>(context, listen: false);
@@ -60,26 +96,178 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
           if (atbiyas.isEmpty) {
             return _empty(loc.t('admin.noCongregationsYet'));
           }
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12, left: 4),
-                child: Text(
-                    // Terse by design: this screen is a coordinate list, not a
-                    // map, so the catalog has no sentence describing it.
-                    _canEdit
-                        ? '${loc.t('common.openInMaps')} · ${loc.t('admin.needsPin')}'
-                        : loc.t('common.openInMaps'),
-                    style: GoogleFonts.notoSansEthiopic(
-                        fontSize: 11, color: Colors.grey)),
+          if (!_coordsLoaded) {
+            WidgetsBinding.instance.addPostFrameCallback(
+                (_) => _loadAllCoords(atbiyas));
+          }
+
+          final placed = atbiyas
+              .where((a) => _coords[a['id'] as String] != null)
+              .toList();
+          final unplaced = atbiyas
+              .where((a) =>
+                  _coordsLoaded && _coords[a['id'] as String] == null)
+              .toList();
+
+          return Column(children: [
+            _mapCanvas(placed, isDark),
+            _mapStatus(placed.length, unplaced.length, isDark),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                children: [...atbiyas.map((a) => _tile(a, isDark))],
               ),
-              ...atbiyas.map((a) => _tile(a, isDark)),
-            ],
-          );
+            ),
+          ]);
         },
       ),
     );
+  }
+
+  /// The congregation layer. The web draws head office, dioceses and
+  /// Mahedherat alongside it; this screen only ever managed congregations, so
+  /// only that layer is here. Colour matches PIN_COLORS.atbiya in the web's
+  /// src/lib/mapIcon.ts, and the amber is its `selected`.
+  static const _pinAtbiya = Color(0xFF2E5E99);
+  static const _pinSelected = Color(0xFFE0A200);
+
+  /// Roughly the middle of Ethiopia, for the first frame when nothing is
+  /// placed yet and there is no point to centre on.
+  static const _fallbackCentre = LatLng(9.15, 40.49);
+
+  Widget _mapCanvas(List<Map<String, dynamic>> placed, bool isDark) {
+    final points = <Marker>[];
+    for (final a in placed) {
+      final c = _coords[a['id'] as String]!;
+      final isTarget = _placing != null && _placing!['id'] == a['id'];
+      points.add(Marker(
+        point: LatLng(c.lat, c.lng),
+        width: 34,
+        height: 34,
+        child: Tooltip(
+          message: (a['name'] ?? '') as String,
+          child: Icon(Icons.location_on,
+              size: 30, color: isTarget ? _pinSelected : _pinAtbiya),
+        ),
+      ));
+    }
+
+    final first = placed.isEmpty
+        ? _fallbackCentre
+        : LatLng(_coords[placed.first['id'] as String]!.lat,
+            _coords[placed.first['id'] as String]!.lng);
+
+    return SizedBox(
+      height: 260,
+      child: Stack(children: [
+        FlutterMap(
+          mapController: _map,
+          options: MapOptions(
+            initialCenter: first,
+            // The web uses 6 when it has points to fit and 11 when it does
+            // not; without a fitted bounds here, 6 shows the country.
+            initialZoom: placed.isEmpty ? 5.5 : 6,
+            onTap: (_, latLng) => _onMapTap(latLng),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              // OpenStreetMap asks that clients identify themselves.
+              userAgentPackageName: 'org.et.mahibereahaw.app',
+            ),
+            MarkerLayer(markers: points),
+          ],
+        ),
+        // OSM's licence requires visible attribution.
+        Positioned(
+          right: 0,
+          bottom: 0,
+          child: GestureDetector(
+            onTap: () => openExternal('https://www.openstreetmap.org/copyright',
+                context: context),
+            child: Container(
+              color: Colors.white70,
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              child: const Text('© OpenStreetMap',
+                  style: TextStyle(fontSize: 9, color: Colors.black87)),
+            ),
+          ),
+        ),
+        if (_placing != null)
+          Positioned(
+            left: 12,
+            right: 12,
+            top: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: _pinSelected,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(children: [
+                const Icon(Icons.touch_app, size: 16, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${_placing!['name'] ?? ''} — ${loc.t('admin.tapToPlace')}',
+                    style: GoogleFonts.notoSansEthiopic(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => setState(() => _placing = null),
+                  child: const Icon(Icons.close, size: 16, color: Colors.white),
+                ),
+              ]),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  Widget _mapStatus(int placed, int unplaced, bool isDark) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 2),
+        child: Row(children: [
+          Text(loc.t('admin.pinnedCount', {'n': '$placed'}),
+              style: GoogleFonts.notoSansEthiopic(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: _pinAtbiya)),
+          const SizedBox(width: 12),
+          if (unplaced > 0)
+            Text(loc.t('admin.unpinnedCount', {'n': '$unplaced'}),
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 11, color: Colors.grey)),
+          const Spacer(),
+          if (_canEdit && _placing == null && unplaced > 0)
+            Text(loc.t('admin.needsPinHint'),
+                textAlign: TextAlign.end,
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 9, color: Colors.grey)),
+        ]),
+      );
+
+  Future<void> _onMapTap(LatLng at) async {
+    final target = _placing;
+    if (target == null || !_canEdit) return;
+    final id = target['id'] as String;
+    try {
+      await _mapService.setCoords(id, at.latitude, at.longitude);
+      if (!mounted) return;
+      setState(() {
+        _coords[id] = (lat: at.latitude, lng: at.longitude);
+        _placing = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(loc.t('admin.pinSaved'))));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(loc.t('errors.generic'))));
+      }
+    }
   }
 
   Widget _tile(Map<String, dynamic> atbiya, bool isDark) {
@@ -129,16 +317,38 @@ class _ChurchMapPageState extends State<ChurchMapPage> {
                 style: GoogleFonts.notoSansEthiopic(
                     fontSize: 10, color: Colors.grey)),
             trailing: _canEdit
-                ? IconButton(
-                    icon: const Icon(Icons.edit_location_alt_outlined,
-                        color: AppColors.primary),
-                    onPressed: () => _editPin(id, name.toString(), coords),
-                  )
+                ? Row(mainAxisSize: MainAxisSize.min, children: [
+                    // Placing by tapping the map is the quick path; the
+                    // coordinate dialog stays for anyone typing a surveyed
+                    // position in.
+                    IconButton(
+                      tooltip: loc.t('admin.tapToPlace'),
+                      icon: Icon(Icons.touch_app_outlined,
+                          color: _placing != null && _placing!['id'] == id
+                              ? _pinSelected
+                              : AppColors.primary),
+                      onPressed: () {
+                        setState(() => _placing = atbiya);
+                        final c = _coords[id];
+                        if (c != null) {
+                          _map.move(LatLng(c.lat, c.lng), 13);
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit_location_alt_outlined,
+                          color: AppColors.primary),
+                      onPressed: () => _editPin(id, name.toString(), coords),
+                    ),
+                  ])
                 : (pinned
                     ? const Icon(Icons.open_in_new,
                         size: 18, color: AppColors.primary)
                     : null),
             onTap: pinned
+                ? () => _map.move(LatLng(coords.lat, coords.lng), 14)
+                : null,
+            onLongPress: pinned
                 ? () => _openInMaps(context, coords.lat, coords.lng)
                 : null,
           ),

@@ -19,6 +19,30 @@ class ChurchMapService {
     return null;
   }
 
+  /// Coordinates for many congregations at once.
+  ///
+  /// Still one read per document rather than a collection query: the rule on
+  /// atbiyaPrivate is
+  ///
+  ///   allow read, write: if isAdmin() || hasGlobalScope()
+  ///     || canRegisterAtbiya()
+  ///     || (isOwnAtbiyaEditor() && myAtbiya() != '' && atbiyaId == myAtbiya())
+  ///
+  /// and that last clause cannot be satisfied by a list query, so a parish
+  /// leader listing the collection would be denied everything rather than
+  /// getting their own row. Fetching by id keeps them working.
+  Future<Map<String, ({double lat, double lng})>> getCoordsFor(
+      Iterable<String> atbiyaIds) async {
+    final ids = atbiyaIds.toList();
+    final results = await Future.wait(ids.map(getCoords));
+    final out = <String, ({double lat, double lng})>{};
+    for (var i = 0; i < ids.length; i++) {
+      final c = results[i];
+      if (c != null) out[ids[i]] = c;
+    }
+    return out;
+  }
+
   Future<void> setCoords(String atbiyaId, double lat, double lng) async {
     await _db.collection('atbiyaPrivate').doc(atbiyaId).set({
       'lat': lat,
