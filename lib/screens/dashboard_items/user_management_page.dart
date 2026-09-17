@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
+
+import '../../services/csv_import.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../services/localization_service.dart';
 import '../../widgets/dashboard/dashboard_scaffold.dart';
@@ -175,6 +180,127 @@ class _UserManagementPageState extends State<UserManagementPage> {
     );
   }
 
+  /// Bulk-imports members from a CSV, mirroring the web's BulkImportDialog.
+  ///
+  /// Only the user import is ported. The web's HR and Inventory "import"
+  /// dialogs do not read the file at all — they write one fabricated record
+  /// built from the filename — so there is nothing there worth matching.
+  Future<void> _showBulkImportSheet() async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['csv', 'txt'],
+      withData: true,
+    );
+    final bytes = picked?.files.single.bytes;
+    if (bytes == null) return;
+
+    List<CsvMemberRow> rows;
+    try {
+      rows = parseMemberCsv(utf8.decode(bytes, allowMalformed: true));
+    } on CsvFormatException {
+      _showSnack(loc.t('admin.biCsvNeedsRows'));
+      return;
+    }
+    if (rows.isEmpty) {
+      _showSnack(loc.t('admin.biCsvNeedsRows'));
+      return;
+    }
+    if (!mounted) return;
+
+    String defaultRole = 'HiyawanMahderat';
+    bool importing = false;
+
+    // `context` here is State.context, reached after awaiting the file picker.
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return FormSheet(
+          title: loc.t('admin.biTitle'),
+          subtitle: loc.t('admin.biRowsReady', {'n': '${rows.length}'}),
+          isDark: isDark,
+          saving: importing,
+          submitLabel: loc.t('admin.importAction'),
+          onSubmit: () async {
+            setSheet(() => importing = true);
+            var ok = 0;
+            var failed = 0;
+            for (final row in rows) {
+              final username = row.usernameFor();
+              // A row with nothing a username can be built from is skipped
+              // rather than written under a generated one nobody recognises.
+              if (username.isEmpty) {
+                failed++;
+                continue;
+              }
+              try {
+                await _memberService.createMember({
+                  'username': username,
+                  // The web's starting password for every imported account.
+                  'password': 'changeme123',
+                  'fullName': row.fullName.isEmpty ? username : row.fullName,
+                  'fullNameAmharic': row.fullNameAmharic,
+                  'phone': row.phone.replaceAll(RegExp(r'\s'), ''),
+                  // Blank rather than fabricated: a made-up address passes the
+                  // real-inbox check and offers a password reset that can
+                  // never arrive.
+                  'email': row.email,
+                  'hierarchyLevel':
+                      row.role.isEmpty ? defaultRole : row.role,
+                  'role': 'user',
+                  'status': 'active',
+                  'signupSource': 'admin',
+                });
+                ok++;
+              } catch (_) {
+                failed++;
+              }
+            }
+            if (ctx.mounted) Navigator.pop(ctx);
+            _showSnack(
+                loc.t('admin.biResult', {'ok': '$ok', 'failed': '$failed'}),
+                success: failed == 0);
+          },
+          children: [
+            buildLabel(loc.t('admin.biDefaultRole'), isDark),
+            _buildHierarchyLevelDropdown(
+                defaultRole, (v) => setSheet(() => defaultRole = v!), isDark),
+            const SizedBox(height: 16),
+            Text(loc.t('admin.biPasswordNote'),
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 11, color: Colors.grey, height: 1.5)),
+            const SizedBox(height: 16),
+            ...rows.take(20).map((r) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(children: [
+                    Expanded(
+                      child: Text(
+                        r.fullName.isEmpty ? r.usernameFor() : r.fullName,
+                        style: GoogleFonts.notoSansEthiopic(fontSize: 12),
+                      ),
+                    ),
+                    Text(r.role.isEmpty ? defaultRole : r.role,
+                        style: GoogleFonts.notoSansEthiopic(
+                            fontSize: 10, color: Colors.grey)),
+                  ]),
+                )),
+            if (rows.length > 20)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text('+${rows.length - 20}',
+                    style: GoogleFonts.notoSansEthiopic(
+                        fontSize: 11, color: Colors.grey)),
+              ),
+          ],
+        );
+      }),
+    );
+    _showSnack(loc.t('admin.importDone'), success: true);
+  }
+
   void _showSnack(String msg, {bool success = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -195,6 +321,13 @@ class _UserManagementPageState extends State<UserManagementPage> {
       moduleKey: 'userManagement',
       constrainWidth: false,
       actions: [
+        if (perms.isSuperAdmin || perms.can('canCreateUser'))
+          IconButton(
+            tooltip: loc.t('admin.biTitle'),
+            onPressed: _showBulkImportSheet,
+            icon: const Icon(Icons.upload_file_outlined,
+                color: AppColors.primary),
+          ),
         if (perms.isSuperAdmin || perms.can('canCreateUser'))
           Padding(
             padding: const EdgeInsets.only(right: 12),

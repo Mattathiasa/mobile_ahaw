@@ -435,6 +435,10 @@ const Map<String, Map<String, String>> kTranslations = {
     // Self-authored: the web shows the public/private split through section
     // headings rather than a sentence, so there is no entry to copy.
     'admin.contactPrivateHint': 'Kept private to your congregation and head office. The fields above appear on the public sign-up form.',
+    'admin.biTitle': 'Bulk import users',
+    'admin.biRowsReady': '{n} rows ready to import',
+    'admin.biResult': '{ok} created, {failed} failed',
+    'admin.biPasswordNote': 'Every imported account is created with the same starting password, changeme123. Tell the people you import to change it when they first sign in.',
     'admin.latitude': 'Latitude',
     // Self-authored: the web places pins by tapping a Leaflet map, so it has
     // no typed-coordinate validation message to copy.
@@ -3415,6 +3419,10 @@ const Map<String, Map<String, String>> kTranslations = {
     'finance.reportTypeQuarterly': 'ሩብ ዓመታዊ',
     'finance.reportTypeCustom': 'ብጁ',
     'admin.contactPrivateHint': 'ለጉባኤዎና ለጠቅላይ ጽሕፈት ቤቱ ብቻ የሚታይ ነው። ከላይ ያሉት መስኮች በሕዝባዊ የምዝገባ ቅጽ ላይ ይታያሉ።',
+    'admin.biTitle': 'ተጠቃሚዎችን በጅምላ አስገባ',
+    'admin.biRowsReady': '{n} ረድፎች ለማስገባት ዝግጁ ናቸው',
+    'admin.biResult': '{ok} ተፈጥረዋል፣ {failed} አልተሳኩም',
+    'admin.biPasswordNote': 'እያንዳንዱ የገባ መለያ በተመሳሳይ የመነሻ የይለፍ ቃል changeme123 ይፈጠራል። ያስገቧቸው ሰዎች መጀመሪያ ሲገቡ እንዲቀይሩት ይንገሯቸው።',
     'admin.latitude': 'ኬክሮስ',
     'admin.invalidCoords': 'ትክክለኛ ኬክሮስና ኬንትሮስ ያስገቡ።',
     'admin.longitude': 'ኬንትሮስ',
